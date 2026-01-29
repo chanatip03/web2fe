@@ -1,15 +1,97 @@
 @import "tailwindcss";
 
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #212121;
 }
 
 @theme inline {
+  --font-sans: var(--font-noto-thai,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      Segoe UI,
+      Roboto,
+      Helvetica,
+      Arial);
+}
+
+@theme {
+  /* colors setup */
+  --color-primary01: #E3EDFD;
+  --color-primary02: #1565C0;
+  --color-primary03: #0D47A1; /* main */
+  --color-primary04: #093272;
+  --color-secondary01: #E3F2FD;
+  --color-secondary02: #90CAF9;
+  --color-secondary03: #2196F3;
+  --color-secondary04: #1E88E5;/* main */
+  --color-accent01: #ED9A9A;
+  --color-accent02: #E56F6F;
+  --color-accent03: #CA2424; /* main */
+  --color-accent04: #9F1C1C;
+  --color-neutral01: #FAFAFA;
+  --color-neutral02: #EBEBEB;
+  --color-neutral03: #C7C7C7;
+  --color-neutral04: #949494;
+  --color-neutral05: #7A7A7A;
+
+  --text-h1: 36px;
+  --text-h2: 28px;
+  --text-h3: 24px;
+  --text-h4: 20px;
+  --text-h5: 16px;
+  --text-h6: 12px;
+  --text-p1: 18px;
+  --text-p2: 16px;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+
+  /* ex. <h1> สวัสดี <h1> */
+  h1 {
+    font-size: var(--text-h1);
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: var(--text-h2);
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: var(--text-h3);
+    font-weight: 700;
+  }
+
+  h4 {
+    font-size: var(--text-h4);
+    font-weight: 700;
+  }
+
+  h5 {
+    font-size: var(--text-h5);
+    font-weight: 700;
+  }
+
+  h6 {
+    font-size: var(--text-h6);
+    font-weight: 700;
+  }
+
+  /* ex. <p class="p1">สวัสดี</p> */
+  .p1 {
+    font-size: var(--text-p1);
+  }
+
+  .p2 {
+    font-size: var(--text-p2);
+  }
+
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +104,5 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
