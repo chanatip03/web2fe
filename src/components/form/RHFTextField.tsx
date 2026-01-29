@@ -38,6 +38,7 @@ export function RHFTextField<T extends FieldValues>({
             {...field}
             label={label}
             value={field.value ?? ""}
+            size="small"
             error={!!fieldState.error}
             helperText={fieldState.error?.message}
             fullWidth
