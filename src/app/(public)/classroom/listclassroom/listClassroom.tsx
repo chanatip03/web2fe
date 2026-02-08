@@ -6,6 +6,7 @@ import { RHFSelect } from "@/components/form/RHFSelect";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import StudentDiscordTip from "./StudentDiscordTip";
+import Navbar from "@/components/navbar";
 
 
 interface Classroom {
@@ -51,7 +52,9 @@ export default function ListClassroom({ apiBase, role }: ListClassroomProps) {
       : classrooms.filter((c) => c.semester === semesterFilter);
 
   return (
-    <div className="min-h-screen bg-neutral01 px-10 py-8 max-w-[1700px] mx-auto">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-neutral01 px-10 py-10 max-w-[1750px] mx-auto">
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
             <h1 className="text-212121">All Classroom</h1>
@@ -103,6 +106,7 @@ export default function ListClassroom({ apiBase, role }: ListClassroomProps) {
           ))}
         </div>
       <StudentDiscordTip role={role} />
-    </div>
+      </div>
+    </>
   );
 }
