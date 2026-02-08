@@ -31,11 +31,13 @@
   --color-accent02: #E56F6F;
   --color-accent03: #CA2424; /* main */
   --color-accent04: #9F1C1C;
-  --color-neutral01: #FAFAFA;
+  --color-neutral01: #FAFAFA; /* white*/
   --color-neutral02: #EBEBEB;
   --color-neutral03: #C7C7C7;
   --color-neutral04: #949494;
   --color-neutral05: #7A7A7A;
+  --color-black: #212121;
+  --color-white: #fafafa;
 
   --text-h1: 36px;
   --text-h2: 28px;
