@@ -113,7 +113,7 @@ export const Theme = createTheme({
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    height: 46,
+                    minHeight: 46,
                     borderRadius: 4,
                     backgroundColor: "#FFFFFF",
 

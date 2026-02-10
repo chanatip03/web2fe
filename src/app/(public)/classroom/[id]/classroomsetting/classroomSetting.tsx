@@ -64,23 +64,22 @@ export default function ClassroomSetting({ apiBase }: Props) {
         </div>
       <h1 className="mb-8">Classroom Setting</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
 
         {/* Classroom Name */}
         <div>
-          <h4 className="mb-2">Classroom Name</h4>
+          <h2 className="mb-4">Classroom Name</h2>
           <RHFTextField
             control={control}
             name="name"
             fullWidth
             label={`Classroom Name`}
-            InputLabelProps={{ shrink: true }}
           />
         </div>
 
         {/* Description */}
         <div>
-          <h4 className="mb-2 ">Class Description</h4>
+          <h2 className="mb-4">Class Description</h2>
           <RHFTextField
             control={control}
             name="description"
@@ -88,14 +87,13 @@ export default function ClassroomSetting({ apiBase }: Props) {
             rows={5}
             fullWidth
             label={`Classroom Description`}
-            InputLabelProps={{ shrink: true }}
           />
         </div>
 
         {/* Learning Outcomes */}
         <div>
-          <div className="flex justify-between items-center mb-3">
-            <h4>Learning Outcome</h4>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="mb-2">Learning Outcome</h2>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
@@ -114,9 +112,8 @@ export default function ClassroomSetting({ apiBase }: Props) {
                     name={`learning_outcomes.${index}.description`}
                     fullWidth
                     multiline
-                    rows={2}
+                    
                     label={`Learning Outcome ${index + 1}`}
-                    InputLabelProps={{ shrink: true }}
                   />
                 </div>
 
