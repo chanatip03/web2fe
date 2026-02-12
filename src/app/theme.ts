@@ -43,7 +43,7 @@ export const Theme = createTheme({
             },
             styleOverrides: {
                 root: {
-                     height: 46,
+                    height: 46,
                     borderRadius: 6,
                     fontWeight: 600,
                     textTransform: "none",
@@ -113,7 +113,7 @@ export const Theme = createTheme({
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    height: 46,
+                    minHeight: 46,
                     borderRadius: 4,
                     backgroundColor: "#FFFFFF",
 
@@ -224,6 +224,28 @@ export const Theme = createTheme({
                 },
             },
         },
+        MuiBreadcrumbs: {
+            styleOverrides: {
+                root: {
+                    fontSize: "16px",
+                    color: "var(--color-neutral04)",
 
+                    "& .MuiLink-root": {
+                        color: "var(--color-neutral04)",
+                        textDecoration: "none",
+
+                        "&:hover": {
+                            textDecoration: "underline",
+                        },
+                    },
+                },
+
+                separator: {
+                    marginLeft: 4,
+                    marginRight: 4,
+                    color: "var(--color-neutral04)",
+                },
+            },
+        },
     },
 });
