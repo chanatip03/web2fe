@@ -197,64 +197,70 @@ return (
           const isLate = status === "late";
 
           return (
-            <div
+          <Link
               key={item.id}
-              className="grid grid-cols-12 items-center bg-white rounded-xl border border-neutral03 px-6 py-6 shadow-xl
-              transition-all duration-200 ease-in-out
-              hover:-translate-y-1 hover:shadow-2xl hover:border-primary03"
+              href={`/assignment/${item.id}/submit`}
+              className="block"
             >
-              {/* Name + Type */}
-              <div className="col-span-5">
-                <p className="font-semibold text-foreground mb-0.5">
-                  {item.name}
-                </p>
+              <div
+                key={item.id}
+                className="grid grid-cols-12 items-center bg-white rounded-xl border border-neutral03 px-6 py-6 shadow-xl
+                transition-all duration-200 ease-in-out
+                hover:-translate-y-1 hover:shadow-2xl hover:border-primary03 "
+              >
+                {/* Name + Type */}
+                <div className="col-span-5">
+                  <p className="font-semibold text-foreground mb-0.5">
+                    {item.name}
+                  </p>
 
-                <span
-                  className={`text-xs px-3 py-1 rounded-md border ${
-                    item.isGroup
-                      ? "border-secondary03 text-secondary03"
-                      : "border-primary03 text-primary03"
+                  <span
+                    className={`text-xs px-3 py-1 rounded-md border ${
+                      item.isGroup
+                        ? "border-secondary03 text-secondary03"
+                        : "border-primary03 text-primary03"
+                    }`}
+                  >
+                    {item.isGroup ? "Group" : "Individual"}
+                  </span>
+                </div>
+
+                {/* Publish Date */}
+                <div className="col-span-3 text-neutral06 text-sm">
+                  {dayjs(item.startDate).format("D MMMM YYYY [at] HH.mm")}
+                </div>
+
+                {/* Due Date */}
+                <div
+                  className={`col-span-2 text-sm ${
+                    isLate ? "text-red-600" : "text-neutral06"
                   }`}
                 >
-                  {item.isGroup ? "Group" : "Individual"}
-                </span>
-              </div>
+                  {dayjs(item.dueDate).format("D MMMM YYYY [at] HH.mm")}
+                </div>
 
-              {/* Publish Date */}
-              <div className="col-span-3 text-neutral06 text-sm">
-                {dayjs(item.startDate).format("D MMMM YYYY [at] HH.mm")}
-              </div>
-
-              {/* Due Date */}
-              <div
-                className={`col-span-2 text-sm ${
-                  isLate ? "text-red-600" : "text-neutral06"
-                }`}
-              >
-                {dayjs(item.dueDate).format("D MMMM YYYY [at] HH.mm")}
-              </div>
-
-              {/* Status */}
-              <div className="col-span-2">
-                <div
-                  className={`text-xs font-semibold px-4 py-2 rounded-md text-center w-[130px]
-                    ${
-                      status === "submitted"
-                        ? "bg-green-600 text-white"
-                        : status === "late"
-                        ? "bg-yellow-500 text-white"
-                        : "bg-gray-400 text-white"
-                    }
-                  `}
-                >
-                  {status === "submitted"
-                    ? "Submitted"
-                    : status === "late"
-                    ? "Late Submitted"
-                    : "Not Submitted"}
+                {/* Status */}
+                <div className="col-span-2">
+                  <div
+                    className={`text-xs font-semibold px-4 py-2 rounded-md text-center w-[130px]
+                      ${
+                        status === "submitted"
+                          ? "bg-green-600 text-white"
+                          : status === "late"
+                          ? "bg-yellow-500 text-white"
+                          : "bg-gray-400 text-white"
+                      }
+                    `}
+                  >
+                    {status === "submitted"
+                      ? "Submitted"
+                      : status === "late"
+                      ? "Late Submitted"
+                      : "Not Submitted"}
+                  </div>
                 </div>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
