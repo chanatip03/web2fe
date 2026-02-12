@@ -43,7 +43,8 @@ export const Theme = createTheme({
             },
             styleOverrides: {
                 root: {
-                    borderRadius: 4,
+                     height: 46,
+                    borderRadius: 6,
                     fontWeight: 600,
                     textTransform: "none",
                 },
@@ -61,7 +62,7 @@ export const Theme = createTheme({
                     },
 
                     "&.Mui-disabled": {
-                        backgroundColor: "var(--color-neutral01)",
+                        backgroundColor: "var(--color-neutral02)",
                         borderColor: "var(--color-neutral03)",
                         color: "var(--color-neutral03)",
                     },
@@ -112,8 +113,9 @@ export const Theme = createTheme({
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
+                    height: 46,
                     borderRadius: 4,
-                    backgroundColor: "var(--color-neutral01)",
+                    backgroundColor: "#FFFFFF",
 
                     "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: "var(--color-neutral03)",
