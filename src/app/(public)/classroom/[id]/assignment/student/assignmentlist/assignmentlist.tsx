@@ -3,187 +3,106 @@
 import {
   Box,
   Typography,
-  Stack,
-  Card,
   Chip,
-  Button,
+  Card,
+  CardContent,
   Grid,
+  Stack,
+  Button,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import dayjs from "dayjs";
+import Link from "next/link"
 
-/* ================= TYPES ================= */
-
-export type AssignmentStatus = "on_time" | "late" | "not_submitted";
+/* ================= TYPES (SQL) ================= */
 
 export interface Assignment {
   id: number;
-  title: string;
-  publishDate: string;
+  name: string;
+  detail: string;
+  startDate: string;
   dueDate: string;
   isGroup: boolean;
-  status: AssignmentStatus; // เตรียมไว้ตรงกับ backend
+  testcaseUrl: string;
+  isPublic: boolean;
+  projectTypeId: number;
+  projecrLanguage: string;
+  classroomId: number;
+  createdDate: string;
+  updatedDate: string;
+  deletedDate: string | null;
 }
 
 interface Props {
   apiBase: string;
 }
 
-/* ================= MOCK DATA (แทน API) ================= */
+type AssignmentStatus = "submitted" | "late" | "not_submitted";
+
+/* ================= MOCK ================= */
 
 const mockAssignments: Assignment[] = [
   {
     id: 1,
-    title: "Lab 1 List Form",
-    publishDate: "2025-03-01T11:00:00",
+    name: "Lab 1 List Form",
+    detail: "",
+    startDate: "2025-03-01T11:00:00",
     dueDate: "2025-03-04T12:00:00",
     isGroup: false,
-    status: "on_time",
+    testcaseUrl: "",
+    isPublic: true,
+    projectTypeId: 1,
+    projecrLanguage: "TS",
+    classroomId: 1,
+    createdDate: "",
+    updatedDate: "",
+    deletedDate: null,
   },
   {
     id: 2,
-    title: "HW Flexbox and Grid",
-    publishDate: "2025-03-14T11:01:00",
+    name: "HW Flexbox and Grid",
+    detail: "",
+    startDate: "2025-03-14T11:01:00",
     dueDate: "2025-03-14T12:00:00",
     isGroup: false,
-    status: "late",
+    testcaseUrl: "",
+    isPublic: true,
+    projectTypeId: 1,
+    projecrLanguage: "CSS",
+    classroomId: 1,
+    createdDate: "",
+    updatedDate: "",
+    deletedDate: null,
   },
   {
     id: 3,
-    title: "Final Project",
-    publishDate: "2025-04-07T11:00:00",
-    dueDate: "2025-04-09T11:01:00",
+    name: "Final Project",
+    detail: "",
+    startDate: "2025-04-07T11:00:00",
+    dueDate: "2026-04-09T11:01:00",
     isGroup: true,
-    status: "not_submitted",
+    testcaseUrl: "",
+    isPublic: true,
+    projectTypeId: 2,
+    projecrLanguage: "Fullstack",
+    classroomId: 1,
+    createdDate: "",
+    updatedDate: "",
+    deletedDate: null,
   },
 ];
 
-/* ================= MAIN COMPONENT ================= */
-
-export default function AssignmentList({ apiBase }: Props) {
-  const theme = useTheme();
-
-  const assignments = mockAssignments; // เปลี่ยนเป็น fetch จาก backend ทีหลังได้เลย
-
-  return (
-    <Box sx={{ px: 10, py: 8, backgroundColor: theme.palette.background.default }}>
-      {/* Breadcrumb */}
-      <Typography variant="body2" color="text.secondary" mb={1}>
-        Home / Web programming / Assignment
-      </Typography>
-
-      {/* Page Title */}
-      <Typography variant="h2" fontWeight={700} mb={3}>
-        Assignment
-      </Typography>
-
-      {/* Legend */}
-      <Stack direction="row" spacing={3} alignItems="center" mb={4}>
-        <Legend color="#4CAF50" label="On-time" />
-        <Legend color="#F4B400" label="Late" />
-        <Legend color="#BDBDBD" label="Not Sumit" />
-      </Stack>
-
-      {/* Header Row */}
-      <Grid container sx={{ px: 3, mb: 1 }}>
-        <Grid item xs={5}>
-          <Typography variant="h6" fontWeight={600}>
-            Assignment Name
-          </Typography>
-        </Grid>
-        <Grid item xs={3}>
-          <Typography variant="h6" fontWeight={600}>
-            Publish Date
-          </Typography>
-        </Grid>
-        <Grid item xs={2}>
-          <Typography variant="h6" fontWeight={600}>
-            Due Date
-          </Typography>
-        </Grid>
-        <Grid item xs={2} textAlign="right">
-          <Typography variant="h6" fontWeight={600}>
-            Status
-          </Typography>
-        </Grid>
-      </Grid>
-
-      {/* Assignment Rows */}
-      <Stack spacing={2}>
-        {assignments.map((a) => (
-          <Card
-            key={a.id}
-            sx={{
-              px: 3,
-              py: 2,
-              borderRadius: 2,
-              boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-            }}
-          >
-            <Grid container alignItems="center">
-              {/* Name + Type */}
-              <Grid item xs={5}>
-                <Typography variant="h5" fontWeight={600}>
-                  {a.title}
-                </Typography>
-
-                <Chip
-                  label={a.isGroup ? "Group" : "Individual"}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    mt: 1,
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
-                    fontWeight: 500,
-                  }}
-                />
-              </Grid>
-
-              {/* Publish Date */}
-              <Grid item xs={3}>
-                <Typography variant="body2">
-                  {dayjs(a.publishDate).format("D MMMM YYYY [at] HH.mm")}
-                </Typography>
-              </Grid>
-
-              {/* Due Date */}
-              <Grid item xs={2}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: a.status === "late" ? theme.palette.error.main : "inherit",
-                    fontWeight: a.status === "late" ? 600 : 400,
-                  }}
-                >
-                  {dayjs(a.dueDate).format("D MMMM YYYY [at] HH.mm")}
-                </Typography>
-              </Grid>
-
-              {/* Status Button */}
-              <Grid item xs={2} textAlign="right">
-                <StatusButton status={a.status} />
-              </Grid>
-            </Grid>
-          </Card>
-        ))}
-      </Stack>
-    </Box>
-  );
+/* ================= STATUS ================= */
+function getStatus(a: Assignment): AssignmentStatus {
+  const now = dayjs();
+  if (now.isAfter(dayjs(a.dueDate))) return "late";
+  return "submitted"; // mock
 }
 
 /* ================= STATUS BUTTON ================= */
-
 function StatusButton({ status }: { status: AssignmentStatus }) {
-  if (status === "on_time") {
+  if (status === "submitted") {
     return (
-      <Button
-        variant="contained"
-        sx={{
-          backgroundColor: "#4CAF50",
-          "&:hover": { backgroundColor: "#43A047" },
-        }}
-      >
+      <Button variant="contained" color="primary">
         Submitted
       </Button>
     );
@@ -195,6 +114,7 @@ function StatusButton({ status }: { status: AssignmentStatus }) {
         variant="contained"
         sx={{
           backgroundColor: "#F4B400",
+          color: "#fff",
           "&:hover": { backgroundColor: "#d89b00" },
         }}
       >
@@ -208,8 +128,8 @@ function StatusButton({ status }: { status: AssignmentStatus }) {
       variant="contained"
       disabled
       sx={{
-        backgroundColor: "#BDBDBD",
-        color: "#fff",
+        backgroundColor: "var(--color-neutral03)",
+        color: "white",
       }}
     >
       Not Submitted
@@ -217,20 +137,129 @@ function StatusButton({ status }: { status: AssignmentStatus }) {
   );
 }
 
-/* ================= LEGEND ================= */
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <Stack direction="row" spacing={1} alignItems="center">
-      <Box
-        sx={{
-          width: 14,
-          height: 14,
-          borderRadius: 1,
-          backgroundColor: color,
-        }}
-      />
-      <Typography variant="body2">{label}</Typography>
-    </Stack>
+/* ================= COMPONENT ================= */
+export default function AssignmentList({ apiBase }: Props) {
+  const assignments = mockAssignments.filter(
+    (a) => a.isPublic && !a.deletedDate
   );
+
+return (
+  <>
+    <div className="w-full px-25 py-8 bg-neutral01">
+
+      {/* Breadcrumb */}
+      <div className="text-sm mb-6">
+        <Link
+          href="/classroom/listclassroom"
+          className="text-neutral04 hover:text-primary03 transition"
+        >
+          Home
+        </Link>
+        <span className="mx-2 text-neutral04">/</span>
+        <span className="text-neutral04">Mockup data</span>
+        <span className="mx-2 text-neutral04">/</span>
+        <span className="font-semibold text-foreground">Assignment</span>
+      </div>
+
+      {/* Title */}
+      <h1 className="mb-4 text-foreground font-bold">Assignment</h1>
+
+      {/* Legend */}
+      <div className="flex items-center gap-6 mb-8 text-base">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-sm bg-green-600"></div>
+          <span className="text-neutral06">On-time</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-sm bg-yellow-500"></div>
+          <span className="text-neutral06">Late</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-sm bg-gray-400"></div>
+          <span className="text-neutral06">Not Submit</span>
+        </div>
+      </div>
+
+      {/* Table Header */}
+      <div className="grid grid-cols-12 text-lg font-semibold text-foreground mb-4">
+        <div className="col-span-5">Assignment Name</div>
+        <div className="col-span-3">Publish Date</div>
+        <div className="col-span-2">Due Date</div>
+        <div className="col-span-2">Status</div>
+      </div>
+
+      {/* Assignment List */}
+      <div className="space-y-5">
+        {assignments.map((item) => {
+          const status = getStatus(item);
+          const isLate = status === "late";
+
+          return (
+            <div
+              key={item.id}
+              className="grid grid-cols-12 items-center bg-white rounded-xl border border-neutral03 px-6 py-6 shadow-xl
+              transition-all duration-200 ease-in-out
+              hover:-translate-y-1 hover:shadow-2xl hover:border-primary03"
+            >
+              {/* Name + Type */}
+              <div className="col-span-5">
+                <p className="font-semibold text-foreground mb-0.5">
+                  {item.name}
+                </p>
+
+                <span
+                  className={`text-xs px-3 py-1 rounded-md border ${
+                    item.isGroup
+                      ? "border-secondary03 text-secondary03"
+                      : "border-primary03 text-primary03"
+                  }`}
+                >
+                  {item.isGroup ? "Group" : "Individual"}
+                </span>
+              </div>
+
+              {/* Publish Date */}
+              <div className="col-span-3 text-neutral06 text-sm">
+                {dayjs(item.startDate).format("D MMMM YYYY [at] HH.mm")}
+              </div>
+
+              {/* Due Date */}
+              <div
+                className={`col-span-2 text-sm ${
+                  isLate ? "text-red-600" : "text-neutral06"
+                }`}
+              >
+                {dayjs(item.dueDate).format("D MMMM YYYY [at] HH.mm")}
+              </div>
+
+              {/* Status */}
+              <div className="col-span-2">
+                <div
+                  className={`text-xs font-semibold px-4 py-2 rounded-md text-center w-[130px]
+                    ${
+                      status === "submitted"
+                        ? "bg-green-600 text-white"
+                        : status === "late"
+                        ? "bg-yellow-500 text-white"
+                        : "bg-gray-400 text-white"
+                    }
+                  `}
+                >
+                  {status === "submitted"
+                    ? "Submitted"
+                    : status === "late"
+                    ? "Late Submitted"
+                    : "Not Submitted"}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </>
+);
+
 }
