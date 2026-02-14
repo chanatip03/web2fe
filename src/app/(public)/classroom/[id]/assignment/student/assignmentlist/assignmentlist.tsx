@@ -199,7 +199,7 @@ return (
           return (
           <Link
               key={item.id}
-              href={`/assignment/${item.id}/submit`}
+              href={`/assignment/${item.id}/student/submit`}
               className="block"
             >
               <div
