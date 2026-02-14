@@ -18,7 +18,7 @@ export default function ClassroomLayout({ children }: Props) {
         <Navbar />
         <div className="flex bg-neutral01 min-h-screen">
         
-        {role === "teacher" ? <SidebarProfessor /> : <SidebarStudent />}
+        {role === "student" ? <SidebarProfessor /> : <SidebarStudent />}
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto">

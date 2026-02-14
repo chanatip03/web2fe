@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import SubmitPanel from "./SubmitPanel";
 import dayjs from "dayjs";
 import Link from "next/link";
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import GroupsIcon from '@mui/icons-material/Groups';
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 /* ================= TYPES ================= */
 
@@ -31,6 +34,8 @@ interface Props {
 /* ================= COMPONENT ================= */
 
 export default function SubmitPage({ assignment }: Props) {
+    const hasGroup = true; // TODO: เอาจาก API group student
+    const canSubmit = !assignment.isGroup || hasGroup;
   return (
     <div className="max-w-[1500px] mx-auto px-10 py-8 bg-neutral01">
 
@@ -99,7 +104,7 @@ export default function SubmitPage({ assignment }: Props) {
                 </div>
 
                 <div className="p-8 flex justify-center">
-                    <button className="bg-primary03 text-white px-6 py-3 rounded-lg shadow hover:opacity-90 transition">
+                    <button className="bg-primary03 text-white px-6 py-3 rounded-lg shadow-xl hover:opacity-90 transition">
                     + Create Group
                     </button>
                 </div>
@@ -108,20 +113,37 @@ export default function SubmitPage({ assignment }: Props) {
         )}
 
         {/* Submit file */}
-        <div className="col-span-12 bg-white rounded-xl shadow border border-neutral03 mb-3">
-            <div className="bg-neutral02 px-6 py-3 font-semibold text-neutral06 rounded-t-xl">
-                Submit file
+        <div
+        className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
+            ${canSubmit
+            ? "border-neutral03"
+            : "border-neutral03 bg-white"}
+        `}
+        >
+            {/* HEADER */}
+            <div
+                className={`px-6 py-3 font-semibold flex items-center justify-between
+                ${canSubmit
+                    ? "bg-primary03 text-white"
+                    : "bg-neutral02 text-neutral06"}
+                `}
+            >
+                
+                <span className="font-semibold flex items-center gap-2"><UploadFileIcon />Submit file</span>
             </div>
 
-            <div className="h-[280px] flex items-center justify-center text-neutral04">
-                {assignment.isGroup
-                ? "Please create group before submit assignment"
-                : "Upload your assignment here"}
+            {/* BODY */}
+            <div className="bg-white">
+                <SubmitPanel
+                isGroup={assignment.isGroup}
+                hasGroup={hasGroup}
+                />
             </div>
         </div>
 
+
         {/* Deployment Results */}
-        <div className="col-span-12 bg-white rounded-xl shadow border border-neutral03">
+        <div className="col-span-12 bg-white rounded-xl shadow-xl border border-neutral03">
             <div className="bg-neutral02 px-6 py-3 font-semibold text-neutral06 rounded-t-xl">
                 Deployment Results
             </div>
