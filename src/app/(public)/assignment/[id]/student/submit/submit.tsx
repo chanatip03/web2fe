@@ -34,7 +34,7 @@ interface Props {
 /* ================= COMPONENT ================= */
 
 export default function SubmitPage({ assignment }: Props) {
-    const hasGroup = true; // TODO: เอาจาก API group student
+    const hasGroup = false; // TODO: เอาจาก API group student
     const canSubmit = !assignment.isGroup || hasGroup;
   return (
     <div className="max-w-[1500px] mx-auto px-10 py-8 bg-neutral01">
@@ -62,13 +62,13 @@ export default function SubmitPage({ assignment }: Props) {
         {assignment.name}
       </h1>
 
-      {/* Due Date */}
-      <p className="mb-3">
-        <span className="font-bold">Due Date :</span>{" "}
-        <span className="text-red-500">
-          {dayjs(assignment.dueDate).format("D MMMM YYYY [at] HH.mm")}
-        </span>
-      </p>
+        {/* Due Date */}
+        <p className="mb-3">
+            <span className="font-bold">Due Date :</span>{" "}
+            <span className="text-red-500">
+            {dayjs(assignment.dueDate).format("D MMMM YYYY [at] HH.mm")}
+            </span>
+        </p>
 
       <div className="grid grid-cols-12 gap-10">
 
@@ -89,7 +89,7 @@ export default function SubmitPage({ assignment }: Props) {
             Attachments
           </h2>
 
-          <ul className="mb-7 space-y-1">
+          <ul className="mb-5 space-y-1">
             <li className="hover:text-primary03 transition cursor-pointer"><InsertDriveFileIcon/> Assignment.pdf</li>
             <li className="hover:text-primary03 transition cursor-pointer"><InsertDriveFileIcon/> image1.png</li>
           </ul>
