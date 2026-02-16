@@ -230,7 +230,7 @@ export const Theme = createTheme({
                     fontSize: "16px",
                     color: "var(--color-neutral04)",
 
-                    "& .MuiLink-root": {
+                    "& a": {
                         color: "var(--color-neutral04)",
                         textDecoration: "none",
 
