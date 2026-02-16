@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Controller, FieldValues, Path, Control } from "react-hook-form";
+import { Controller, FieldValues, Path, Control, RegisterOptions } from "react-hook-form";
 import {
   TextField,
   Stack,
@@ -17,6 +17,7 @@ interface RHFInputProps<T extends FieldValues>
   startIcon?: ReactNode; 
   endIcon?: ReactNode;
   slotProps?: TextFieldProps["slotProps"];
+  rules?: RegisterOptions<T>;
 }
 export function RHFTextField<T extends FieldValues>({
   name,
@@ -26,12 +27,14 @@ export function RHFTextField<T extends FieldValues>({
   startIcon,
   endIcon,
   slotProps,
+  rules,
   ...props
 }: Readonly<RHFInputProps<T>>) {
   return (
     <Controller
       name={name}
       control={control}
+      rules={rules}
       render={({ field, fieldState }) => (
           <TextField
             {...props}

@@ -7,6 +7,9 @@ import Link from "next/link";
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import GroupsIcon from '@mui/icons-material/Groups';
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import CreateGroupModal from "./CreateGroupModal";
+import GroupCard from "./GroupCard";
+import { Group } from "./mockGroup";
 
 /* ================= TYPES ================= */
 
@@ -34,8 +37,11 @@ interface Props {
 /* ================= COMPONENT ================= */
 
 export default function SubmitPage({ assignment }: Props) {
-    const hasGroup = false; // TODO: เอาจาก API group student
+    const [open, setOpen] = useState(false);
+    const [group, setGroup] = useState<Group | null>(null);
+    const hasGroup = !!group; // TODO: เอาจาก API group student
     const canSubmit = !assignment.isGroup || hasGroup;
+    
   return (
     <div className="max-w-[1500px] mx-auto px-10 py-8 bg-neutral01">
 
@@ -62,18 +68,17 @@ export default function SubmitPage({ assignment }: Props) {
         {assignment.name}
       </h1>
 
-        {/* Due Date */}
-        <p className="mb-3">
-            <span className="font-bold">Due Date :</span>{" "}
-            <span className="text-red-500">
-            {dayjs(assignment.dueDate).format("D MMMM YYYY [at] HH.mm")}
-            </span>
-        </p>
-
       <div className="grid grid-cols-12 gap-10">
 
         {/* LEFT SIDE */}
         <div className="col-span-8">
+          {/* Due Date */}
+          <p className="mb-3">
+              <span className="font-bold">Due Date :</span>{" "}
+              <span className="text-red-500">
+              {dayjs(assignment.dueDate).format("D MMMM YYYY [at] HH.mm")}
+              </span>
+          </p>
 
           {/* Detail */}
           <h2 className="font-bold text-lg mb-0.5">
@@ -97,20 +102,36 @@ export default function SubmitPage({ assignment }: Props) {
 
         {/* RIGHT SIDE GROUP BOX */}
         {assignment.isGroup && (
-        <div className="col-span-4">
-            <div className="bg-white rounded-xl shadow border border-neutral03 overflow-hidden">
+          <div className="col-span-4">
+            {group ? (
+              <GroupCard
+                group={group}
+                onEdit={() => setOpen(true)}
+              />
+            ) : (
+              <div className="bg-white rounded-xl shadow-xl border border-neutral03 overflow-hidden">
                 <div className="bg-primary03 text-white px-6 py-3 font-semibold">
-                    <GroupsIcon className="mr-1 inline-block" /> Group
+                  <GroupsIcon className="mr-1 inline-block" /> Group
                 </div>
 
                 <div className="p-8 flex justify-center">
-                    <button className="bg-primary03 text-white px-6 py-3 rounded-lg shadow-xl hover:opacity-90 transition">
+                  <button
+                    onClick={() => setOpen(true)}
+                    className="bg-primary03 text-white px-6 py-3 rounded shadow-xl hover:opacity-90 transition flex items-center gap-2"
+                  >
                     + Create Group
-                    </button>
+                  </button>
                 </div>
-            </div>
-        </div>
+              </div>
+            )}
+          </div>
         )}
+
+        <CreateGroupModal
+          open={open}
+          onClose={() => setOpen(false)}
+          onSave={(g) => setGroup(g)}
+        />
 
         {/* Submit file */}
         <div
