@@ -1,4 +1,5 @@
 import { Teacher } from "./teacher";
+import { IStudent } from "./student";
 
 export interface Classroom {
   id: string;
@@ -23,4 +24,10 @@ export interface UpdateClassRoomRequest {
   year?: number;
   description?: string;
   learningoutcomes?: string;
+}
+
+export interface IClassroomMember {
+  id: number;
+  classroom: Classroom;
+  student: IStudent[];
 }
