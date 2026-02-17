@@ -1,11 +1,18 @@
 import { IAuthRepository } from "./interface";
-import { AuthResponse, LoginRequest } from "@/domain/auth";
-import { ApiResponse } from "@/domain/response";
+import { AuthResponse, LoginRequest, MeResponse } from "@/domain/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class AuthRepository implements IAuthRepository {
-  async loginAdmin(data: LoginRequest): Promise<ApiResponse<AuthResponse>> {
+  async me(): Promise<MeResponse> {
+    const res = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      credentials: "include",
+    });
+    return res.json();
+  }
+
+  async loginAdmin(data: LoginRequest): Promise<AuthResponse> {
     const res = await fetch(`${BASE_URL}/auth/login-admin`, {
       method: "POST",
       headers: {
@@ -21,7 +28,7 @@ export class AuthRepository implements IAuthRepository {
     return res.json();
   }
 
-  async login(data: LoginRequest): Promise<ApiResponse<AuthResponse>> {
+  async login(data: LoginRequest): Promise<AuthResponse> {
     const res = await fetch(`${BASE_URL}/auth/login`, {
       method: "POST",
       headers: {

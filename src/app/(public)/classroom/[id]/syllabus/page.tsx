@@ -1,67 +1,79 @@
-import Syllabus from "./syllabus";
+"use client";
 
-export const dynamic = "force-dynamic";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import AssistantPhotoIcon from "@mui/icons-material/AssistantPhoto";
+import { useParams } from "next/navigation";
+import { Classroom } from "@/domain/classroom";
+import { classroomService } from "@/services/controller";
+import { Breadcrumbs } from "@mui/material";
 
-interface LearningOutcomeDTO {
-  id: string
-  description: string
-}
+export default function Syllabus() {
+  const [classrooms, setClassrooms] = useState<Classroom | null>(null);
+  const [loading, setLoading] = useState(true);
 
-interface SyllabusResponseDTO {
-  classroom_name: string
-  teacher_name: string
-  classroom_description?: string
-  learning_outcomes: LearningOutcomeDTO[]
-}
+  const params = useParams();
+  const id = params.id;
 
-interface PageProps {
-  params: {
-    id: string
-  }
-}
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const classrooms = await classroomService.getclassroomById(Number(id));
+        setClassrooms(classrooms);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-export default async function Page({ params }: PageProps) {
-  const classroomId = params.id
+    loadData();
+  }, [id]);
 
-  // 🔹 MOCK DATA
-  const data: SyllabusResponseDTO = {
-    classroom_name: "Software Engineering",
-    teacher_name: "Prof. Suvit Khanthamano",
-    classroom_description:
-      "Software engineering principles. Process models and software evolution. System development cycle. System feasibility study. Planning of software development project. System analysis methodologies and tools. System design. System development. System implementation and evaluation. Case study. Hands-on experience on the system project in team and which will be completed in CSE 336.",
-    learning_outcomes: [
-      {
-        id: "1",
-        description:
-          "Appreciate software engineering issues that form the background to developing complex and evolving software-intensive systems.",
-      },
-      {
-        id: "2",
-        description:
-          "Plan and deliver effective software engineering projects, based on knowledge of widely used development lifecycle models.",
-      },
-      {
-        id: "3",
-        description:
-          "Develop teamwork skills including general organization, planning and time management and inter-group negotiation.",
-      },
-      {
-        id: "4",
-        description:
-          "Capture, document and analyse requirements.",
-      },
-      {
-        id: "5",
-        description:
-          "Translate a requirements specification into an implementable design, following a structured and organised process.",
-      },
-      {
-        id: "6",
-        description:
-          "Make effective use of UML, along with design strategies such as defining a software architecture, separation of concerns and design patterns.",
-      },
-    ],
-  }
+  if (loading) return <div>Loading...</div>;
 
-  return <Syllabus data={data} />
+  return (
+    <div className="px-20 py-10 bg-neutral01">
+      {/* Breadcrumb */}
+      <Breadcrumbs className="text-sm mb-6">
+        <Link href="/classroom">Home</Link>
+        <span>{classrooms?.name}</span>
+        <span className="text-black font-medium">Syllabus</span>
+      </Breadcrumbs>
+
+      {/* Title */}
+      <h1 className="mb-6 text-foreground font-bold">Syllabus</h1>
+
+      {/* Teacher */}
+      <p className="mb-8 text-neutral06">
+        <span className="font-semibold text-foreground">Teacher :</span>{" "}
+        {classrooms?.teacher.user.first_name}{" "}
+        {classrooms?.teacher.user.last_name}
+      </p>
+
+      {/* Description */}
+      {classrooms?.description && (
+        <div>
+          <h2 className="mb-3 text-foreground">Classroom Description</h2>
+          <p className="text-neutral06 leading-relaxed mb-10">
+            {classrooms?.description}
+          </p>
+        </div>
+      )}
+
+      {/* Learning Outcomes */}
+      <h2 className="mb-4 text-foreground">Learning Outcome</h2>
+      <ul className="space-y-5">
+        {classrooms?.learningoutcomes?.split(",").map((item, index) => (
+          <li key={index} className="flex items-start gap-4">
+            <AssistantPhotoIcon
+              className="text-primary03 mt-1 shrink-0"
+              fontSize="small"
+            />
+            <p className="text-neutral06 leading-relaxed">{item.trim()}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
