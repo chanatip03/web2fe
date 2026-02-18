@@ -56,23 +56,6 @@ export default function SubmitPage({ assignment }: Props) {
         <span>Mock up data</span>
       </Breadcrumbs>
 
-      <div className="text-sm mb-6">
-        <Link
-          href="/classroom/listclassroom"
-          className="text-neutral04 hover:text-primary03 transition"
-        >
-          Home
-        </Link>
-        <span className="mx-2 text-neutral04">/</span>
-        <span className="text-neutral04">claassroom name</span>
-        <span className="mx-2 text-neutral04">/</span>
-        <span className="text-neutral04">Assignment</span>
-        <span className="mx-2 text-neutral04">/</span>
-        <span className="font-semibold text-foreground">
-          {assignment.name}
-        </span>
-      </div>
-
       {/* Title */}
       <h1 className="font-bold mb-4 text-foreground">
         {assignment.name}

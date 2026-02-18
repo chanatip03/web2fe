@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function SubmitPanel({ isGroup, hasGroup }: Props) {
-  const [type, setType] = useState<"file" | "github">("file");
+  const [type, setType] = useState<"file" | "github">("github");
   const [drag, setDrag] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
