@@ -10,6 +10,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CreateGroupModal from "./CreateGroupModal";
 import GroupCard from "./GroupCard";
 import { Group } from "./mockGroup";
+import { Breadcrumbs } from "@mui/material";
 
 /* ================= TYPES ================= */
 
@@ -46,6 +47,15 @@ export default function SubmitPage({ assignment }: Props) {
     <div className="max-w-[1500px] mx-auto px-10 py-8 bg-neutral01">
 
       {/* Breadcrumb */}
+      <Breadcrumbs className="text-sm mb-6">
+        <Link href="/classroom">Home</Link>
+        {/* <span>{classrooms?.name}</span> */}
+        <span>Mock up data</span>
+        <span className="text-black font-medium">Assigment</span>
+        {/* <span>{assignment?.name}</span> */}
+        <span>Mock up data</span>
+      </Breadcrumbs>
+
       <div className="text-sm mb-6">
         <Link
           href="/classroom/listclassroom"
