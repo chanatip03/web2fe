@@ -9,23 +9,18 @@ interface Props {
   params: { id: string };
 }
 
-// 🔹 mock role ไปก่อน (เดี๋ยวค่อยดึงจาก auth จริง)
-const role: "student" | "teacher" = "teacher";
+const role: "student" | "teacher" | "" = "";
 
 export default function ClassroomLayout({ children }: Props) {
   return (
     <>
-        <Navbar />
-        <div className="flex bg-neutral01 min-h-screen">
-        
-        {role === "student" ? <SidebarProfessor /> : <SidebarStudent />}
+      <Navbar />
+      <div className="flex bg-neutral01 min-h-screen">
+        {role === "teacher" ? <SidebarProfessor /> : <SidebarStudent />}
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto">
-            {children}
-        </main>
-
-        </div>
+        <main className="flex-1 overflow-y-auto">{children}</main>
+      </div>
     </>
   );
 }

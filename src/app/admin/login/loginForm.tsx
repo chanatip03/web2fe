@@ -31,10 +31,10 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (data: FormData) => {
-    const response = await authService.login(data);
+    const response = await authService.loginAdmin(data);
     console.log(response);
     if (response) {
-      router.push("/student");
+      router.push("/admin");
     }
   };
 
@@ -65,7 +65,9 @@ export default function LoginForm() {
           className="w-150 flex flex-col gap-6"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <h1 className="text-center text-primary03 mb-6">Welcome back!</h1>
+          <h1 className="text-center text-primary03 mb-6">
+            Welcome Back Admin!
+          </h1>
 
           <RHFTextField
             control={control}
@@ -82,31 +84,11 @@ export default function LoginForm() {
               type="password"
               fullWidth
             />
-
-            <div className="text-right">
-              <Link href="#" underline="hover">
-                <h5 className="text-primary03">Forgot password</h5>
-              </Link>
-            </div>
           </div>
 
           <Button type="submit" variant="contained" fullWidth>
             Login
           </Button>
-
-          <div className="flex justify-center items-center gap-2 text-center p2">
-            <span>If you don&apos;t have an account, register as</span>
-
-            <Link href="/student/register">
-              <span className="font-bold text-primary03">Student</span>
-            </Link>
-
-            <span>or</span>
-
-            <Link href="/professor/register">
-              <span className="font-bold text-primary03">Professor</span>
-            </Link>
-          </div>
         </form>
       </div>
     </div>

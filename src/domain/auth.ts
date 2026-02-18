@@ -6,3 +6,9 @@ export interface LoginRequest {
 export interface AuthResponse {
   msg: string;
 }
+
+export interface MeResponse {
+  userId: string;
+  role: "student" | "teacher";
+  exp: number;
+}
