@@ -152,7 +152,7 @@ return (
       <Breadcrumbs className="text-sm mb-6">
         <Link href="/classroom">Home</Link>
         <span>{classrooms?.name}</span>
-        <span className="text-black font-medium">Syllabus</span>
+        <span className="text-black font-medium">Assignment</span>
       </Breadcrumbs>
 
       {/* Title */}
