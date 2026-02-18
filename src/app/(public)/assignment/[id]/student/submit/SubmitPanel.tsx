@@ -37,6 +37,16 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
           <label className="mr-8">
             <input
               type="radio"
+              checked={type === "github"}
+              onChange={() => setType("github")}
+              className="mr-2 size-4"
+            />
+            Github Repository
+          </label>
+
+          <label>
+            <input
+              type="radio"
               checked={type === "file"}
               onChange={() => setType("file")}
               className="mr-2 size-4"
@@ -44,15 +54,6 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
             Project files
           </label>
 
-          <label>
-            <input
-              type="radio"
-              checked={type === "github"}
-              onChange={() => setType("github")}
-              className="mr-2 size-4"
-            />
-            Github Repository
-          </label>
         </div>
 
         {/* BOXES */}
