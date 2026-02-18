@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import Link from "next/link"
+import { Breadcrumbs } from "@mui/material";
 
 /* ================= TYPES (SQL) ================= */
 
@@ -148,18 +149,11 @@ return (
     <div className="w-full px-25 py-8 bg-neutral01">
 
       {/* Breadcrumb */}
-      <div className="text-sm mb-6">
-        <Link
-          href="/classroom/listclassroom"
-          className="text-neutral04 hover:text-primary03 transition"
-        >
-          Home
-        </Link>
-        <span className="mx-2 text-neutral04">/</span>
-        <span className="text-neutral04">Mockup data</span>
-        <span className="mx-2 text-neutral04">/</span>
-        <span className="font-semibold text-foreground">Assignment</span>
-      </div>
+      <Breadcrumbs className="text-sm mb-6">
+        <Link href="/classroom">Home</Link>
+        <span>{classrooms?.name}</span>
+        <span className="text-black font-medium">Syllabus</span>
+      </Breadcrumbs>
 
       {/* Title */}
       <h1 className="mb-4 text-foreground font-bold">Assignment</h1>

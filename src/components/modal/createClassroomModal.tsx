@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  IconButton,
-  Button,
-} from "@mui/material";
+import { Dialog, DialogContent, IconButton, Button } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -14,26 +9,30 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
+import { CreateClassRoomRequest } from "@/domain/classroom";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  onSubmit: (data: CreateClassRoomRequest) => Promise<void>;
 }
 
 const Schema = z.object({
   name: z.string().min(1, "Please enter a classroom name"),
-  semester: z.string().min(1, "Please enter a semester"),
-  description: z.string().min(1, "Please enter a description"),
-  learningOutcomes: z.array(
-    z.object({
-      value: z.string().optional(),
-    })
-  ),
+  semester: z.string().regex(/^[1-3]\/25\d{2}$/, "Format must be like 2/2566"),
+  description: z.string().optional(),
+  learningOutcomes: z
+    .array(
+      z.object({
+        value: z.string().min(1),
+      }),
+    )
+    .optional(),
 });
 
 type FormData = z.infer<typeof Schema>;
 
-const CreateClassroomModal = ({ open, onClose }: Props) => {
+const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
   const {
     control,
     handleSubmit,
@@ -60,9 +59,22 @@ const CreateClassroomModal = ({ open, onClose }: Props) => {
     onClose();
   };
 
-  const onSubmit = async (data: FormData) => {
-    console.log("Create Classroom:", data);
-    handleClose();
+  const handleFormSubmit = async (data: FormData) => {
+    const payload = {
+      name: data.name,
+      semester: data.semester,
+      description: data.description ?? "",
+      learningoutcomes:
+        data.learningOutcomes
+          ?.map((item) => item.value.trim())
+          .filter(Boolean)
+          .join(",") || "",
+    };
+
+    console.log("Final Payload:", payload);
+
+    await onSubmit(payload);
+    // handleClose();
   };
 
   return (
@@ -81,7 +93,6 @@ const CreateClassroomModal = ({ open, onClose }: Props) => {
             maxWidth: "none",
             display: "flex",
             flexDirection: "column",
-
           },
         },
       }}
@@ -96,7 +107,7 @@ const CreateClassroomModal = ({ open, onClose }: Props) => {
       <DialogContent className="flex-1 overflow-hidden ">
         <form
           className="flex h-full flex-col gap-3 py-4 px-8"
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(handleFormSubmit)}
         >
           <div className="flex gap-4">
             <div className="flex-3">
@@ -142,10 +153,7 @@ const CreateClassroomModal = ({ open, onClose }: Props) => {
 
             <div className="max-h-[220px] overflow-y-auto pt-2 ">
               {fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="mb-2 flex items-start gap-2"
-                >
+                <div key={field.id} className="mb-2 flex items-start gap-2">
                   <RHFTextField
                     name={`learningOutcomes.${index}.value`}
                     control={control}
@@ -171,11 +179,7 @@ const CreateClassroomModal = ({ open, onClose }: Props) => {
           </div>
 
           <div className="mt-auto flex justify-end pt-4">
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={!isValid}
-            >
+            <Button type="submit" variant="contained" disabled={!isValid}>
               Save
             </Button>
           </div>
