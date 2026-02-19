@@ -19,7 +19,7 @@ export default function ClassroomLayout({ children }: Props) {
         {role === "teacher" ? <SidebarProfessor /> : <SidebarStudent />}
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto px-24 py-8">{children}</main>
       </div>
     </>
   );
