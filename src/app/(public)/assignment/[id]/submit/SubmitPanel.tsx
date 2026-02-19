@@ -224,7 +224,7 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
                 ? () => fileInputRef.current?.click()
                 : undefined
             }
-            className={`border rounded-lg h-[200px] flex items-start justify-start cursor-pointer transition p-3`}
+            className={`border border-neutral03 rounded-lg h-[200px] flex items-start justify-start cursor-pointer transition p-3`}
           >
             {type === "file" ? (
               uploadedFiles.length === 0 ? (
