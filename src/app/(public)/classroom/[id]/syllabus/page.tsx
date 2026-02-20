@@ -33,19 +33,19 @@ export default function Syllabus() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="px-20 py-10 bg-neutral01">
+    <div>
       {/* Breadcrumb */}
-      <Breadcrumbs className="text-sm mb-6">
+      <Breadcrumbs>
         <Link href="/classroom">Home</Link>
         <span>{classrooms?.name}</span>
         <span className="text-black font-medium">Syllabus</span>
       </Breadcrumbs>
 
       {/* Title */}
-      <h1 className="mb-6 text-foreground font-bold">Syllabus</h1>
+      <h1 className="text-foreground font-bold my-6">Syllabus</h1>
 
       {/* Teacher */}
-      <p className="mb-8 text-neutral06">
+      <p className="text-neutral06 mb-4">
         <span className="font-semibold text-foreground">Teacher :</span>{" "}
         {classrooms?.teacher.user.first_name}{" "}
         {classrooms?.teacher.user.last_name}
@@ -54,26 +54,24 @@ export default function Syllabus() {
       {/* Description */}
       {classrooms?.description && (
         <div>
-          <h2 className="mb-3 text-foreground">Classroom Description</h2>
-          <p className="text-neutral06 leading-relaxed mb-10">
+          <h2 className="text-foreground mb-3">Classroom Description</h2>
+          <p className="text-neutral06 leading-relaxed wrap-break-word whitespace-pre-line mb-4">
             {classrooms?.description}
           </p>
         </div>
       )}
 
       {/* Learning Outcomes */}
-      <h2 className="mb-4 text-foreground">Learning Outcome</h2>
-      <ul className="space-y-5">
-        {classrooms?.learningoutcomes?.split(",").map((item, index) => (
-          <li key={index} className="flex items-start gap-4">
-            <AssistantPhotoIcon
-              className="text-primary03 mt-1 shrink-0"
-              fontSize="small"
-            />
-            <p className="text-neutral06 leading-relaxed">{item.trim()}</p>
-          </li>
-        ))}
-      </ul>
+      <h2 className="text-foreground mb-3">Learning Outcome</h2>
+      {classrooms?.learningoutcomes?.split(",").map((item, index) => (
+        <div key={index} className="flex items-start gap-4 mb-2">
+          <AssistantPhotoIcon
+            className="text-primary03 mt-1 shrink-0"
+            fontSize="small"
+          />
+          <p className="text-neutral06 break-all">{item}</p>
+        </div>
+      ))}
     </div>
   );
 }

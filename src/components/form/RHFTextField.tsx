@@ -2,8 +2,6 @@ import { ReactNode } from "react";
 import { Controller, FieldValues, Path, Control, RegisterOptions } from "react-hook-form";
 import {
   TextField,
-  Stack,
-  FormLabel,
   InputAdornment,
   TextFieldProps,
 } from "@mui/material";
@@ -13,7 +11,7 @@ interface RHFInputProps<T extends FieldValues>
   name: Path<T>;
   control: Control<T>;
   label?: string;
-  requiredMark?: boolean;
+  required?: boolean;
   startIcon?: ReactNode; 
   endIcon?: ReactNode;
   slotProps?: TextFieldProps["slotProps"];
@@ -23,7 +21,7 @@ export function RHFTextField<T extends FieldValues>({
   name,
   control,
   label,
-  requiredMark,
+  required,
   startIcon,
   endIcon,
   slotProps,
@@ -42,6 +40,7 @@ export function RHFTextField<T extends FieldValues>({
             label={label}
             value={field.value ?? ""}
             size="small"
+            required={required}
             error={!!fieldState.error}
             helperText={fieldState.error?.message}
             fullWidth

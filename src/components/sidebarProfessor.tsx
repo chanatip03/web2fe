@@ -5,7 +5,11 @@ import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+
+interface SidebarProfessorProps {
+  classroomName?: string;
+}
 
 const sidebarProfessorItems = [
   {
@@ -35,27 +39,27 @@ const sidebarProfessorItems = [
   },
 ];
 
-export const SidebarProfessor = () => {
+export const SidebarProfessor = ({ classroomName }: SidebarProfessorProps) => {
   const pathname = usePathname();
+  const params = useParams();
+  const classroomId = params.id;
+
   return (
     <aside className="w-[260px] h-screen bg-white border-r border-neutral02 ">
       <div className="bg-secondary04 text-white h-[145px] flex items-center px-4">
-        <h2>
-          WEB
-          <br />
-          PROGRAMMING
-        </h2>
+        <h2>{classroomName}</h2>
       </div>
 
       <nav className="mt-4">
         <ul className="flex flex-col">
           {sidebarProfessorItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === `/classroom/${classroomId}${item.href}`;
 
             return (
               <li key={item.name}>
                 <Link
-                  href={item.href}
+                  href={`/classroom/${classroomId}${item.href}`}
                   className={`group flex items-center gap-3 h-[52px] px-6 transition-colors border-l-6
                                     ${
                                       isActive

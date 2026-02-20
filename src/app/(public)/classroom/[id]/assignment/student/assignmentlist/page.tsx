@@ -1,11 +1,11 @@
-import ClassroomSetting from "./classroomSetting";
+import AssignmentList from "./assignmentlist";
 
 export const dynamic = "force-dynamic";
 
 export default function Page() {
   return (
     <div>
-      <ClassroomSetting apiBase="" />
+      <AssignmentList apiBase="" />
     </div>
   );
 }

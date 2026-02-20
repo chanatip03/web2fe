@@ -125,27 +125,37 @@ export default function ListClassroom() {
                 sx={{
                   width: "287px",
                   height: "214px",
-                  textTransform: "none",
-                  backgroundColor: "transparent",
+                  justifyContent: "flex-start",
+                  alignItems: "flex-start",
+                  textAlign: "left",
+
+                  backgroundColor: "white",
+                  borderRadius: "24px",
+                  boxShadow: 3,
+                  p: 2,
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "0.2s",
+
                   "&:hover": {
-                    backgroundColor: "transparent",
+                    boxShadow: 6,
+                    backgroundColor: "white",
                   },
                 }}
               >
-                <div className="bg-white rounded-3xl shadow-lg hover:shadow-xl transition duration-200 p-6 overflow-hidden">
-                  <div className="bg-secondary03 text-white p-8 w-[260px] h-[152px] rounded-2xl flex items-start">
-                    <h1 className="text-2xl font-extrabold wrap-break-word leading-snug line-clamp-2">
-                      {classroom.name}
-                    </h1>
-                  </div>
-
-                  <p className="mt-6 text-base text-gray-500">
-                    Semester{" "}
-                    <span className="font-semibold text-black text-lg">
-                      {classroom.semester}
-                    </span>
-                  </p>
+                <div className="bg-secondary03 text-white p-8 w-full h-[172px] rounded-t-2xl flex items-start overflow-hidden">
+                  <h1 className="text-2xl font-extrabold wrap-break-word leading-snug line-clamp-2">
+                    {classroom.name}
+                  </h1>
                 </div>
+
+                <p className="mt-2 text-base text-gray-500">
+                  Semester{" "}
+                  <span className="font-semibold text-black text-lg">
+                    {classroom.semester}
+                  </span>
+                </p>
               </Button>
             ))}
           </div>

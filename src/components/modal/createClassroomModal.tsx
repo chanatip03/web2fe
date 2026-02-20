@@ -19,7 +19,9 @@ interface Props {
 
 const Schema = z.object({
   name: z.string().min(1, "Please enter a classroom name"),
-  semester: z.string().regex(/^[1-3]\/25\d{2}$/, "Format must be like 2/2566"),
+  semester: z
+    .string()
+    .regex(/^[12s]\/(2\d{3})$/, "Format must be like 2/2566 or 2/2025"),
   description: z.string().optional(),
   learningOutcomes: z
     .array(
@@ -71,10 +73,8 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
           .join(",") || "",
     };
 
-    console.log("Final Payload:", payload);
-
     await onSubmit(payload);
-    // handleClose();
+    handleClose();
   };
 
   return (
