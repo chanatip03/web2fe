@@ -33,7 +33,7 @@ export class ClassroomRepository implements IClassroomRepository {
     async updateClassroom(data: UpdateClassRoomRequest, classroomId: number): Promise<Classroom> {
         const res = await fetch(`${BASE_URL}/classroom/${classroomId}`, {
             method: "PUT",
-             headers: {"Content-Type": "application/json",},
+            headers: {"Content-Type": "application/json",},
             credentials: "include",
             body: JSON.stringify(data),
         });    
