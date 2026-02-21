@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import SubmitPanel from "./SubmitPanel";
+import DeploymentStatus, { SubmitStatus } from "./DeploymentStatus";
 import dayjs from "dayjs";
 import Link from "next/link";
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -42,6 +43,18 @@ export default function SubmitPage({ assignment }: Props) {
     const [group, setGroup] = useState<Group | null>(null);
     const hasGroup = !!group; // TODO: เอาจาก API group student
     const canSubmit = !assignment.isGroup || hasGroup;
+    const [status, setStatus] = useState<SubmitStatus>("editing");
+
+    // Mock up data for DeploymentStatus
+    const deploySuccess = true;
+    const testcase = { pass: 15, fail: 5, success: true };
+    const security = { success: true };
+
+    const hasFail =
+      status === "done" &&
+      (!deploySuccess ||
+        (assignment.projectTypeId === 1 || assignment.projectTypeId === 2) &&
+        (!testcase.success || !security.success));
     
   return (
     <div className="max-w-[1500px] mx-auto px-10 py-8 bg-neutral01">
@@ -57,7 +70,7 @@ export default function SubmitPage({ assignment }: Props) {
       </Breadcrumbs>
 
       {/* Title */}
-      <h1 className="font-bold mb-4 text-foreground">
+      <h1 className="font-bold mb-4 text-foreground mt-5">
         {assignment.name}
       </h1>
 
@@ -151,20 +164,44 @@ export default function SubmitPage({ assignment }: Props) {
                 <SubmitPanel
                 isGroup={assignment.isGroup}
                 hasGroup={hasGroup}
+                status={status}
+                setStatus={setStatus}
                 />
             </div>
         </div>
 
-
         {/* Deployment Results */}
         <div className="col-span-12 bg-white rounded-xl shadow-xl border border-neutral03">
-            <div className="bg-neutral02 px-6 py-3 font-semibold text-neutral06 rounded-t-xl">
-                Deployment Results
+            <div
+              className={`px-6 py-3 font-semibold rounded-t-xl
+                ${
+                  status === "editing"
+                    ? "bg-neutral02 text-neutral06"
+                    : hasFail
+                    ? "bg-red-600 text-white"
+                    : "bg-green-600 text-white"
+                }
+              `}
+            >
+              Deployment Results
             </div>
 
-            <div className="h-[220px] flex items-center justify-center text-neutral04">
+          <div className="p-6">
+            {status === "editing" ? (
+              <div className="h-[220px] flex items-center justify-center text-neutral04">
                 The results will appear after you finish uploading the project.
-            </div>
+              </div>
+            ) : (
+              <DeploymentStatus
+                status={status}
+                projectTypeId={assignment.projectTypeId}
+                deploySuccess={deploySuccess}
+                testcase={testcase}
+                security={security}
+              />
+            )}
+
+          </div>
         </div>
 
       </div>

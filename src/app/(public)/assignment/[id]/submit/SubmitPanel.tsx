@@ -9,14 +9,17 @@ import JSZip from "jszip";
 interface Props {
   isGroup: boolean;
   hasGroup?: boolean;
+  status: "editing" | "submitting" | "deploying" | "done";
+  setStatus: (s: Props["status"]) => void;
 }
 
-export default function SubmitPanel({ isGroup, hasGroup }: Props) {
+export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Props) {
   const [type, setType] = useState<"file" | "github">("github");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const canUpload = uploadedFiles.length === 0;
   const [envText, setEnvText] = useState("");
+  const isLocked = status !== "editing";
   const rootFolders = Array.from(
     new Set(
       uploadedFiles.map(f => {
@@ -149,6 +152,9 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
       console.log("No files uploaded");
       return;
     }
+
+    setStatus("submitting");
+
     const zipBlob = await zipFiles(uploadedFiles);
     await debugZipPaths(zipBlob);
     const form = new FormData();
@@ -170,6 +176,13 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
     });
 
     console.log("Submission complete: ", zipBlob);
+    setStatus("deploying");
+
+    // mock deploy delay
+    setTimeout(() => {
+      setStatus("done");
+    }, 4000);
+
   };
 
   async function debugZipPaths(zipBlob: Blob) {
@@ -220,7 +233,7 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
           {/* LEFT BOX */}
           <div
             onClick={
-              type === "file" && canUpload
+              type === "file" && canUpload && !isLocked
                 ? () => fileInputRef.current?.click()
                 : undefined
             }
@@ -300,10 +313,36 @@ export default function SubmitPanel({ isGroup, hasGroup }: Props) {
 
         {/* SUBMIT */}
         <div className="flex justify-end pt-2">
-          <button type="button" onClick={handleSubmit} className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-xl hover:opacity-90">
-            Submit
-          </button>
+          {status === "editing" && (
+            <button onClick={handleSubmit}
+              className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-2xl">
+              Submit
+            </button>
+          )}
+
+          {status === "submitting" && (
+            <button disabled
+              className="bg-neutral04 text-white px-6 py-2 rounded-lg shadow-2xl">
+              Submitting...
+            </button>
+          )}
+
+          {status === "deploying" && (
+            <button disabled
+              className="bg-neutral04 text-white px-6 py-2 rounded-lg shadow-2xl">
+              Deploying...
+            </button>
+          )}
+
+          {status === "done" && (
+            <button
+              onClick={() => setStatus("editing")}
+              className="bg-yellow-400 text-white px-6 py-2 rounded-lg shadow-2xl">
+              Resubmit
+            </button>
+          )}
         </div>
+
       </div>
     </div>
   );

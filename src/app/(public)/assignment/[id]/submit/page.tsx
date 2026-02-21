@@ -17,7 +17,7 @@ function getMockAssignment(id: number): Assignment {
     isGroup: true,
     testcaseUrl: "",
     isPublic: true,
-    projectTypeId: 2,
+    projectTypeId: 1,
     projecrLanguage: "Fullstack",
     classroomId: 1,
     createdDate: "",
