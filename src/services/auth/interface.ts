@@ -1,4 +1,5 @@
-import { AuthResponse, MeResponse } from "@/domain/auth";
+import { AuthResponse, MeResponse} from "@/domain/auth";
+import { User } from "@/domain/user";
 
 export interface IAuthRepository {
   me(): Promise<MeResponse>;
@@ -10,4 +11,9 @@ export interface IAuthRepository {
     email: string;
     password: string;
   }): Promise<AuthResponse>;
+  requestOTP(data : FormData): Promise<string>;
+  verifyOTP(data: {
+    email:string,
+    otp:string
+  }):Promise<string>
 }

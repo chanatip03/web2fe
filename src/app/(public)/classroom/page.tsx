@@ -26,12 +26,16 @@ export default function ListClassroom() {
         const me = await authService.me();
         const classrooms = await classroomService.getclassrooms();
 
-        const uniqueSemesters = [
-          "all",
-          ...Array.from(new Set(classrooms.map((c) => c.semester))),
-        ];
+        let uniqueSemesters = ["all"];
+
+        if (Array.isArray(classrooms)) {
+          uniqueSemesters = [
+            "all",
+            ...Array.from(new Set(classrooms.map((c) => c.semester))),
+          ];
+        }
         Cookies.set("role", me.role, { expires: 7 });
-        setClassrooms(classrooms);
+        setClassrooms(Array.isArray(classrooms) ? classrooms : []);
         setSemesterOptions(uniqueSemesters);
       } catch (err) {
         console.error(err);

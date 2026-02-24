@@ -1,5 +1,6 @@
+import { User } from "@/domain/user";
 import { IAuthRepository } from "./interface";
-import { AuthResponse, LoginRequest, MeResponse } from "@/domain/auth";
+import { AuthResponse, CreateUserRequest, LoginRequest, MeResponse } from "@/domain/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -19,6 +20,7 @@ export class AuthRepository implements IAuthRepository {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -46,5 +48,34 @@ export class AuthRepository implements IAuthRepository {
     console.log("response", response);
 
     return response;
+  }
+
+  async requestOTP(data: FormData): Promise<string> {
+    const res = await fetch(`${BASE_URL}/auth/request-otp`, {
+      method: "POST",
+      body: data,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Request otp failed: ${res.status}`);
+    }
+
+    return res.json();
+  }
+
+  async verifyOTP(data: { email: string; otp: string; }):Promise<string> {
+    const res = await fetch(`${BASE_URL}/auth/verify-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Verify otp failed: ${res.status}`);
+    }
+
+    return res.json();
   }
 }
