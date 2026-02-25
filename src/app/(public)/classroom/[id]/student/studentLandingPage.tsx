@@ -43,20 +43,20 @@ const StudentLandingPage = ({ classroomMember }: StudentLandingPageProps) => {
         </Breadcrumbs>
       </div>
       <h1 className="-mb-2">Student</h1>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-[18px]">
-            Capacity
+            Capacity{" "}
             <span className="text-primary03 font-bold mx-2">
               {classroomMember.student.length}
-            </span>
+            </span>{" "}
             people
           </p>
         </div>
 
         <div className="flex items-center gap-4">
           <p className="text-[18px] font-semibold">
-            Classroom code:
+            Classroom code:{" "}
             <span className="font-bold text-h4 text-primary03 ml-2">
               {classroomMember.classroom.code}
             </span>
