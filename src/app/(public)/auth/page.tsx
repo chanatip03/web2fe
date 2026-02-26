@@ -97,14 +97,14 @@ export default function Auth() {
           <div className="flex justify-center items-center gap-2 text-center p2">
             <span>If you don&apos;t have an account, register as</span>
 
-            <Link href="/student/register">
+            <Link href="/register?role=student">
               <span className="font-bold text-primary03">Student</span>
             </Link>
 
             <span>or</span>
 
-            <Link href="/professor/register">
-              <span className="font-bold text-primary03">Professor</span>
+            <Link href="/register?role=teacher">
+              <span className="font-bold text-primary03">Teacher</span>
             </Link>
           </div>
         </form>
