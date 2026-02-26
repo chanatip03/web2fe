@@ -29,7 +29,8 @@ const StudentTable = ({ classroomMember }: StudentTableComponentsProps) => {
                     },
                     "& td": {
                         py: 0.8,
-                    }
+                    },
+                    backgroundColor:"#FFFFFF",
                 }}
             >
                 <TableHead>

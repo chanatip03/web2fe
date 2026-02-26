@@ -31,7 +31,7 @@ export const SidebarStudent = ({ classroomName }: SidebarStudentProps) => {
   const params = useParams();
   const classroomId = params.id;
   return (
-    <aside className="w-[260px] h-screen bg-white border-r border-neutral02 ">
+    <aside className="w-[260px] h-screen bg-[#ffffff] border-r border-neutral02 ">
       <div className="bg-secondary04 text-white h-[145px] flex items-center px-4">
         <h2>{classroomName}</h2>
       </div>

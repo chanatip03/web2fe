@@ -247,5 +247,74 @@ export const Theme = createTheme({
                 },
             },
         },
+
+        MuiAlert: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 6,
+                    backgroundColor: "#FFFFFF",
+                },
+
+                message: {
+                    color: "var(--color-black)"
+                },
+
+                action: {
+                    color: "var(--color-neutral04)"
+                },
+
+
+                standardSuccess: {
+                    borderLeft: "4px solid var(--color-success01)",
+
+                    "& .MuiAlert-icon": {
+                        color: "var(--color-success01)",
+                    },
+                },
+
+                standardWarning: {
+                    borderLeft: "4px solid var(--color-warning01)",
+
+                    "& .MuiAlert-icon": {
+                        color: "var(--color-warning01)",
+                    },
+                },
+
+                standardError: {
+                    borderLeft: "4px solid var(--color-accent03)",
+
+                    "& .MuiAlert-icon": {
+                        color: "var(--color-accent03)",
+                    },
+                },
+
+                standardInfo: {
+                    borderLeft: "4px solid var(--color-primary03)",
+
+                    "& .MuiAlert-icon": {
+                        color: "var(--color-primary03)",
+                    },
+                },
+
+            },
+        },
+
+        MuiSnackbar: {
+            defaultProps: {
+                anchorOrigin: {
+                    vertical: "top",
+                    horizontal: "right",
+                },
+            },
+
+            styleOverrides: {
+                root: {
+                    "& .MuiPaper-root": {
+                        backgroundColor: "#FFFFFF",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    },
+                },
+            },
+        },
     },
 });
