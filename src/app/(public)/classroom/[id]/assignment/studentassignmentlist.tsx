@@ -44,14 +44,14 @@ export default function StudentAssignmentListPage() {
   return (
     <>
       {/* Breadcrumb */}
-      <Breadcrumbs className="text-sm mb-6">
+      <Breadcrumbs className="mb-6">
         <Link href="/classroom">Home</Link>
         <span>{Cookies.get("classroomName")}</span>
         <span className="text-black font-medium">Assignment</span>
       </Breadcrumbs>
 
       {/* Title */}
-      <h1 className="mb-4 text-foreground font-bold">Assignment</h1>
+      <h1 className="mb-6 text-foreground font-bold">Assignment</h1>
 
       {/* Legend */}
       <div className="flex items-center gap-6 mb-8 text-base">

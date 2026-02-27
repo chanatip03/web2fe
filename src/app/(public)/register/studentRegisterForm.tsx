@@ -75,7 +75,7 @@ export default function StudentRegisterForm() {
       <div className="bg-neutral01 w-[750px] rounded-2xl shadow-lg px-20 py-14 flex flex-col">
         <div className="flex justify-center">
           <Image
-            src="/WEB2LOGO.png"
+            src="/logo.png"
             alt="WEB2 Logo"
             width={180}
             height={75}
@@ -85,8 +85,8 @@ export default function StudentRegisterForm() {
 
         <h1 className="text-center text-primary03 mb-6">Register Student</h1>
 
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex gap-3">
+        <form className="flex flex-col gap-2" onSubmit={handleSubmit(onSubmit)}>
+          <div className="flex gap-2">
             <RHFTextField
               control={control}
               name="firstName"

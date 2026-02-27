@@ -76,16 +76,16 @@ export default function TeacherRegisterForm() {
       <div className="bg-neutral01 w-[750px] rounded-2xl shadow-lg px-20 py-14 flex flex-col">
         <div className="flex justify-center">
           <Image
-            src="/WEB2LOGO.png"
+            src="/logo.png"
             alt="WEB2 Logo"
-            width={120}
-            height={50}
+            width={180}
+            height={75}
             priority
           />
         </div>
-        <h1 className="text-center text-primary03 mb-6">Register Teacher</h1>
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex gap-3">
+        <h1 className="text-center text-primary03 mb-4">Register Teacher</h1>
+        <form className="flex flex-col gap-2" onSubmit={handleSubmit(onSubmit)}>
+          <div className="flex gap-2">
             <RHFTextField
               control={control}
               name="first_name"
@@ -133,7 +133,7 @@ export default function TeacherRegisterForm() {
           <div className="flex items-center gap-2 p2">
             <span className="whitespace-nowrap">
               Upload Certificate of Appointment
-              <p className="text-red-500">*</p>
+              <span className="text-red-500 ml-1">*</span>
             </span>
 
             <Button variant="outlined" component="label" size="small">

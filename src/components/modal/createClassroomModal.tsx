@@ -106,7 +106,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
 
       <DialogContent className="flex-1 overflow-hidden ">
         <form
-          className="flex h-full flex-col gap-3 py-4 px-8"
+          className="flex h-full flex-col gap-2 py-4 px-8"
           onSubmit={handleSubmit(handleFormSubmit)}
         >
           <div className="flex gap-4">

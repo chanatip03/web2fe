@@ -51,7 +51,7 @@ export default function Auth() {
       <div className="w-1/2 bg-secondary02 flex items-center justify-center">
         <div className="relative w-125 h-125">
           <Image
-            src="/WEB2Logo.png"
+            src="/logo.png"
             alt="WEB2 Logo"
             fill
             priority

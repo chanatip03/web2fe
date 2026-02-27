@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import UniversalThemeProvider from "@/components/providers/mui/UniversalThemeProvider";
-import appIcon from "./WEB2Logo.png"
+import appIcon from "./WLogo.png"
 
 const notoThai = Noto_Sans_Thai({
   subsets: ["thai", "latin"],
