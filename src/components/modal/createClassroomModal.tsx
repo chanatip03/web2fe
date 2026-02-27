@@ -70,7 +70,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
         data.learningOutcomes
           ?.map((item) => item.value.trim())
           .filter(Boolean)
-          .join(",") || "",
+          .join("|") || "",
     };
 
     await onSubmit(payload);

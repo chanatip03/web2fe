@@ -7,6 +7,7 @@ import {
   IconButton,
   Button,
   MenuItem,
+  Box,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
@@ -15,15 +16,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "../form/RHFTextField";
 import { RHFSelect } from "../form/RHFSelect";
 import { RHFDateTimePickerDayjs } from "../form/RHFDateTimePicker";
-import { ProjectType, Language } from "@/domain/assignment";
+import {
+  ProjectType,
+  Language,
+  Assignment,
+  Attachments,
+} from "@/domain/assignment";
 import dayjs from "dayjs";
 import { useParams } from "next/navigation";
 import { assignmentService } from "@/services/controller";
-import ConfirmNoTestCaseModal from "./confirmCreateAssignmentModal";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  assignment: Assignment | null;
 }
 
 const mockProjectTypes: ProjectType[] = [
@@ -45,27 +52,24 @@ const Schema = z.object({
   assignmentType: z.string().min(1, "Please select assignment type"),
   projectTypeId: z.number().min(1, "Please select project type"),
   languageId: z.number().optional(),
-  publishDate: z
-    .string()
-    .min(1, "Please select publishDate date")
-    .refine((val) => dayjs(val).isValid(), {
-      message: "Invalid date format",
-    }),
-  dueDate: z
-    .string()
-    .min(1, "Please select dueDate date")
-    .refine((val) => dayjs(val).isValid(), {
-      message: "Invalid date format",
-    }),
+  publishDate: z.string().refine((val) => dayjs(val).isValid(), {
+    message: "Invalid date format",
+  }),
+  dueDate: z.string().refine((val) => dayjs(val).isValid(), {
+    message: "Invalid date format",
+  }),
   attachment: z.array(z.instanceof(File)).optional(),
-  testCase: z.instanceof(File).optional(),
 });
 
 type FormData = z.infer<typeof Schema>;
 
-const CreateAssignmentModal = ({ open, onClose }: Props) => {
-  const [openConfirm, setOpenConfirm] = useState(false);
-  const [pendingData, setPendingData] = useState<FormData | null>(null);
+const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
+  const [existingAttachments, setExistingAttachments] = useState<Attachments[]>(
+    [],
+  );
+  const [deletedAttachmentIds, setDeletedAttachmentIds] = useState<number[]>(
+    [],
+  );
 
   const params = useParams();
   const id = params.id;
@@ -86,41 +90,42 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
       assignmentType: "",
       projectTypeId: undefined,
       languageId: undefined,
-      publishDate: undefined,
-      dueDate: undefined,
-      testCase: undefined,
+      publishDate: "",
+      dueDate: "",
       attachment: [],
     },
   });
 
   const projectTypeId = watch("projectTypeId");
-
   const attachments = watch("attachment") ?? [];
-
   const enableLanguage = projectTypeId === 1 || projectTypeId === 2;
 
   useEffect(() => {
-    if (!enableLanguage) {
-      setValue("languageId", undefined);
-    }
-  }, [enableLanguage, setValue]);
+    if (!assignment) return;
 
-  const handleClose = () => {
-    reset();
-    onClose();
+    reset({
+      name: assignment.title,
+      detail: assignment.description ?? "",
+      assignmentType: assignment.is_group ? "group" : "individual",
+      projectTypeId: assignment.project_type?.id,
+      languageId: assignment.language?.id,
+      publishDate: dayjs(assignment.start_date).toISOString(),
+      dueDate: dayjs(assignment.due_date).toISOString(),
+      attachment: [],
+    });
+
+    setExistingAttachments(assignment.attachments || []);
+    setDeletedAttachmentIds([]);
+  }, [assignment, reset]);
+
+  const handleRemoveExisting = (id: number) => {
+    setExistingAttachments((prev) => prev.filter((a) => a.id !== id));
+    setDeletedAttachmentIds((prev) => [...prev, id]);
   };
 
   const onSubmit = async (data: FormData) => {
-    if (!data.testCase) {
-      setPendingData(data);
-      setOpenConfirm(true);
-      return;
-    }
+    if (!assignment) return;
 
-    await handleCreate(data);
-  };
-
-  const handleCreate = async (data: FormData) => {
     try {
       const payload = {
         title: data.name,
@@ -131,17 +136,18 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
         project_type_id: data.projectTypeId,
         language_id: data.languageId ?? undefined,
         classroom_id: Number(id),
+
+        delete_attachment_ids: deletedAttachmentIds,
       };
 
-      await assignmentService.createAssignment(
+      await assignmentService.updateAssignment(
         payload,
-        data.testCase ?? undefined,
+        assignment.id,
+        undefined,
         data.attachment ?? [],
       );
 
-      handleClose();
-      setOpenConfirm(false);
-      setPendingData(null);
+      onClose();
     } catch (err) {
       console.error(err);
     }
@@ -152,7 +158,7 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
       open={open}
       onClose={(_, reason) => {
         if (reason === "backdropClick") return;
-        handleClose();
+        onClose();
       }}
       slotProps={{
         paper: {
@@ -160,16 +166,14 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
             width: 920,
             borderRadius: "12px",
             maxWidth: "none",
-            display: "flex",
-            flexDirection: "column",
           },
         },
       }}
     >
       <div className="flex items-center justify-between bg-primary03 px-12 py-3 text-white">
-        <h3>Create Assignment</h3>
+        <h3>Update Assignment</h3>
 
-        <IconButton onClick={handleClose}>
+        <IconButton onClick={onClose}>
           <CloseIcon className="text-white" />
         </IconButton>
       </div>
@@ -177,7 +181,7 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
       <DialogContent>
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="h-full flex-col gap-3 py-4 px-8"
+          className="flex flex-col gap-4 py-4 px-8"
         >
           <RHFTextField
             name="name"
@@ -195,22 +199,13 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
             fullWidth
           />
 
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <RHFSelect
-              name="assignmentType"
-              control={control}
-              label="Assignment Type"
-            >
+          <div className="grid grid-cols-3 gap-4">
+            <RHFSelect name="assignmentType" control={control} label="Type">
               <MenuItem value="individual">Individual</MenuItem>
-
               <MenuItem value="group">Group</MenuItem>
             </RHFSelect>
 
-            <RHFSelect
-              name="projectTypeId"
-              control={control}
-              label="Project type"
-            >
+            <RHFSelect name="projectTypeId" control={control} label="Project">
               {mockProjectTypes.map((item) => (
                 <MenuItem key={item.id} value={item.id}>
                   {item.name}
@@ -231,13 +226,13 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
               ))}
             </RHFSelect>
           </div>
-          <div className="grid grid-cols-2 gap-6 mb-4">
+
+          <div className="grid grid-cols-2 gap-4">
             <RHFDateTimePickerDayjs
               name="publishDate"
               control={control}
               label="Publish date"
             />
-
             <RHFDateTimePickerDayjs
               name="dueDate"
               control={control}
@@ -245,32 +240,24 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
             />
           </div>
 
-          <div className="flex items-center gap-3 mb-4">
-            <span className="flex items-center gap-2">
-              <h4 className="m-0">Test case</h4>
-              <p className="p2 m-0">(optional)</p>
-            </span>
-
-            <Button variant="outlined" component="label" sx={{ height: 32 }}>
-              <span>Add File</span>
-              <input
-                type="file"
-                hidden
-                onChange={(e) => setValue("testCase", e.target.files?.[0])}
-              />
-            </Button>
-
-            <p className="text-neutral03 p2 truncate max-w-[400px]">
-              {watch("testCase")?.name ?? "No file chosen"}
-            </p>
-          </div>
+          <Box>
+            <h4>Existing Files</h4>
+            {existingAttachments.length === 0 && <p>No files</p>}
+            {existingAttachments.map((file) => (
+              <div key={file.id} className="flex justify-between items-center">
+                <span>{file.file_url.split("/").pop()}</span>
+                <Button
+                  color="error"
+                  onClick={() => handleRemoveExisting(file.id)}
+                >
+                  <DeleteIcon />
+                </Button>
+              </div>
+            ))}
+          </Box>
 
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2">
-              <h4 className="m-0">Attachments</h4>
-              <p className="p2 m-0">(optional)</p>
-            </span>
-            <Button variant="outlined" component="label" sx={{ height: 32 }}>
+            <Button variant="outlined" component="label">
               <span>Add File</span>
               <input
                 type="file"
@@ -287,33 +274,22 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
               />
             </Button>
 
-            <p className="text-neutral03 p2 truncate max-w-[400px]">
+            <p className="truncate max-w-[400px]">
               {attachments.length > 0
                 ? attachments.map((f) => f.name).join(", ")
-                : "No file chosen"}
+                : "No new file"}
             </p>
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-end">
             <Button type="submit" variant="contained" disabled={!isValid}>
               Save
             </Button>
           </div>
         </form>
       </DialogContent>
-      <ConfirmNoTestCaseModal
-        open={openConfirm}
-        onClose={() => {
-          setOpenConfirm(false);
-        }}
-        onConfirm={() => {
-          if (pendingData) {
-            handleCreate(pendingData);
-          }
-        }}
-      />
     </Dialog>
   );
 };
 
-export default CreateAssignmentModal;
+export default UpdateAssignmentModal;

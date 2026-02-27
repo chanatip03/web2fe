@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { mockStudents, Student, Group, mockCurrentStudent } from "./mockGroup";
+import { mockStudents, Student, Group, mockCurrentStudent } from "../mockGroup";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import { useState, useEffect } from "react";
 
@@ -62,22 +62,22 @@ export default function CreateGroupModal({ open, onClose, onSave }: Props) {
   const filteredStudents = mockStudents.filter((s) =>
     `${s.user.firstName} ${s.user.lastName}`
       .toLowerCase()
-      .includes(search.toLowerCase())
+      .includes(search.toLowerCase()),
   );
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-[900px] max-w-[95vw] rounded-2xl shadow-xl overflow-hidden">
-
         {/* HEADER */}
         <div className="bg-primary03 text-white px-6 py-4 flex justify-between items-center">
           <h4 className="font-bold">Manage Group</h4>
-          <button onClick={onClose} className="text-xl">✕</button>
+          <button onClick={onClose} className="text-xl">
+            ✕
+          </button>
         </div>
 
         {/* BODY */}
         <div className="p-6 space-y-5">
-
           <RHFTextField<FormValues>
             name="groupName"
             control={control}
@@ -95,7 +95,6 @@ export default function CreateGroupModal({ open, onClose, onSave }: Props) {
           <div className="grid grid-cols-2 gap-5">
             {/* LEFT MEMBERS */}
             <div className="border border-neutral03 rounded-lg p-4 h-[260px] flex flex-col">
-
               <div className="flex flex-wrap gap-2 overflow-y-auto">
                 {members.length === 0 && (
                   <p className="text-neutral04 text-sm">No members selected</p>
@@ -133,7 +132,6 @@ export default function CreateGroupModal({ open, onClose, onSave }: Props) {
 
             {/* RIGHT LIST */}
             <div className="border border-neutral03 rounded-lg p-4 h-[260px] flex flex-col">
-
               {/* SEARCH */}
               <input
                 placeholder="Search name member"

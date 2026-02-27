@@ -33,7 +33,7 @@ const sidebarProfessorItems = [
     icon: <EmojiEventsOutlinedIcon />,
   },
   {
-    name: "setting",
+    name: "Setting",
     href: "/setting",
     icon: <SettingsOutlinedIcon />,
   },
@@ -46,15 +46,16 @@ export const SidebarProfessor = ({ classroomName }: SidebarProfessorProps) => {
 
   return (
     <aside className="w-[260px] h-screen bg-[#ffffff] border-r border-neutral02 ">
-      <div className="bg-secondary04 text-white h-[145px] flex items-center px-4">
-        <h2>{classroomName}</h2>
+      <div className="bg-secondary04 text-white h-[145px] flex items-center px-2">
+        <h3>{classroomName}</h3>
       </div>
 
       <nav className="mt-4">
         <ul className="flex flex-col">
           {sidebarProfessorItems.map((item) => {
-            const isActive =
-              pathname === `/classroom/${classroomId}${item.href}`;
+            const isActive = pathname.startsWith(
+              `/classroom/${classroomId}${item.href}`,
+            );
 
             return (
               <li key={item.name}>

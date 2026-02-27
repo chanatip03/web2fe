@@ -1,0 +1,181 @@
+// "use client";
+
+// import { useState } from "react";
+// import SubmitPanel from "../../../../../../components/SubmitPanel";
+// import DeploymentStatus, {
+//   SubmitStatus,
+// } from "../../../../../../components/DeploymentStatus";
+// import dayjs from "dayjs";
+// import Link from "next/link";
+// import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+// import GroupsIcon from "@mui/icons-material/Groups";
+// import UploadFileIcon from "@mui/icons-material/UploadFile";
+// import CreateGroupModal from "../../../../../../components/modal/CreateGroupModal";
+// import GroupCard from "../../../../../../components/GroupCard";
+// import { Group } from "../../../../../../components/mockGroup";
+// import { Breadcrumbs } from "@mui/material";
+// import { Assignment } from "@/domain/assignment";
+
+// export default function StudentAssignmentInfoPage() {
+//   const [open, setOpen] = useState(false);
+//   const [group, setGroup] = useState<Group | null>(null);
+//   const hasGroup = !!group; // TODO: เอาจาก API group student
+//   const canSubmit = !Assignment.is_group || hasGroup;
+//   const [status, setStatus] = useState<SubmitStatus>("editing");
+
+//   // Mock up data for DeploymentStatus
+//   const deploySuccess = true;
+//   const testcase = { pass: 15, fail: 5, success: true };
+//   const security = { success: true };
+
+//   const hasFail =
+//     status === "done" &&
+//     (!deploySuccess ||
+//       ((assignment.projectTypeId === 1 || assignment.projectTypeId === 2) &&
+//         (!testcase.success || !security.success)));
+
+//   return (
+//     <div className="max-w-[1500px] mx-auto px-10 py-8 bg-neutral01">
+//       {/* Breadcrumb */}
+//       <Breadcrumbs className="text-sm mb-6">
+//         <Link href="/classroom">Home</Link>
+//         {/* <span>{classrooms?.name}</span> */}
+//         <span>Mock up data</span>
+//         <span className="text-black font-medium">Assigment</span>
+//         {/* <span>{assignment?.name}</span> */}
+//         <span>Mock up data</span>
+//       </Breadcrumbs>
+
+//       {/* Title */}
+//       <h1 className="font-bold mb-4 text-foreground mt-5">{assignment.name}</h1>
+
+//       <div className="grid grid-cols-12 gap-10">
+//         {/* LEFT SIDE */}
+//         <div className="col-span-8">
+//           {/* Due Date */}
+//           <p className="mb-3">
+//             <span className="font-bold">Due Date :</span>{" "}
+//             <span className="text-red-500">
+//               {dayjs(assignment.dueDate).format("D MMMM YYYY [at] HH.mm")}
+//             </span>
+//           </p>
+
+//           {/* Detail */}
+//           <h2 className="font-bold text-lg mb-0.5">Assignment Detail</h2>
+
+//           <p className="text-neutral06 whitespace-pre-line mb-8 leading-relaxed">
+//             {assignment.detail}
+//           </p>
+
+//           {/* Attachments */}
+//           <h2 className="font-bold text-lg mb-2">Attachments</h2>
+
+//           <ul className="mb-5 space-y-1">
+//             <li className="hover:text-primary03 transition cursor-pointer">
+//               <InsertDriveFileIcon /> Assignment.pdf
+//             </li>
+//             <li className="hover:text-primary03 transition cursor-pointer">
+//               <InsertDriveFileIcon /> image1.png
+//             </li>
+//           </ul>
+//         </div>
+
+//         {/* RIGHT SIDE GROUP BOX */}
+//         {assignment.isGroup && (
+//           <div className="col-span-4">
+//             {group ? (
+//               <GroupCard group={group} onEdit={() => setOpen(true)} />
+//             ) : (
+//               <div className="bg-white rounded-xl shadow-xl border border-neutral03 overflow-hidden">
+//                 <div className="bg-primary03 text-white px-6 py-3 font-semibold">
+//                   <GroupsIcon className="mr-1 inline-block" /> Group
+//                 </div>
+
+//                 <div className="p-8 flex justify-center">
+//                   <button
+//                     onClick={() => setOpen(true)}
+//                     className="bg-primary03 text-white px-6 py-3 rounded shadow-xl hover:opacity-90 transition flex items-center gap-2"
+//                   >
+//                     + Create Group
+//                   </button>
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+//         )}
+
+//         <CreateGroupModal
+//           open={open}
+//           onClose={() => setOpen(false)}
+//           onSave={(g) => setGroup(g)}
+//         />
+
+//         {/* Submit file */}
+//         <div
+//           className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
+//             ${canSubmit ? "border-neutral03" : "border-neutral03 bg-white"}
+//         `}
+//         >
+//           {/* HEADER */}
+//           <div
+//             className={`px-6 py-3 font-semibold flex items-center justify-between
+//                 ${
+//                   canSubmit
+//                     ? "bg-primary03 text-white"
+//                     : "bg-neutral02 text-neutral06"
+//                 }
+//                 `}
+//           >
+//             <span className="font-semibold flex items-center gap-2">
+//               <UploadFileIcon />
+//               Submit file
+//             </span>
+//           </div>
+
+//           {/* BODY */}
+//           <div className="bg-white">
+//             <SubmitPanel
+//               isGroup={assignment.isGroup}
+//               hasGroup={hasGroup}
+//               status={status}
+//               setStatus={setStatus}
+//             />
+//           </div>
+//         </div>
+
+//         {/* Deployment Results */}
+//         <div className="col-span-12 bg-white rounded-xl shadow-xl border border-neutral03">
+//           <div
+//             className={`px-6 py-3 font-semibold rounded-t-xl
+//                 ${
+//                   status === "editing"
+//                     ? "bg-neutral02 text-neutral06"
+//                     : hasFail
+//                       ? "bg-red-600 text-white"
+//                       : "bg-green-600 text-white"
+//                 }
+//               `}
+//           >
+//             Deployment Results
+//           </div>
+
+//           <div className="p-6">
+//             {status === "editing" ? (
+//               <div className="h-[220px] flex items-center justify-center text-neutral04">
+//                 The results will appear after you finish uploading the project.
+//               </div>
+//             ) : (
+//               <DeploymentStatus
+//                 status={status}
+//                 projectTypeId={assignment.projectTypeId}
+//                 deploySuccess={deploySuccess}
+//                 testcase={testcase}
+//                 security={security}
+//               />
+//             )}
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }

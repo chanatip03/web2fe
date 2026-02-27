@@ -130,20 +130,14 @@ export default function ScorebookLandingPage() {
       </div>
 
       <div className="flex justify-between mb-8">
-
         <h1 className="-mb-2">Scorebook</h1>
 
-        <Button
-          variant="contained"
-          startIcon={<FileUploadIcon />}
-        >
+        <Button variant="contained" startIcon={<FileUploadIcon />}>
           Export (.csv)
         </Button>
-
       </div>
 
       <ScorebookTable data={mockData} />
-
     </div>
   );
 }

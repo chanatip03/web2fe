@@ -51,27 +51,28 @@ export default function Syllabus() {
         {classrooms?.teacher.user.last_name}
       </p>
 
-      {/* Description */}
-      {classrooms?.description && (
-        <div>
-          <h2 className="text-foreground mb-3">Classroom Description</h2>
+      <div>
+        {/* Description */}
+        <h2 className="text-foreground mb-3">Classroom Description</h2>
+        {classrooms?.description && (
           <p className="text-neutral06 leading-relaxed wrap-break-word whitespace-pre-line mb-4">
             {classrooms?.description}
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Learning Outcomes */}
       <h2 className="text-foreground mb-3">Learning Outcome</h2>
-      {classrooms?.learningoutcomes?.split(",").map((item, index) => (
-        <div key={index} className="flex items-start gap-4 mb-2">
-          <AssistantPhotoIcon
-            className="text-primary03 mt-1 shrink-0"
-            fontSize="small"
-          />
-          <p className="text-neutral06 break-all">{item}</p>
-        </div>
-      ))}
+      {classrooms?.learningoutcomes ??
+        classrooms?.learningoutcomes?.split("|").map((item, index) => (
+          <div key={index} className="flex items-start gap-4 mb-2">
+            <AssistantPhotoIcon
+              className="text-primary03 mt-1 shrink-0"
+              fontSize="small"
+            />
+            <p className="text-neutral06 break-all">{item}</p>
+          </div>
+        ))}
     </div>
   );
 }

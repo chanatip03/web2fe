@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, IconButton, Breadcrumbs } from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import Link from "next/link";
@@ -60,7 +60,7 @@ export default function ClassroomSetting() {
     semester: data.semester,
     description: data.description,
     learningoutcomes: data.learningoutcomes
-      ? data.learningoutcomes.split(",").map((item) => ({
+      ? data.learningoutcomes.split("|").map((item) => ({
           value: item,
         }))
       : [],
@@ -96,7 +96,7 @@ export default function ClassroomSetting() {
           data.learningoutcomes
             ?.map((item) => item.value.trim())
             .filter(Boolean)
-            .join(",") || "",
+            .join("|") || "",
       };
 
       const res = await classroomService.updateClassroom(payload, id);
@@ -184,7 +184,7 @@ export default function ClassroomSetting() {
                   onClick={() => remove(index)}
                   className="mt-2"
                 >
-                  <DeleteOutlineIcon />
+                  <DeleteIcon />
                 </IconButton>
               </div>
             ))}

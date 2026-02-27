@@ -12,16 +12,17 @@ interface SidebarStudentProps {
 const sidebarStudentItems = [
   {
     name: "Syllabus",
+    href: "/syllabus",
     icon: <BookOutlinedIcon />,
   },
   {
     name: "Assignment",
-    href: "/student/",
+    href: "/assignment",
     icon: <AssignmentOutlinedIcon />,
   },
   {
     name: "Scorebook and Feedback",
-    href: "/student/",
+    href: "/scorebook",
     icon: <NotificationsOutlinedIcon />,
   },
 ];
@@ -32,14 +33,16 @@ export const SidebarStudent = ({ classroomName }: SidebarStudentProps) => {
   const classroomId = params.id;
   return (
     <aside className="w-[260px] h-screen bg-[#ffffff] border-r border-neutral02 ">
-      <div className="bg-secondary04 text-white h-[145px] flex items-center px-4">
-        <h2>{classroomName}</h2>
+      <div className="bg-secondary04 text-white h-[145px] flex items-center px-2">
+        <h3>{classroomName}</h3>
       </div>
 
       <nav className="mt-4">
         <ul className="flex flex-col">
           {sidebarStudentItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname.startsWith(
+              `/classroom/${classroomId}${item.href}`,
+            );
 
             return (
               <li key={item.name}>
