@@ -10,12 +10,14 @@ import { authService, classroomService } from "@/services/controller";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CreateClassroomModal from "@/components/modal/createClassroomModal";
+import JoinClassroomModal from "@/components/modal/joinClassroommodal";
 import Cookies from "js-cookie";
 
 export default function ListClassroom() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [openCreate, setOpenCreate] = useState<boolean>(false);
+  const [openJoin, setOpenJoin] = useState<boolean>(false);
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [semesterOptions, setSemesterOptions] = useState<string[]>([]);
   const router = useRouter();
@@ -69,6 +71,22 @@ export default function ListClassroom() {
       ? classrooms
       : classrooms.filter((c) => c.semester === selectedSemester);
 
+  const onSubmitJoinClassroom = async (classroomCode: string) => {
+    try {
+      // TODO: implement join classroom
+      // const res = await classroomService.joinClassroom(classroomCode);
+
+      // if (!res) {
+      //   throw new Error("Failed to join classroom");
+      // }
+
+      setOpenJoin(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Error joining classroom:", error);
+    }
+  };
+
   const role = Cookies.get("role");
 
   return (
@@ -80,7 +98,9 @@ export default function ListClassroom() {
           <h1 className="text-212121">All Classroom</h1>
           <div className="flex items-center gap-4 w-full sm:w-auto">
             {role === "student" ? (
-              <Button variant="contained" startIcon={<AddIcon />}>
+              <Button variant="contained" 
+              startIcon={<AddIcon />}
+              onClick={() => setOpenJoin(true)}>
                 Join Classroom
               </Button>
             ) : (
@@ -173,6 +193,14 @@ export default function ListClassroom() {
           />
         )}
         {role === "student" && <StudentDiscordTip />}
+        {openJoin && (
+          <JoinClassroomModal
+            open={openJoin}
+            onClose={() => setOpenJoin(false)}
+            onSuccess={() => router.refresh()}
+          />
+        )}
+
       </div>
     </>
   );
