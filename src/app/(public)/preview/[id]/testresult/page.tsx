@@ -7,9 +7,9 @@ import cyberScanData from "./cyberscan.json";
 
 export default function TestResult() {
   return (
-    <div className="p-8 flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       {/* Breadcrumb */}
-      <Breadcrumbs>
+      <Breadcrumbs className="my-6 mb-6">
         <Link href="/classroom">Home</Link>
         <span>mockup classroom</span>
         <Link href="/assignment">Assignment</Link>
