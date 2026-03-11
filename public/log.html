@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Robot Framework Log</title>
+    <style>
+        body { 
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #ffffff; 
+            color: #333;
+        }
+        .header { 
+            background: #222; 
+            color: white; 
+            padding: 16px 20px; 
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .header h2 { margin: 0; font-size: 20px; font-weight: normal; }
+        .summary-block {
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .pass { color: #28a745; font-weight: bold; }
+        .fail { color: #dc3545; font-weight: bold; }
+        table { 
+            border-collapse: collapse; 
+            width: 100%; 
+            background: white;
+        }
+        th { 
+            background: #f4f4f4; 
+            border-bottom: 2px solid #ddd; 
+            text-align: left; 
+            padding: 10px; 
+        }
+        td { 
+            border-bottom: 1px solid #eee; 
+            padding: 10px; 
+        }
+        tr:hover { background: #fdfdfd; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>Robot Framework Execution Log (Mockup)</h2>
+    </div>
+    <div class="summary-block">
+        <strong>Status:</strong> 3 critical tests <span class="pass">passed</span>, 2 critical tests <span class="fail">failed</span><br/>
+        <strong>Elapsed Time:</strong> 00:00:15.123
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Test Case</th>
+                <th>Status</th>
+                <th>Elapsed</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Home page renders successfully</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.000</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>API returns valid JSON data</td>
+                <td class="pass">PASS</td>
+                <td>00:00:01.500</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Login with correct credentials</td>
+                <td class="fail">FAIL</td>
+                <td>00:00:05.100</td>
+                <td>TimeoutException: Element locator 'id=welcome-message' did not match any elements after 5 seconds.</td>
+            </tr>
+            <tr>
+                <td>Login with incorrect password</td>
+                <td class="fail">FAIL</td>
+                <td>00:00:04.200</td>
+                <td>Text 'Invalid username or password' not found within 4 seconds.</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Logout redirects to Home</td>
+                <td class="pass">PASS</td>
+                <td>00:00:02.323</td>
+                <td>-</td>
+            </tr>
+
+        </tbody>
+    </table>
+</body>
+</html>
