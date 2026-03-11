@@ -77,7 +77,7 @@ export default function TestResult() {
         </AccordionSummary>
         <AccordionDetails sx={{ p: 4, pt: 3, maxHeight: '500px', overflowY: 'auto' }}>
           <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--color-black)" }}>
-{JSON.stringify(cyberScanData, null, 2)}
+            {JSON.stringify(cyberScanData, null, 2)}
           </pre>
         </AccordionDetails>
       </Accordion>
