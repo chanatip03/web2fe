@@ -1,15 +1,77 @@
 "use client";
 
-import { useState } from "react";
-import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, OutlinedInput, InputAdornment } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, OutlinedInput, InputAdornment, Box, CircularProgress, Typography } from "@mui/material";
 import Link from "next/link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
-import cyberScanData from "./cyberscan.json";
-import plagiarismData from "./plagiarism.json";
 
 export default function TestResult_fe_be() {
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // States for backend data
+  const [cyberScanData, setCyberScanData] = useState<any>(null);
+  const [plagiarismData, setPlagiarismData] = useState<any>(null);
+  const [logHtmlUrl, setLogHtmlUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Mock fetching data from backend
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setIsLoading(true);
+        // FIXME: Replace this setTimeout with your actual backend API call 
+        // const response = await fetch('/api/test-results');
+        // const data = await response.json();
+        
+        // Simulating network delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        // Simulating the JSON response from your API
+        setCyberScanData({
+          project: "student-webapp",
+          file: "Dockerfile",
+          baseImage: "node:16-alpine",
+          scanTime: "2025-12-03T22:15:00Z",
+          ok: false,
+          summary: { totalIssues: 1 },
+        });
+
+        setPlagiarismData({
+          status: "success",
+          total_comparisons: 6,
+          data: [
+            { student1: "G1.js", student2: "Group3.js", avg_similarity: 74.07 },
+            { student1: "G1.js", student2: "test.js", avg_similarity: 50.31 },
+            { student1: "Group3.js", student2: "G1.js", avg_similarity: 74.07 },
+            { student1: "Group3.js", student2: "test.js", avg_similarity: 80 },
+            { student1: "test.js", student2: "G1.js", avg_similarity: 50.31 },
+            { student1: "test.js", student2: "Group3.js", avg_similarity: 80 },
+          ],
+        });
+
+        // Simulating HTML URL (or raw string if backend sends `srcDoc={rawString}`)
+        // If backend sends a URL, leave as is. If it sends raw HTML string, use `srcDoc` in the iframe below instead of `src`
+        setLogHtmlUrl("/log.html");
+
+      } catch (error) {
+        console.error("Error fetching test results:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, []);
+
+  if (isLoading || !plagiarismData || !cyberScanData) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '50vh', gap: 2 }}>
+        <CircularProgress sx={{ color: 'var(--color-primary03)' }} />
+        <Typography style={{ color: "var(--color-neutral05)" }}>Loading test results...</Typography>
+      </Box>
+    );
+  }
 
   const currentProjectFile = "G1.js";
   const studentMap: Record<string, { id: string; name: string }> = {
@@ -20,8 +82,8 @@ export default function TestResult_fe_be() {
   const projectComparisons = Array.from(
     new Map(
       plagiarismData.data
-        .filter((item) => item.student1 === currentProjectFile || item.student2 === currentProjectFile)
-        .map((item) => {
+        .filter((item: any) => item.student1 === currentProjectFile || item.student2 === currentProjectFile)
+        .map((item: any) => {
           const otherFile = item.student1 === currentProjectFile ? item.student2 : item.student1;
           const studentInfo = studentMap[otherFile] || { id: "Unknown", name: otherFile };
           return [
@@ -34,7 +96,7 @@ export default function TestResult_fe_be() {
           ];
         })
     ).values()
-  );
+  ) as any[];
 
   const filteredPlagiarism = projectComparisons.filter(
     (item) =>
@@ -43,7 +105,7 @@ export default function TestResult_fe_be() {
   );
 
   const uniqueComparisonsMap = new Map();
-  plagiarismData.data.forEach((item) => {
+  plagiarismData.data.forEach((item: any) => {
     // Sort filenames alphabetically to create a unique key for any A<->B comparison pair
     const key = [item.student1, item.student2].sort().join("-");
     if (!uniqueComparisonsMap.has(key)) {
@@ -51,10 +113,10 @@ export default function TestResult_fe_be() {
     }
   });
   
-  const uniqueComparisons = Array.from(uniqueComparisonsMap.values());
+  const uniqueComparisons = Array.from(uniqueComparisonsMap.values()) as any[];
 
   const averageSimilarity = uniqueComparisons.length > 0
-    ? uniqueComparisons.reduce((acc, curr) => acc + curr.avg_similarity, 0) / uniqueComparisons.length
+    ? uniqueComparisons.reduce((acc: any, curr: any) => acc + curr.avg_similarity, 0) / uniqueComparisons.length
     : 0;
   
   let avgColorClass = "bg-[var(--color-success01)]";
@@ -100,7 +162,7 @@ export default function TestResult_fe_be() {
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0}}>
           <iframe 
-            src="/log.html" 
+            src={logHtmlUrl} 
             title="Robot Framework Log"
             style={{ width: '100%', height: '500px', border: 'none', display: 'block' }} 
           />
@@ -211,7 +273,7 @@ export default function TestResult_fe_be() {
                     <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.name}</td>
                     <td className="py-3 px-6 flex justify-end">
                       <div className={`${colorClass} text-white font-bold px-3 py-1 rounded w-16 text-center text-[14px]`}>
-                        {Math.round(item.score)}%
+                        {Number(item.score).toFixed(2)}%
                       </div>
                     </td>
                   </tr>

@@ -1,12 +1,54 @@
 "use client";
 
-import { useState } from "react";
-import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, Box, Typography, CircularProgress } from "@mui/material";
 import Link from "next/link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import cyberScanData from "./cyberscan.json";
 
 export default function TestResult_full() {
+  const [cyberScanData, setCyberScanData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Mock fetching data from backend
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setIsLoading(true);
+        // FIXME: Replace this setTimeout with your actual backend API call 
+        // const response = await fetch('/api/test-results-full');
+        // const data = await response.json();
+        
+        // Simulating network delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        // Simulating the JSON response from your API
+        setCyberScanData({
+          project: "student-webapp",
+          file: "Dockerfile",
+          baseImage: "node:16-alpine",
+          scanTime: "2025-12-03T22:15:00Z",
+          ok: false,
+          summary: { totalIssues: 1 },
+        });
+
+      } catch (error) {
+        console.error("Error fetching test results:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, []);
+
+  if (isLoading || !cyberScanData) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '50vh', gap: 2 }}>
+        <CircularProgress sx={{ color: 'var(--color-primary03)' }} />
+        <Typography style={{ color: "var(--color-neutral05)" }}>Loading test results...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
