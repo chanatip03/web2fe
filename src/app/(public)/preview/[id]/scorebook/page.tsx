@@ -33,6 +33,8 @@ export default function ScorebookPage() {
     }
   ];
 
+
+
   const { control, handleSubmit, formState: { isValid } } = useForm<FormData>({
     resolver: zodResolver(Schema),
     defaultValues: {
@@ -42,24 +44,42 @@ export default function ScorebookPage() {
     mode: "onChange",
   });
 
-  const onSubmitForm = (data: FormData) => {
-    console.log("Form submitted:", data);
-    // TODO: implement backend submit here
+  const onSubmitForm = async (data: FormData) => {
+    try {
+      console.log("Submitting Score");
+      console.log("Payload:", {
+        studentIds: students.map(s => s.id),
+        score: Number(data.score),
+        feedback: data.feedback,
+      });
+
+      // TODO: Replace with your actual backend fetch call here:
+      // const response = await fetch('/api/score/submit', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ ...your data ... })
+      // });
+      
+    } catch (error) {
+      console.error("Failed to submit:", error);
+    }
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="p-3 flex flex-col gap-6">
       {/* Breadcrumb */}
-        <Breadcrumbs aria-label="breadcrumb" separator="/">
-            <Link href="/classroom/listclassroom">Home</Link>
-            <Link href="/classroom/listclassroom">Web programming</Link>
-            <Link href="/assignment">Assignment</Link>
-            <span >Final Project</span>
-            <span >G. Zhì Shèng Háo</span>
-            <span className="text-black">Scorebook and Feedback</span>
-        </Breadcrumbs>
+        <div className="flex flex-col items-start justify-start gap-2 mb-4">
+            <Breadcrumbs aria-label="breadcrumb" separator="/">
+                <Link href="/classroom/listclassroom">Home</Link>
+                <Link href="/classroom/listclassroom">Web programming</Link>
+                <Link href="/assignment">Assignment</Link>
+                <span >Final Project</span>
+                <span >G. Zhì Shèng Háo</span>
+                <span className="text-black">Scorebook and Feedback</span>
+            </Breadcrumbs>
+        </div>
 
-      <h1 className="mb-3 my-6">Scorebook and Feedback</h1>
+      <h1 className="mb-3">Scorebook and Feedback</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
         {/* Left Column: Student Info */}
@@ -70,7 +90,7 @@ export default function ScorebookPage() {
               borderRadius: "8px",
               overflow: "hidden",
               backgroundColor: "var(--color-neutral01)",
-              boxShadow: "0 5px 10px 5px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
             }}
           >
             <Box
@@ -90,7 +110,7 @@ export default function ScorebookPage() {
                 p: 2,
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
+                gap: 1,
               }}
             >
               {students.map((student) => (
