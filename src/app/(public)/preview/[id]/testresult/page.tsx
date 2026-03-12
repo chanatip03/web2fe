@@ -1,11 +1,66 @@
 "use client";
 
-import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import { useState } from "react";
+import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, OutlinedInput, InputAdornment } from "@mui/material";
 import Link from "next/link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SearchIcon from "@mui/icons-material/Search";
 import cyberScanData from "./cyberscan.json";
+import plagiarismData from "./plagiarism.json";
 
 export default function TestResult() {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const currentProjectFile = "G1.js";
+  const studentMap: Record<string, { id: string; name: string }> = {
+    "Group3.js": { id: "66090500402", name: "นายปุ๊ ระเบิดขวด" },
+    "test.js": { id: "66090500403", name: "นายแดง ใบเล่" },
+  };
+
+  const projectComparisons = Array.from(
+    new Map(
+      plagiarismData.data
+        .filter((item) => item.student1 === currentProjectFile || item.student2 === currentProjectFile)
+        .map((item) => {
+          const otherFile = item.student1 === currentProjectFile ? item.student2 : item.student1;
+          const studentInfo = studentMap[otherFile] || { id: "Unknown", name: otherFile };
+          return [
+            studentInfo.id,
+            {
+              id: studentInfo.id,
+              name: studentInfo.name,
+              score: item.avg_similarity,
+            }
+          ];
+        })
+    ).values()
+  );
+
+  const filteredPlagiarism = projectComparisons.filter(
+    (item) =>
+      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const uniqueComparisonsMap = new Map();
+  plagiarismData.data.forEach((item) => {
+    // Sort filenames alphabetically to create a unique key for any A<->B comparison pair
+    const key = [item.student1, item.student2].sort().join("-");
+    if (!uniqueComparisonsMap.has(key)) {
+      uniqueComparisonsMap.set(key, item);
+    }
+  });
+  
+  const uniqueComparisons = Array.from(uniqueComparisonsMap.values());
+
+  const averageSimilarity = uniqueComparisons.length > 0
+    ? uniqueComparisons.reduce((acc, curr) => acc + curr.avg_similarity, 0) / uniqueComparisons.length
+    : 0;
+  
+  let avgColorClass = "bg-[var(--color-success01)]";
+  if (averageSimilarity >= 80) avgColorClass = "bg-[#da291c]"; // Red warning
+  else if (averageSimilarity >= 60) avgColorClass = "bg-[#ffb300]"; // Yellow/Orange warning
+
   return (
     <div className="flex flex-col gap-6">
       {/* Breadcrumb */}
@@ -81,6 +136,92 @@ export default function TestResult() {
           </pre>
         </AccordionDetails>
       </Accordion>
+
+      {/* Plagiarism Test Result Card */}
+      <Accordion 
+        defaultExpanded 
+        disableGutters 
+        elevation={0}
+        sx={{
+          border: '1px solid var(--color-neutral03)',
+          borderRadius: '8px !important',
+          '&:before': { display: 'none' },
+          overflow: 'hidden',
+          boxShadow: '3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)'
+        }}
+      >
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--color-black)' }} />}
+          sx={{
+            borderBottom: '1px solid var(--color-neutral03)',
+            px: 3,
+            py: 1,
+            '.MuiAccordionSummary-content': {
+               justifyContent: 'space-between',
+               alignItems: 'center',
+            }
+          }}
+        >
+          <div className="flex items-center gap-4">
+            <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Plagiarism Test</h4>
+            <div className={`flex items-center gap-2 ${avgColorClass} text-white px-3 py-1 rounded-[4px]`}>
+              <span className="text-[13px] font-medium opacity-90">Average Similar Score</span>
+              <span className="font-bold text-[15px]">{averageSimilarity.toFixed(2)}%</span>
+            </div>
+          </div>
+          <div className="mx-8" onClick={(e) => e.stopPropagation()}>
+            <OutlinedInput
+              size="small"
+              placeholder="Search Student"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              startAdornment={
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'var(--color-neutral04)' }} />
+                </InputAdornment>
+              }
+              sx={{ 
+                width: 200, 
+                backgroundColor: 'white',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'var(--color-neutral03)',
+                }
+              }}
+            />
+          </div>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-[#fafafa] border-b border-[var(--color-neutral03)]">
+                <th className="py-3 px-6 font-bold text-[15px] w-1/3" style={{ color: "var(--color-black)" }}>Student ID</th>
+                <th className="py-3 px-6 font-bold text-[15px] w-1/3" style={{ color: "var(--color-black)" }}>Student name</th>
+                <th className="py-3 px-6 font-bold text-[15px] w-1/3 text-right" style={{ color: "var(--color-black)" }}>Similar Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPlagiarism.map((item, index) => {
+                const isEven = index % 2 === 0;
+                let colorClass = "bg-[var(--color-success01)]";
+                if (item.score >= 80) colorClass = "bg-[#da291c]"; // Red warning
+                else if (item.score >= 60) colorClass = "bg-[#ffb300]"; // Yellow/Orange warning
+                return (
+                  <tr key={index} className={`border-b border-[var(--color-neutral03)] ${isEven ? 'bg-white' : 'bg-[#eef6ff]'}`}>
+                    <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.id}</td>
+                    <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.name}</td>
+                    <td className="py-3 px-6 flex justify-end">
+                      <div className={`${colorClass} text-white font-bold px-3 py-1 rounded w-16 text-center text-[14px]`}>
+                        {Math.round(item.score)}%
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </AccordionDetails>
+      </Accordion>
+
     </div>
   );
 }
