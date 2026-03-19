@@ -21,6 +21,7 @@ import { assignmentService } from "@/services/controller";
 import Cookies from "js-cookie";
 import { useParams } from "next/navigation";
 import { Assignment } from "@/domain/assignment";
+import TestCaseFormModal from "@/components/modal/testCaseFormModal";
 
 interface IProject {
   id: number;
@@ -62,6 +63,7 @@ export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
+  const [openTestcase, setOpenTestcase] = useState(false);
 
   const params = useParams();
   const id = params.id;
@@ -90,6 +92,8 @@ export default function TeacherAssignmentInfoPage() {
 
   if (loading || !assignments) return <div>Loading...</div>;
 
+  const hasTestcase = !!assignments.testcase_url;
+
   return (
     <div>
       <div className="mb-6">
@@ -103,10 +107,19 @@ export default function TeacherAssignmentInfoPage() {
 
       <div className="flex items-center justify-between mb-3">
         <h1>{assignments.title}</h1>
-        <Button variant="contained" startIcon={<AddIcon />}>
-          Create TestCase
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setOpenTestcase(true)}
+        >
+          {hasTestcase ? "Edit TestCase" : "Create TestCase"}
         </Button>
       </div>
+      <TestCaseFormModal
+        open={openTestcase}
+        onClose={() => setOpenTestcase(false)}
+        testcase={assignments.testcase_url}
+      />
 
       <div className="flex gap-2 mb-2">
         <h5>Due Date</h5>
