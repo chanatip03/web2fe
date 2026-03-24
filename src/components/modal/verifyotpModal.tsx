@@ -4,6 +4,7 @@ import { Dialog, DialogContent, Button, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { authService } from "@/services/controller";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ interface Props {
 
 const VerifyOtpModal = ({ open, email, onClose }: Props) => {
   const [otp, setOtp] = useState("");
+  const router = useRouter();
 
   const onSubmit = async () => {
     try {
@@ -24,6 +26,7 @@ const VerifyOtpModal = ({ open, email, onClose }: Props) => {
 
       console.log(res);
       onClose();
+      router.push("/auth");
     } catch (err) {
       console.error(err);
     }

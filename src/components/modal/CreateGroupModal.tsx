@@ -1,66 +1,129 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { mockStudents, Student, Group, mockCurrentStudent } from "../mockGroup";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import { useState, useEffect } from "react";
+import { groupService, authService } from "@/services/controller";
+import { Group } from "@/domain/group";
+import { IStudent } from "@/domain/student";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onSave: (group: Group) => void;
+  assignmentId: number;
+  classroomId: number;
+  initialGroup?: Group | null;
 }
 
 interface FormValues {
   groupName: string;
 }
 
-export default function CreateGroupModal({ open, onClose, onSave }: Props) {
-  const { control, handleSubmit, reset } = useForm<FormValues>({
+export default function CreateGroupModal({ open, onClose, onSave, assignmentId, classroomId, initialGroup }: Props) {
+  const { control, handleSubmit, reset, setValue } = useForm<FormValues>({
     defaultValues: {
       groupName: "",
     },
     mode: "onSubmit",
   });
 
-  const [members, setMembers] = useState<Student[]>([]);
+  const [members, setMembers] = useState<IStudent[]>([]);
+  const [availableStudents, setAvailableStudents] = useState<IStudent[]>([]);
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStudentId, setCurrentStudentId] = useState<number | null>(null);
 
   useEffect(() => {
     if (open) {
-      setMembers((prev) => {
-        if (prev.find((m) => m.id === mockCurrentStudent.id)) return prev;
-        return [mockCurrentStudent, ...prev];
-      });
-    }
-  }, [open]);
+      if (initialGroup) {
+        setValue("groupName", initialGroup.name);
+        setMembers(initialGroup.members.map((m) => m.student));
+      } else {
+        setValue("groupName", "");
+        setMembers([]);
+      }
 
-  const toggleMember = (s: Student) => {
+      const fetchData = async () => {
+        try {
+          const [authData, students] = await Promise.all([
+             authService.me(),
+             groupService.getAvailableMembers(assignmentId, classroomId)
+          ]);
+
+          setAvailableStudents(students);
+          
+          let myId: number | null = null;
+          if (authData.student) {
+            myId = authData.student.id;
+            setCurrentStudentId(myId);
+          }
+
+          if (!initialGroup && myId) {
+             const me = students.find(s => s.id === myId);
+             if (me) {
+                 setMembers([me]);
+             }
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      };
+
+      fetchData();
+    } else {
+      reset();
+      setMembers([]);
+      setSearch("");
+      setCurrentStudentId(null);
+    }
+  }, [open, assignmentId, initialGroup, setValue, reset]);
+
+  const toggleMember = (s: IStudent) => {
     if (members.find((m) => m.id === s.id))
       setMembers(members.filter((m) => m.id !== s.id));
     else setMembers([...members, s]);
   };
 
-  const handleSave = (data: FormValues) => {
-    onSave({
-      id: Date.now(),
-      name: data.groupName,
-      projectId: 1,
-      members: members.map((m, i) => ({
-        id: i,
-        student: m,
-      })),
-    });
+  const handleSave = async (data: FormValues) => {
+    setIsLoading(true);
+    try {
+      let savedGroup: Group;
+      if (initialGroup) {
+        const initialMemberIds = initialGroup.members.map((m) => m.student.id);
+        const currentMemberIds = members.map((m) => m.id);
 
-    reset();
-    setMembers([]);
-    onClose();
+        const new_member_ids = currentMemberIds.filter((id) => !initialMemberIds.includes(id));
+        const remove_member_ids = initialMemberIds.filter((id) => !currentMemberIds.includes(id));
+
+        savedGroup = await groupService.updateGroup(initialGroup.id, {
+          name: data.groupName,
+          new_member_ids,
+          remove_member_ids,
+        });
+      } else {
+        const member_ids = members.map((m) => m.id);
+        savedGroup = await groupService.createGroup({
+          name: data.groupName,
+          assignment_id: assignmentId,
+          member_ids,
+        });
+      }
+      onSave(savedGroup);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save group");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!open) return null;
 
-  const filteredStudents = mockStudents.filter((s) =>
-    `${s.user.firstName} ${s.user.lastName}`
+  const filteredStudents = availableStudents.filter((s) =>
+    s.id !== currentStudentId &&
+    `${s.user.first_name} ${s.user.last_name}`
       .toLowerCase()
       .includes(search.toLowerCase()),
   );
@@ -111,14 +174,14 @@ export default function CreateGroupModal({ open, onClose, onSave }: Props) {
                     />
 
                     <span className="text-sm whitespace-nowrap">
-                      {m.user.firstName} {m.user.lastName}
+                      {m.user.first_name} {m.user.last_name}
                     </span>
 
                     <button
                       onClick={() => toggleMember(m)}
-                      disabled={m.id === mockCurrentStudent.id}
+                      disabled={m.id === currentStudentId}
                       className={`ml-1 ${
-                        m.id === mockCurrentStudent.id
+                        m.id === currentStudentId
                           ? "text-neutral03 cursor-not-allowed"
                           : "text-neutral05 hover:text-red-500"
                       }`}
@@ -159,7 +222,7 @@ export default function CreateGroupModal({ open, onClose, onSave }: Props) {
                       />
 
                       <span className="text-sm">
-                        {s.user.firstName} {s.user.lastName}
+                        {s.user.first_name} {s.user.last_name}
                       </span>
                     </div>
                   );
@@ -172,9 +235,12 @@ export default function CreateGroupModal({ open, onClose, onSave }: Props) {
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={handleSubmit(handleSave)}
-              className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-xl hover:opacity-90"
+              disabled={isLoading}
+              className={`px-6 py-2 rounded-lg shadow-xl text-white ${
+                isLoading ? "bg-neutral04 cursor-not-allowed" : "bg-primary03 hover:opacity-90"
+              }`}
             >
-              Save
+              {isLoading ? "Saving..." : "Save"}
             </button>
           </div>
         </div>

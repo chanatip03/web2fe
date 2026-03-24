@@ -28,6 +28,6 @@ export interface UpdateClassRoomRequest {
 
 export interface IClassroomMember {
   id: number;
-  classroom: Classroom;
-  student: IStudent[];
+  classroom_id: number;
+  student: IStudent;
 }

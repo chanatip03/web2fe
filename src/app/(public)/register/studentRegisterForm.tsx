@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useState } from "react";
 import { authService } from "@/services/controller";
@@ -30,8 +29,6 @@ const Schema = z
 type FormData = z.infer<typeof Schema>;
 
 export default function StudentRegisterForm() {
-  const router = useRouter();
-
   const [openVerifyModal, setOpenVerifyModal] = useState(false);
   const [email, setEmail] = useState("");
 

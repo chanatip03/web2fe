@@ -1,4 +1,4 @@
-import { Group } from "./mockGroup";
+import { Group } from "@/domain/group";
 import GroupsIcon from "@mui/icons-material/Groups";
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 
@@ -11,7 +11,7 @@ export default function GroupCard({ group, onEdit }: Props) {
   return (
     <div className="bg-white rounded-xl shadow-xl border border-neutral03 overflow-hidden">
       <div className="bg-primary03 text-white px-6 py-3 font-semibold flex justify-between">
-        <span><GroupsIcon className="mr-1"/> Group</span>
+        <span><GroupsIcon className="mr-1" /> Group</span>
       </div>
 
       <div className="p-4">

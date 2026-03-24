@@ -1,12 +1,12 @@
 "use client";
 
-import Cookies from "js-cookie";
 import TeacherAssignmentInfoPage from "./teacher.assignmentInfo.page";
 import StudentAssignmentInfoPage from "./student.assignment.info.page";
+import { useAuth } from "@/app/authcontext";
 
 export default function Page() {
-  const role = Cookies.get("role");
-  return role === "teacher" ? (
+  const { user } = useAuth();
+  return user?.roles[0].name === "teacher" ? (
     <TeacherAssignmentInfoPage />
   ) : (
     <StudentAssignmentInfoPage />

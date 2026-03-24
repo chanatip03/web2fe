@@ -4,20 +4,22 @@ import { Navbar } from "@/components/navbar";
 import { SidebarProfessor } from "@/components/sidebarProfessor";
 import { SidebarStudent } from "@/components/sidebarStudent";
 import Cookies from "js-cookie";
+import { useAuth } from "@/app/authcontext";
 
 interface Props {
   children: React.ReactNode;
 }
 
 export default function ClassroomLayout({ children }: Readonly<Props>) {
-  const role = Cookies.get("role");
+  const { user } = useAuth();
+
   const classroomName = Cookies.get("classroomName");
 
   return (
     <>
       <Navbar />
       <div className="flex bg-neutral01 min-h-screen">
-        {role === "teacher" ? (
+        {user?.roles[0].name === "teacher" ? (
           <SidebarProfessor classroomName={classroomName} />
         ) : (
           <SidebarStudent classroomName={classroomName} />

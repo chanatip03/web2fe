@@ -12,6 +12,7 @@ import { classroomService } from "@/services/controller";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Cookies from "js-cookie";
 
 const Schema = z.object({
   name: z.string().min(1, "Please enter a classroom name"),
@@ -72,7 +73,6 @@ export default function ClassroomSetting() {
         const classroom = await classroomService.getclassroomById(Number(id));
 
         setClassroom(classroom);
-
         reset(mapClassroomToForm(classroom));
       } catch (error) {
         console.log(error);
@@ -103,6 +103,7 @@ export default function ClassroomSetting() {
 
       if (!res) throw new Error("Failed to update classroom");
 
+      Cookies.set("classroomName", String(payload.name));
       router.refresh();
     } catch (error) {
       console.error("Error updating classroom:", error);

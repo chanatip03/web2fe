@@ -1,80 +1,53 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import StudentLandingPage from "./studentLandingPage";
-import { IClassroomMember } from "@/domain/classroom";
-
-
-const mockClassroomMember: IClassroomMember = 
-
-    {
-        id: 1,
-        classroom: {
-            id: 1,
-            name: "Web Programming II",
-            description: "This is a web programming class.",
-            semester: "2024-1",
-            code: "XCYGI22",
-            excelLink: "https://example.com/excel",
-            learningOutcome: "Learn how to build web applications.",
-        },
-        student: [
-            {
-
-                id: 1,
-                studentId: "66090500401",
-                user: {
-                    id: 1,
-                    firstName: "Benjamin",
-                    lastName: "Deemak",
-                    email: "Benjamin.Deem@gmail.com",
-                    imageUrl: "https://i.pravatar.cc/100?img=1",
-                }
-            },
-            {
-                id: 2,
-                studentId: "66090500402",
-                user: {
-                    id: 2,
-                    firstName: "Jennie",
-                    lastName: "Ree",
-                    email: "Jennie.Ree@gmail.com",
-                    imageUrl: "https://i.pravatar.cc/100?img=2",
-                }
-            },
-            {
-                id: 3,
-                studentId: "66090500403",
-                user: {
-                    id: 3,
-                    firstName: "Somchai",
-                    lastName: "Jaidee",
-                    email: "Somchai.Jaid@gmail.com",
-                    imageUrl: "https://i.pravatar.cc/100?img=3",
-                }
-            },
-            {
-                id: 4,
-                studentId: "66090500404",
-                user: {
-                    id: 4,
-                    firstName: "Micha",
-                    lastName: "Thomson",
-                    email: "Micha.Thom@gmail.com",
-                    imageUrl: "https://i.pravatar.cc/100?img=4",
-                }
-            },
-            {
-                id: 5,
-                studentId: "66090500405",
-                user: {
-                    id: 5,
-                    firstName: "Tula",
-                    lastName: "Patanaboonmee",
-                    email: "Tula.pata@gmail.com",
-                    imageUrl: "",
-                }
-            },]
-    };
-
+import { IClassroomMember, Classroom } from "@/domain/classroom";
+import { classroomService, classroomMemberService } from "@/services/controller";
 
 export default function Page() {
-    return <StudentLandingPage classroomMember={mockClassroomMember} />;
+    const params = useParams();
+    const classroomId = Number(params.id);
+
+    const [classroom, setClassroom] = useState<Classroom | null>(null);
+    const [members, setMembers] = useState<IClassroomMember[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [cData, mData] = await Promise.all([
+                classroomService.getclassroomById(classroomId),
+                classroomMemberService.getMembers(classroomId)
+            ]);
+            setClassroom(cData);
+            setMembers(mData || []);
+        } catch (err) {
+            console.error("Failed to load members page data:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (classroomId) {
+            loadData();
+        }
+    }, [classroomId]);
+
+    const handleDeleteMember = async (studentId: number) => {
+        if (!confirm("Are you sure you want to remove this student?")) return;
+        try {
+            await classroomMemberService.deleteMember(classroomId, studentId);
+            setMembers(prev => prev.filter(m => m.student.id !== studentId));
+        } catch (err) {
+            console.error(err);
+            alert("Failed to delete member");
+        }
+    };
+
+    if (loading || !classroom) return <div>Loading...</div>;
+
+    return <StudentLandingPage classroom={classroom} members={members} onDeleteMember={handleDeleteMember} />;
 }

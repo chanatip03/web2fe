@@ -14,10 +14,11 @@ import PersonIcon from "@mui/icons-material/Person";
 import { IClassroomMember } from "@/domain/classroom";
 
 interface StudentTableComponentsProps {
-     classroomMember: IClassroomMember;
+     members: IClassroomMember[];
+     onDelete?: (studentId: number) => void;
 }
 
-const StudentTable = ({ classroomMember }: StudentTableComponentsProps) => {
+const StudentTable = ({ members, onDelete }: StudentTableComponentsProps) => {
     return (
         <TableContainer component={Paper} variant="outlined">
             <Table
@@ -44,7 +45,9 @@ const StudentTable = ({ classroomMember }: StudentTableComponentsProps) => {
                 </TableHead>
 
                 <TableBody>
-                    {classroomMember.student.map((student, index) => (
+                    {members.map((member, index) => {
+                        const student = member.student;
+                        return (
                         <TableRow
                             key={student.id}
                             sx={{
@@ -56,7 +59,7 @@ const StudentTable = ({ classroomMember }: StudentTableComponentsProps) => {
                                 {student.user?.imageUrl ? (
                                     <Avatar
                                         src={student.user.imageUrl}
-                                        alt={`${student.user.firstName} ${student.user.lastName}`}
+                                        alt={`${student.user.first_name} ${student.user.last_name}`}
                                         sx={{ width: 46, height: 46 , mx: "auto",}}
                                     />
                                 ) : (
@@ -73,21 +76,22 @@ const StudentTable = ({ classroomMember }: StudentTableComponentsProps) => {
                                 )}
                             </TableCell>
 
-                            <TableCell><h5 className="text-[18px]">{student.studentId}</h5></TableCell>
+                            <TableCell><h5 className="text-[18px]">{student.student_id}</h5></TableCell>
 
                             <TableCell>
-                                <p className="p2">{student.user.firstName} {student.user.lastName}</p>
+                                <p className="p2">{student.user.first_name} {student.user.last_name}</p>
                             </TableCell>
 
                             <TableCell><p className="p2">{student.user.email}</p></TableCell>
 
                             <TableCell align="right">
-                                <IconButton color="error">
+                                <IconButton color="error" onClick={() => onDelete?.(student.id)}>
                                     <DeleteIcon />
                                 </IconButton>
                             </TableCell>
                         </TableRow>
-                    ))}
+                        );
+                    })}
                 </TableBody>
             </Table>
         </TableContainer>

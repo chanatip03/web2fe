@@ -2,11 +2,11 @@
 
 import StudentAssignmentListPage from "./studentassignmentlist";
 import TeacherAssignmentListPage from "./teacherassignmentlist";
-import Cookies from "js-cookie";
+import { useAuth } from "@/app/authcontext";
 
 export default function Page() {
-  const role = Cookies.get("role");
-  return role === "teacher" ? (
+  const { user } = useAuth();
+  return user?.roles[0].name === "teacher" ? (
     <TeacherAssignmentListPage />
   ) : (
     <StudentAssignmentListPage />

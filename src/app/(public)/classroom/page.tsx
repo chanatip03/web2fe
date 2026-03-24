@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import StudentDiscordTip from "./StudentDiscordTip";
 import Navbar from "@/components/navbar";
 import { Classroom, CreateClassRoomRequest } from "@/domain/classroom";
-import { authService, classroomService } from "@/services/controller";
+import { classroomService } from "@/services/controller";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CreateClassroomModal from "@/components/modal/createClassroomModal";
 import JoinClassroomModal from "@/components/modal/joinClassroommodal";
+import { useAuth } from "@/app/authcontext";
 import Cookies from "js-cookie";
 
 export default function ListClassroom() {
@@ -21,31 +22,30 @@ export default function ListClassroom() {
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [semesterOptions, setSemesterOptions] = useState<string[]>([]);
   const router = useRouter();
+  const { user } = useAuth();
+
+  async function loadData() {
+    try {
+      const classrooms = await classroomService.getclassrooms();
+
+      let uniqueSemesters = ["all"];
+
+      if (Array.isArray(classrooms)) {
+        uniqueSemesters = [
+          "all",
+          ...Array.from(new Set(classrooms.map((c) => c.semester))),
+        ];
+      }
+      setClassrooms(Array.isArray(classrooms) ? classrooms : []);
+      setSemesterOptions(uniqueSemesters);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const me = await authService.me();
-        const classrooms = await classroomService.getclassrooms();
-
-        let uniqueSemesters = ["all"];
-
-        if (Array.isArray(classrooms)) {
-          uniqueSemesters = [
-            "all",
-            ...Array.from(new Set(classrooms.map((c) => c.semester))),
-          ];
-        }
-        Cookies.set("role", me.role, { expires: 7 });
-        setClassrooms(Array.isArray(classrooms) ? classrooms : []);
-        setSemesterOptions(uniqueSemesters);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadData();
   }, []);
 
@@ -71,24 +71,6 @@ export default function ListClassroom() {
       ? classrooms
       : classrooms.filter((c) => c.semester === selectedSemester);
 
-  const onSubmitJoinClassroom = async (classroomCode: string) => {
-    try {
-      // TODO: implement join classroom
-      // const res = await classroomService.joinClassroom(classroomCode);
-
-      // if (!res) {
-      //   throw new Error("Failed to join classroom");
-      // }
-
-      setOpenJoin(false);
-      router.refresh();
-    } catch (error) {
-      console.error("Error joining classroom:", error);
-    }
-  };
-
-  const role = Cookies.get("role");
-
   return (
     <>
       <Navbar />
@@ -97,10 +79,12 @@ export default function ListClassroom() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
           <h1 className="text-212121">All Classroom</h1>
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            {role === "student" ? (
-              <Button variant="contained" 
-              startIcon={<AddIcon />}
-              onClick={() => setOpenJoin(true)}>
+            {user?.roles[0].name === "student" ? (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenJoin(true)}
+              >
                 Join Classroom
               </Button>
             ) : (
@@ -188,19 +172,23 @@ export default function ListClassroom() {
         {openCreate && (
           <CreateClassroomModal
             open={openCreate}
-            onClose={() => setOpenCreate(false)}
+            onClose={() => {
+              loadData();
+              setOpenCreate(false);
+            }}
             onSubmit={onSubmitCreateClassroom}
           />
         )}
-        {role === "student" && <StudentDiscordTip />}
         {openJoin && (
           <JoinClassroomModal
             open={openJoin}
-            onClose={() => setOpenJoin(false)}
-            onSuccess={() => router.refresh()}
+            onClose={() => {
+              loadData();
+              setOpenJoin(false);
+            }}
           />
         )}
-
+        {user?.roles[0].name === "student" && <StudentDiscordTip />}
       </div>
     </>
   );

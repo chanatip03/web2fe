@@ -108,14 +108,16 @@ const TeacherAssignmentListPage = () => {
 
       <div className="flex flex-col gap-3">
         {assignments.map((item) => (
-          <Link
+          <div
             key={item.id}
-            href={`/classroom/${id}/assignment/${item.id}`}
             className="grid grid-cols-12 items-center w-full shadow-sm border border-neutral02 rounded-lg px-6 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary03"
           >
             {/* Name */}
+
             <div className="col-span-5 flex flex-col gap-2">
-              <h5 className="font-semibold">{item.title}</h5>
+              <Link href={`/classroom/${id}/assignment/${item.id}`}>
+                <h5 className="font-semibold">{item.title}</h5>{" "}
+              </Link>
 
               <div className="flex gap-2 flex-wrap">
                 <Chip
@@ -203,7 +205,7 @@ const TeacherAssignmentListPage = () => {
                 <DeleteIcon fontSize="small" />
               </IconButton>
             </div>
-          </Link>
+          </div>
         ))}
       </div>
 

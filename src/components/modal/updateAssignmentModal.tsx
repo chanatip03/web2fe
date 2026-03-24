@@ -61,6 +61,8 @@ const Schema = z.object({
   attachment: z.array(z.instanceof(File)).optional(),
 });
 
+// TODO sync if project type id == 3 language shoude null
+
 type FormData = z.infer<typeof Schema>;
 
 const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
@@ -136,9 +138,12 @@ const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
         project_type_id: data.projectTypeId,
         language_id: data.languageId ?? undefined,
         classroom_id: Number(id),
-
         delete_attachment_ids: deletedAttachmentIds,
       };
+
+      if (data.projectTypeId === 3) {
+        delete data.languageId;
+      }
 
       await assignmentService.updateAssignment(
         payload,

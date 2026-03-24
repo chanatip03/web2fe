@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@mui/material";
 import StudentTable from "./studentTable";
 import { RHFTextField } from "@/components/form/RHFTextField";
-import { IClassroomMember } from "@/domain/classroom";
+import { IClassroomMember, Classroom } from "@/domain/classroom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,9 @@ import SearchIcon from "@mui/icons-material/Search";
 import CloseIcon from "@mui/icons-material/Close";
 
 interface StudentLandingPageProps {
-  classroomMember: IClassroomMember;
+  classroom: Classroom;
+  members: IClassroomMember[];
+  onDeleteMember?: (studentId: number) => void;
 }
 
 const searchSchema = z.object({
@@ -21,7 +23,7 @@ const searchSchema = z.object({
 
 type SearchForm = z.infer<typeof searchSchema>;
 
-const StudentLandingPage = ({ classroomMember }: StudentLandingPageProps) => {
+const StudentLandingPage = ({ classroom, members, onDeleteMember }: StudentLandingPageProps) => {
   const { control, reset, watch } = useForm<SearchForm>({
     resolver: zodResolver(searchSchema),
     defaultValues: { search: "" },
@@ -31,14 +33,20 @@ const StudentLandingPage = ({ classroomMember }: StudentLandingPageProps) => {
     reset({ search: "" });
   };
 
-  const watchedSearch = watch("search");
+  const watchedSearch = watch("search") || "";
+
+  const filteredMembers = members.filter(m => 
+    `${m.student.user.first_name} ${m.student.user.last_name} ${m.student.student_id}`
+      .toLowerCase()
+      .includes(watchedSearch.toLowerCase())
+  );
 
   return (
     <div>
       <div className="flex flex-col items-start justify-start gap-2 mb-6">
         <Breadcrumbs aria-label="breadcrumb" separator="/">
           <Link href="/classroom/listclassroom">Home</Link>
-          <span>{classroomMember.classroom.name}</span>
+          <span>{classroom.name}</span>
           <span className="text-black">Student</span>
         </Breadcrumbs>
       </div>
@@ -48,7 +56,7 @@ const StudentLandingPage = ({ classroomMember }: StudentLandingPageProps) => {
           <p className="text-[18px]">
             Capacity{" "}
             <span className="text-primary03 font-bold mx-2">
-              {classroomMember.student.length}
+              {members.length}
             </span>{" "}
             people
           </p>
@@ -58,7 +66,7 @@ const StudentLandingPage = ({ classroomMember }: StudentLandingPageProps) => {
           <p className="text-[18px] font-semibold">
             Classroom code:{" "}
             <span className="font-bold text-h4 text-primary03 ml-2">
-              {classroomMember.classroom.code}
+              {classroom.code}
             </span>
           </p>
 
@@ -79,7 +87,7 @@ const StudentLandingPage = ({ classroomMember }: StudentLandingPageProps) => {
         </div>
       </div>
 
-      <StudentTable classroomMember={classroomMember} />
+      <StudentTable members={filteredMembers} onDelete={onDeleteMember} />
     </div>
   );
 };

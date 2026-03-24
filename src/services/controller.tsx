@@ -4,6 +4,10 @@ import { ClassroomService } from "./classroom/service";
 import { ClassroomRepository } from "./classroom/repository";
 import { AssignmentService } from "./assignment/service";
 import { AssignmentRepository } from "./assignment/repository";
+import { GroupService } from "./group/service";
+import { GroupRepository } from "./group/repository";
+import { ClassroomMemberService } from "./classroommember/service";
+import { ClassroomMemberRepository } from "./classroommember/repository";
 
 const authRepository = new AuthRepository();
 export const authService = new AuthService(authRepository);
@@ -11,3 +15,7 @@ const classroomRepository = new ClassroomRepository();
 export const classroomService = new ClassroomService(classroomRepository);
 const assignmentRepository = new AssignmentRepository();
 export const assignmentService = new AssignmentService(assignmentRepository);
+const groupRepository = new GroupRepository();
+export const groupService = new GroupService(groupRepository);
+const classroomMemberRepository = new ClassroomMemberRepository();
+export const classroomMemberService = new ClassroomMemberService(classroomMemberRepository);

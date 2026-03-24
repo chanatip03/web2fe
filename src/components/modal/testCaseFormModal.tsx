@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, IconButton, Button } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
@@ -12,6 +12,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   testcase?: string;
+  assignmentId: string;
+  onSaveSuccess?: () => void;
 }
 
 const Schema = z.object({
@@ -21,7 +23,7 @@ const Schema = z.object({
 
 type FormData = z.infer<typeof Schema>;
 
-const TestCaseFormModal = ({ open, onClose, testcase }: Props) => {
+const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSuccess }: Props) => {
   const [loading, setLoading] = useState(false);
   const isEditMode = !!testcase;
   const [canEdit, setCanEdit] = useState(isEditMode);
@@ -38,14 +40,34 @@ const TestCaseFormModal = ({ open, onClose, testcase }: Props) => {
     mode: "onChange",
     defaultValues: {
       prompt: "",
-      testcase: testcase || "",
+      testcase: "",
     },
   });
+
+  useEffect(() => {
+    if (open && testcase) {
+      setLoading(true);
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/assignment/${assignmentId}/testcase`, {
+        credentials: "include"
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch testcase");
+          return res.text();
+        })
+        .then((text) => {
+          setValue("testcase", text, { shouldValidate: true });
+        })
+        .catch((err) => console.error("Failed to fetch testcase content:", err))
+        .finally(() => setLoading(false));
+    } else if (open && !testcase) {
+      setValue("testcase", "");
+    }
+  }, [open, testcase, setValue]);
 
   const handleClose = () => {
     reset({
       prompt: "",
-      testcase: testcase || "",
+      testcase: "",
     });
 
     setCanEdit(isEditMode);
@@ -59,25 +81,16 @@ const TestCaseFormModal = ({ open, onClose, testcase }: Props) => {
     try {
       setLoading(true);
 
-      const generated = `*** Settings ***
-      Library    SeleniumLibrary
-      Suite Setup    Open Calculator Browser
-      Suite Teardown    Close All Browsers 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/testcase/definitions/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail);
 
-      *** Test Cases **
-      # Basic arithmetic (1-10)
-      TC 001 Addition: 2 + 3 = 5
-      [Tags]    addition    basic
-      Clear And Open
-      Press Buttons    2 + 3 =
-      Display Should Be    5
-
-      TC 002 Subtraction: 7 - 4 = 3
-      [Tags]    subtraction    basic
-      Clear And Open
-      Press Buttons    7 - 4 = 3`; //mock
-
-      setValue("testcase", generated, {
+      setValue("testcase", data.suite_content, {
         shouldValidate: true,
       });
 
@@ -96,6 +109,22 @@ const TestCaseFormModal = ({ open, onClose, testcase }: Props) => {
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
+      
+      const formData = new globalThis.FormData();
+      formData.append("content", data.testcase);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/assignment/${assignmentId}/testcase`, {
+        method: "PUT",
+        body: formData,
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to save testcase");
+      }
+
+      onSaveSuccess?.();
       handleClose();
     } catch (err) {
       console.error(err);

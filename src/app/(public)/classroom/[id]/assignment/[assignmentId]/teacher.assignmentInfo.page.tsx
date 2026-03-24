@@ -119,6 +119,8 @@ export default function TeacherAssignmentInfoPage() {
         open={openTestcase}
         onClose={() => setOpenTestcase(false)}
         testcase={assignments.testcase_url}
+        assignmentId={assignMentId as string}
+        onSaveSuccess={() => window.location.reload()}
       />
 
       <div className="flex gap-2 mb-2">

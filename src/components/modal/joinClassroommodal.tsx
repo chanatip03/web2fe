@@ -1,21 +1,30 @@
 "use client";
 
-import { Dialog, DialogContent, DialogActions, Button, IconButton, TextField, Alert, CircularProgress } from "@mui/material";
+import {
+  Dialog,
+  DialogContent,
+  DialogActions,
+  Button,
+  IconButton,
+  TextField,
+  Alert,
+  CircularProgress,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useState, useEffect } from "react";
-import { classroomService } from "@/services/controller";
+import { classroomService, classroomMemberService } from "@/services/controller";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSuccess?: () => void; // refresh classroom list
+  onSuccess?: () => void;
 }
 
 export default function JoinClassroomModal({
   open,
   onClose,
   onSuccess,
-}: Props) {
+}: Readonly<Props>) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,15 +46,17 @@ export default function JoinClassroomModal({
       setLoading(true);
       setError("");
 
-      await classroomService.joinClassroom(code);
+      try {
+        await classroomMemberService.joinClassroom(code);
+      } catch (err: any) {
+        setError(err.message || "Something went wrong");
+        return;
+      }
 
       onSuccess?.();
       onClose();
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          "Cannot join classroom. Check your code."
-      );
+    } catch (error) {
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -78,11 +89,7 @@ export default function JoinClassroomModal({
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={onClose}>Cancel</Button>
 
-        <Button
-          variant="contained"
-          onClick={onSubmit}
-          disabled={loading}
-        >
+        <Button variant="contained" onClick={onSubmit} disabled={loading}>
           {loading ? <CircularProgress size={24} /> : "Join"}
         </Button>
       </DialogActions>

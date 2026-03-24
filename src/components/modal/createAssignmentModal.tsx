@@ -27,16 +27,22 @@ interface Props {
 }
 
 const mockProjectTypes: ProjectType[] = [
-  { id: 1, name: "Frontend" },
-  { id: 2, name: "Backend" },
-  { id: 3, name: "Fullstack" },
+  { id: 1, name: "FE" },
+  { id: 2, name: "BE" },
+  { id: 3, name: "Project" },
 ];
 
 const mockLanguages: Language[] = [
-  { id: 1, name: "JavaScript" },
-  { id: 2, name: "TypeScript" },
-  { id: 3, name: "Go" },
-  { id: 4, name: "Java" },
+  { id: 1, name: "Java" },
+  { id: 2, name: "Python" },
+  { id: 3, name: "C" },
+  { id: 4, name: "C++" },
+  { id: 5, name: "JavaScript" },
+  { id: 6, name: "TypeScript" },
+  { id: 7, name: "Go" },
+  { id: 8, name: "Kotlin" },
+  { id: 9, name: "Swift" },
+  { id: 10, name: "Rust" },
 ];
 
 const Schema = z.object({
@@ -115,6 +121,10 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
       setPendingData(data);
       setOpenConfirm(true);
       return;
+    }
+
+    if (data.projectTypeId === 3) {
+      delete data.languageId;
     }
 
     await handleCreate(data);

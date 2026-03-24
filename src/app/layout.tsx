@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import UniversalThemeProvider from "@/components/providers/mui/UniversalThemeProvider";
-import appIcon from "./WLogo.png"
+import appIcon from "./WLogo.png";
+import { AuthProvider } from "./authcontext";
 
 const notoThai = Noto_Sans_Thai({
   subsets: ["thai", "latin"],
@@ -23,8 +24,8 @@ export default function RootLayout({
   return (
     <html lang="th" className={notoThai.variable}>
       <body className="antialiased">
-          <UniversalThemeProvider>
-          {children}
+        <UniversalThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
         </UniversalThemeProvider>
       </body>
     </html>

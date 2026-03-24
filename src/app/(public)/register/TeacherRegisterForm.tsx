@@ -138,7 +138,12 @@ export default function TeacherRegisterForm() {
 
             <Button variant="outlined" component="label" size="small">
               <span>Choose File</span>
-              <input type="file" hidden onChange={handleFileChange} />
+              <input
+                type="file"
+                hidden
+                onChange={handleFileChange}
+                accept=".jpg,.jpeg,.png,.pdf"
+              />
             </Button>
 
             <span className="text-neutral04 truncate max-w-[200px]">
