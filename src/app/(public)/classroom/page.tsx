@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, MenuItem, Select } from "@mui/material";
+import { Button, MenuItem, Select, Snackbar, Alert} from "@mui/material";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import StudentDiscordTip from "./StudentDiscordTip";
@@ -23,6 +23,11 @@ export default function ListClassroom() {
   const [semesterOptions, setSemesterOptions] = useState<string[]>([]);
   const router = useRouter();
   const { user } = useAuth();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
   async function loadData() {
     try {
@@ -60,9 +65,23 @@ export default function ListClassroom() {
       }
       setOpenCreate(false);
 
+      setSnackbar({
+        open: true,
+        message: "Classroom created successfully.",
+        severity: "success",
+      });
+
       router.refresh();
     } catch (error) {
       console.error("Error creating classroom:", error);
+
+      setSnackbar({
+        open: true,
+        message: "Failed to create classroom. Please try again later.",
+        severity: "error",
+      });
+
+      throw error;
     }
   };
 
@@ -190,6 +209,18 @@ export default function ListClassroom() {
         )}
         {user?.roles[0].name === "student" && <StudentDiscordTip />}
       </div>
+       <Snackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          variant="standard"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
