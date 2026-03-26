@@ -1,5 +1,4 @@
 import { createTheme } from "@mui/material/styles";
-import { AuthProvider } from "@/context/AuthContext";
 
 export const Theme = createTheme({
     palette: {
@@ -303,9 +302,10 @@ export const Theme = createTheme({
         MuiSnackbar: {
             defaultProps: {
                 anchorOrigin: {
-                    vertical: "top",
+                    vertical: "bottom",
                     horizontal: "right",
                 },
+                autoHideDuration: 6000,
             },
 
             styleOverrides: {
