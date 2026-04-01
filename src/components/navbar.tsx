@@ -26,8 +26,13 @@ export const Navbar = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleClose();
+    try {
+      await authService.logout();
+    } catch (_) {
+      // ignore — cookie may already be invalid
+    }
     setUser(null);
     router.push("/auth");
   };
@@ -38,6 +43,8 @@ export const Navbar = () => {
         if (user) return;
 
         const me = await authService.me();
+
+        console.log(me);
         setUser(me);
       } catch (err) {
         console.error(err);

@@ -33,4 +33,8 @@ export class AuthService {
   async verifyOTP(data: {email: string; otp: string }){
     return this.authRepository.verifyOTP(data);
   }
+
+  async logout(): Promise<void> {
+    return this.authRepository.logout();
+  }
 }

@@ -2,76 +2,106 @@
 
 import { useRef, useState } from "react";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import DeleteIcon from '@mui/icons-material/Delete';
-import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
+import DeleteIcon from "@mui/icons-material/Delete";
+import FolderOpenOutlinedIcon from "@mui/icons-material/FolderOpenOutlined";
 import JSZip from "jszip";
 
 interface Props {
   isGroup: boolean;
   hasGroup?: boolean;
+  assignmentId: number;
+  groupId?: number;
   status: "editing" | "submitting" | "deploying" | "done";
   setStatus: (s: Props["status"]) => void;
+  onPipelineSuccess?: (data: any) => void;
+  onPipelineError?: (data: any) => void;
 }
 
-export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Props) {
+export default function SubmitPanel({
+  isGroup,
+  hasGroup,
+  assignmentId,
+  groupId,
+  status,
+  setStatus,
+  onPipelineSuccess,
+  onPipelineError,
+}: Readonly<Props>) {
   const [type, setType] = useState<"file" | "github">("github");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const canUpload = uploadedFiles.length === 0;
   const [envText, setEnvText] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
   const isLocked = status !== "editing";
   const rootFolders = Array.from(
     new Set(
-      uploadedFiles.map(f => {
+      uploadedFiles.map((f) => {
         const path = (f as any).webkitRelativePath;
         return path ? path.split("/")[0] : "uploaded-files";
-      })
-    )
+      }),
+    ),
   );
-  
+
   // ===== FILE FILTER =====
   const blacklist = [
     // JS
-    "node_modules", ".next", ".nuxt", "dist", "build", "out", "coverage",
-    ".cache", ".parcel-cache", ".turbo", ".vercel",
+    "node_modules",
+    ".next",
+    ".nuxt",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    ".cache",
+    ".parcel-cache",
+    ".turbo",
+    ".vercel",
     // Java
-    "target", ".gradle", "build",
+    "target",
+    ".gradle",
+    "build",
     // Python
-    "venv", "__pycache__", ".mypy_cache", ".pytest_cache",
+    "venv",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
     // PHP
-    "vendor", "storage/logs", "bootstrap/cache",
+    "vendor",
+    "storage/logs",
+    "bootstrap/cache",
     // Go/Rust
-    "pkg", "bin",
+    "pkg",
+    "bin",
     // IDE
-    ".git", ".vscode", ".idea",
+    ".git",
+    ".vscode",
+    ".idea",
     // OS
-    ".DS_Store", "Thumbs.db",
+    ".DS_Store",
+    "Thumbs.db",
   ];
 
-  const forbiddenExtensions = [
-    ".env", ".pem", ".key", ".log",
-  ];
+  const forbiddenExtensions = [".env", ".pem", ".key", ".log"];
 
   function shouldSkip(path: string) {
     const lower = path.toLowerCase();
 
     // skip dependency folders ONLY if file is inside them
-    if (blacklist.some(folder => lower.includes(`/${folder}/`)))
-      return true;
+    if (blacklist.some((folder) => lower.includes(`/${folder}/`))) return true;
 
     // skip extension
-    if (forbiddenExtensions.some(ext => lower.endsWith(ext)))
-      return true;
+    if (forbiddenExtensions.some((ext) => lower.endsWith(ext))) return true;
 
     return false;
   }
 
   const removeFolder = (folderName: string) => {
-    setUploadedFiles(prev =>
-      prev.filter(file => {
+    setUploadedFiles((prev) =>
+      prev.filter((file) => {
         const path = (file as any).webkitRelativePath || file.name;
         return !path.startsWith(folderName + "/");
-      })
+      }),
     );
   };
 
@@ -79,8 +109,7 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
     const kept: File[] = [];
 
     for (const file of Array.from(files)) {
-      const path =
-        (file as any).webkitRelativePath || file.name;
+      const path = file.webkitRelativePath || file.name;
 
       if (!shouldSkip(path)) {
         kept.push(file);
@@ -111,27 +140,24 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
     }
 
     const filtered = filterFiles(files);
-    setUploadedFiles(prev => [...prev, ...filtered]);
+    setUploadedFiles((prev) => [...prev, ...filtered]);
 
     console.log("Uploaded filtered files:", filtered);
 
     for (const f of Array.from(files)) {
       console.log("PATH:", (f as any).webkitRelativePath);
     }
-
-    // TODO: ส่ง filtered ไป backend
   };
 
   const removeFile = (index: number) => {
-      setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-    };
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
-    async function zipFiles(files: File[]) {
+  async function zipFiles(files: File[]) {
     const zip = new JSZip();
 
     for (const file of files) {
-      const path =
-        (file as any).webkitRelativePath || file.name;
+      const path = (file as any).webkitRelativePath || file.name;
 
       zip.file(path, file);
     }
@@ -148,41 +174,104 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
 
-    if (uploadedFiles.length === 0) {
+    if (type === "file" && uploadedFiles.length === 0) {
       console.log("No files uploaded");
+      return;
+    }
+    if (type === "github" && githubUrl.trim() === "") {
+      console.log("No github url");
       return;
     }
 
     setStatus("submitting");
 
-    const zipBlob = await zipFiles(uploadedFiles);
-    await debugZipPaths(zipBlob);
     const form = new FormData();
 
-    //แก้ไข key "file" ตาม API จริง และ ชื่อไฟล์ "submission.zip" ตามทีที่จะเก็บใน backend
-    form.append("file", zipBlob, "submission.zip");
+    if (type === "file") {
+      const zipBlob = await zipFiles(uploadedFiles);
+      await debugZipPaths(zipBlob);
+      form.append("file", zipBlob, "submission.zip");
+    } else {
+      form.append("repo_url", githubUrl);
+    }
 
-      // ส่ง env แยก
     if (envText.trim() !== "") {
       form.append("env", envText);
     }
+    if (groupId) {
+      form.append("group_id", groupId.toString());
+    }
 
-    console.log("Submitting files:", uploadedFiles);
-    console.log("Env text:", envText);
-    //แก้ไข URL ตาม API จริง
-    await fetch("/api/submit", {
-      method: "POST",
-      body: form,
-    });
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/submission/${assignmentId}`,
+        {
+          method: "POST",
+          body: form,
+          credentials: "include",
+        },
+      );
+      if (!res.ok) {
+        const t = await res.text();
+        console.error("Submission HTTP Error:", t);
+        throw new Error(`Failed to submit: ${t}`);
+      }
+      const data = await res.json();
+      const submissionId = data.submission_id;
 
-    console.log("Submission complete: ", zipBlob);
-    setStatus("deploying");
+      let currentStatus = "submitting";
 
-    // mock deploy delay
-    setTimeout(() => {
+      const poll = setInterval(async () => {
+        const sRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/submission/${submissionId}`,
+          {
+            credentials: "include",
+          },
+        );
+        if (!sRes.ok) {
+          clearInterval(poll);
+          setStatus("done");
+          if (onPipelineError) onPipelineError({ message: "Server error during polling." });
+          return;
+        }
+        const sData = await sRes.json();
+
+        // 🛑 Breakpoint checking deployment finished status from Backend 🛑
+        if (
+          sData.steps?.deployment?.status === "success" ||
+          sData.steps?.deployment?.status === "error"
+        ) {
+          console.log("Deployment is finished. Inspect sData below:");
+          console.dir(sData);
+          debugger; 
+        }
+
+        if (sData.pipeline_status === "running") {
+          // update visual states if deployment is running vs testcase
+          if (sData.steps?.deployment?.status === "running") {
+            if (currentStatus !== "deploying") {
+              currentStatus = "deploying";
+              setStatus("deploying");
+            }
+          }
+        } else if (
+          sData.pipeline_status === "success" ||
+          sData.pipeline_status === "partial_success"
+        ) {
+          clearInterval(poll);
+
+          if (onPipelineSuccess) onPipelineSuccess(sData);
+          setStatus("done");
+        } else if (sData.pipeline_status === "error") {
+          clearInterval(poll);
+          if (onPipelineError) onPipelineError(sData);
+          setStatus("done");
+        }
+      }, 3000);
+    } catch (err) {
+      console.error(err);
       setStatus("done");
-    }, 4000);
-
+    }
   };
 
   async function debugZipPaths(zipBlob: Blob) {
@@ -190,7 +279,7 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
 
     console.log("====== ZIP PATHS ======");
 
-    Object.keys(zip.files).forEach(path => {
+    Object.keys(zip.files).forEach((path) => {
       console.log(path);
     });
 
@@ -200,7 +289,6 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
   return (
     <div className="bg-white overflow-hidden">
       <div className="p-6 space-y-6">
-
         {/* SELECT TYPE */}
         <div>
           <p className="font-semibold mb-3">Select project source type</p>
@@ -224,12 +312,10 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
             />
             Project files
           </label>
-
         </div>
 
         {/* BOXES */}
         <div className="grid grid-cols-2 gap-6">
-
           {/* LEFT BOX */}
           <div
             onClick={
@@ -249,7 +335,6 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
                 </div>
               ) : (
                 <div className="w-full h-full flex flex-col gap-2 overflow-auto cursor-default">
-
                   {rootFolders.map((root) => (
                     <div
                       key={root}
@@ -281,13 +366,14 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
                   >
                     + Add more files
                   </button>
-
                 </div>
-
               )
             ) : (
               <textarea
                 placeholder="Input Github repository Link"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                disabled={isLocked}
                 className="w-full h-full outline-none resize-none"
               />
             )}
@@ -314,22 +400,28 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
         {/* SUBMIT */}
         <div className="flex justify-end pt-2">
           {status === "editing" && (
-            <button onClick={handleSubmit}
-              className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-2xl">
+            <button
+              onClick={handleSubmit}
+              className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-2xl"
+            >
               Submit
             </button>
           )}
 
           {status === "submitting" && (
-            <button disabled
-              className="bg-neutral04 text-white px-6 py-2 rounded-lg shadow-2xl">
+            <button
+              disabled
+              className="bg-neutral04 text-white px-6 py-2 rounded-lg shadow-2xl"
+            >
               Submitting...
             </button>
           )}
 
           {status === "deploying" && (
-            <button disabled
-              className="bg-neutral04 text-white px-6 py-2 rounded-lg shadow-2xl">
+            <button
+              disabled
+              className="bg-neutral04 text-white px-6 py-2 rounded-lg shadow-2xl"
+            >
               Deploying...
             </button>
           )}
@@ -337,12 +429,12 @@ export default function SubmitPanel({ isGroup, hasGroup, status, setStatus }: Pr
           {status === "done" && (
             <button
               onClick={() => setStatus("editing")}
-              className="bg-yellow-400 text-white px-6 py-2 rounded-lg shadow-2xl">
+              className="bg-yellow-400 text-white px-6 py-2 rounded-lg shadow-2xl"
+            >
               Resubmit
             </button>
           )}
         </div>
-
       </div>
     </div>
   );

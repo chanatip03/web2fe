@@ -15,5 +15,6 @@ export interface IAuthRepository {
   verifyOTP(data: {
     email:string,
     otp:string
-  }):Promise<string>
+  }):Promise<string>;
+  logout(): Promise<void>;
 }
