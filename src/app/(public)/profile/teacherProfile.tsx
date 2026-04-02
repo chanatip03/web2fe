@@ -12,6 +12,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
+import ResetPasswordModal from "@/components/modal/resetPasswordModal";
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -40,6 +41,7 @@ export default function TeacherProfile() {
   const [previewImage, setPreviewImage] = useState("");
   const [initialPreviewImage, setInitialPreviewImage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [openResetPassword, setOpenResetPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -220,18 +222,22 @@ export default function TeacherProfile() {
               label="Email"
               disabled={!isEditing}
             />
-              <RHFTextField
-                control={control}
-                name="academy"
-                label="Academy"
-                disabled={!isEditing}
-              />
+            <RHFTextField
+              control={control}
+              name="academy"
+              label="Academy"
+              disabled={!isEditing}
+            />
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
             {!isEditing ? (
               <>
-                <Button type="button" variant="contained">
+                <Button
+                  type="button"
+                  variant="contained"
+                  onClick={() => setOpenResetPassword(true)}
+                >
                   Reset Password
                 </Button>
 
@@ -296,6 +302,17 @@ export default function TeacherProfile() {
             </Button>
           </div>
         </form>
+        <ResetPasswordModal
+          open={openResetPassword}
+          email={mockProfile.email}
+          onClose={() => setOpenResetPassword(false)}
+          onConfirm={(data) => {
+            console.log("reset password:", data);
+          }}
+          onResend={() => {
+            console.log("resend code");
+          }}
+        />
       </div>
     </div>
   );
