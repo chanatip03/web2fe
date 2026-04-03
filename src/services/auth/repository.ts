@@ -10,6 +10,9 @@ export class AuthRepository implements IAuthRepository {
       method: "GET",
       credentials: "include",
     });
+    if (!res.ok) {
+      throw new Error(`Unauthorized: ${res.status}`);
+    }
     return res.json();
   }
 
@@ -77,5 +80,12 @@ export class AuthRepository implements IAuthRepository {
     }
 
     return res.json();
+  }
+
+  async logout(): Promise<void> {
+    await fetch(`${BASE_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
   }
 }
