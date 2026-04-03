@@ -31,6 +31,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   assignment: Assignment | null;
+  onSuccess?: (message: string) => void;
+  onError?: (message: string) => void;
 }
 
 const mockProjectTypes: ProjectType[] = [
@@ -40,10 +42,16 @@ const mockProjectTypes: ProjectType[] = [
 ];
 
 const mockLanguages: Language[] = [
-  { id: 1, name: "JavaScript" },
-  { id: 2, name: "TypeScript" },
-  { id: 3, name: "Go" },
-  { id: 4, name: "Java" },
+  { id: 1, name: "Java" },
+  { id: 2, name: "Python" },
+  { id: 3, name: "C" },
+  { id: 4, name: "C++" },
+  { id: 5, name: "JavaScript" },
+  { id: 6, name: "TypeScript" },
+  { id: 7, name: "Go" },
+  { id: 8, name: "Kotlin" },
+  { id: 9, name: "Swift" },
+  { id: 10, name: "Rust" },
 ];
 
 const Schema = z.object({
@@ -65,7 +73,7 @@ const Schema = z.object({
 
 type FormData = z.infer<typeof Schema>;
 
-const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
+const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }: Props) => {
   const [existingAttachments, setExistingAttachments] = useState<Attachments[]>(
     [],
   );
@@ -152,10 +160,19 @@ const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
         data.attachment ?? [],
       );
 
-      onClose();
+      handleClose();
+      onSuccess?.("Assignment updated successfully.");
     } catch (err) {
       console.error(err);
+      onError?.("Failed to update assignment. Please try again later.");
     }
+  };
+
+  const handleClose = () => {
+    reset();
+    setExistingAttachments([]);
+    setDeletedAttachmentIds([]);
+    onClose();
   };
 
   return (
@@ -163,7 +180,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
       open={open}
       onClose={(_, reason) => {
         if (reason === "backdropClick") return;
-        onClose();
+        handleClose();
       }}
       slotProps={{
         paper: {
@@ -178,7 +195,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment }: Props) => {
       <div className="flex items-center justify-between bg-primary03 px-12 py-3 text-white">
         <h3>Update Assignment</h3>
 
-        <IconButton onClick={onClose}>
+        <IconButton onClick={handleClose}>
           <CloseIcon className="text-white" />
         </IconButton>
       </div>
