@@ -51,12 +51,7 @@ export default function TeacherRegisterForm() {
       return;
     }
 
-    const response = await authService.requestOTP(
-      data,
-      "teacher",
-      selectedFile,
-      null,
-    );
+    const response = await authService.requestOTP(data, 2, selectedFile, null);
 
     if (response) {
       setEmail(data.email);

@@ -14,6 +14,7 @@ export interface User {
   email: string;
   image_url: string | null;
   academy: string;
+  role_id: number;
 }
 
 export interface Role {
@@ -35,9 +36,7 @@ export interface Teacher {
 
 export interface MeResponse {
   user: User;
-  roles: Role[];
-  student: Student | null;
-  teacher: Teacher | null;
+  roles: Role;
 }
 
 export interface CreateUserRequest {
