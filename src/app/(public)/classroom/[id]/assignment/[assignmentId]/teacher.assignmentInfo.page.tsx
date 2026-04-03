@@ -15,6 +15,8 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { assignmentService } from "@/services/controller";
@@ -64,6 +66,11 @@ export default function TeacherAssignmentInfoPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
   const [openTestcase, setOpenTestcase] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
   const params = useParams();
   const id = params.id;
@@ -95,6 +102,7 @@ export default function TeacherAssignmentInfoPage() {
   const hasTestcase = !!assignments.testcase_url;
 
   return (
+    <>
     <div>
       <div className="mb-6">
         <Breadcrumbs separator="/">
@@ -121,6 +129,20 @@ export default function TeacherAssignmentInfoPage() {
         testcase={assignments.testcase_url}
         assignmentId={assignMentId as string}
         onSaveSuccess={() => window.location.reload()}
+         onSuccess={(message) => {
+            setSnackbar({
+              open: true,
+              message,
+              severity: "success",
+            });
+          }}
+          onError={(message) => {
+            setSnackbar({
+              open: true,
+              message,
+              severity: "error",
+            });
+          }}
       />
 
       <div className="flex gap-2 mb-2">
@@ -286,5 +308,18 @@ export default function TeacherAssignmentInfoPage() {
         </Table>
       </Paper>
     </div>
+     <Snackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          variant="standard"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
