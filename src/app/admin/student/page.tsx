@@ -15,7 +15,6 @@ import {
   Tooltip,
   TextField,
   InputAdornment,
-  Link as MuiLink,
   Snackbar,
   Alert,
   Typography,
@@ -23,41 +22,40 @@ import {
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
 import { adminService } from "@/services/controller";
-import type { AdminTeacher } from "@/domain/admin";
+import type { AdminStudent } from "@/domain/admin";
 
 const ROWS_PER_PAGE = 5;
 
 const headCellSx = { fontWeight: 700, color: "var(--color-primary03)" } as const;
 
-export default function TeacherPage() {
-  const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
+export default function StudentPage() {
+  const [students, setStudents] = useState<AdminStudent[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   /* confirm dialog */
-  const [deleteTarget, setDeleteTarget] = useState<AdminTeacher | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminStudent | null>(null);
   /* snackbar */
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    adminService.getTeachers(search || undefined).then(setTeachers);
+    adminService.getStudents(search || undefined).then(setStudents);
   }, [search]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    await adminService.deleteTeacher(deleteTarget.id);
-    setTeachers((prev) => prev.filter((t) => t.id !== deleteTarget.id));
-    setToast(`Teacher "${deleteTarget.name}" has been deleted`);
+    await adminService.deleteStudent(deleteTarget.id);
+    setStudents((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+    setToast(`Student "${deleteTarget.name}" has been deleted`);
     setDeleteTarget(null);
   };
 
-  const totalPages = Math.ceil(teachers.length / ROWS_PER_PAGE);
-  const paginatedData = teachers.slice(
+  const totalPages = Math.ceil(students.length / ROWS_PER_PAGE);
+  const paginatedData = students.slice(
     (page - 1) * ROWS_PER_PAGE,
     page * ROWS_PER_PAGE,
   );
@@ -66,10 +64,10 @@ export default function TeacherPage() {
     <AdminLayout>
       {/* Top: Title + Search */}
       <div className="flex items-center justify-between mb-4">
-        <PageHeader title="Teacher" totalCount={teachers.length} />
+        <PageHeader title="Student" totalCount={students.length} />
         <TextField
           size="small"
-          placeholder="Search teacher"
+          placeholder="Search student"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -98,10 +96,10 @@ export default function TeacherPage() {
           <TableHead>
             <TableRow sx={{ backgroundColor: "var(--color-primary01)" }}>
               <TableCell align="center" sx={headCellSx}>Profile</TableCell>
+              <TableCell align="center" sx={headCellSx}>Student ID</TableCell>
               <TableCell sx={headCellSx}>Name</TableCell>
               <TableCell sx={headCellSx}>Email</TableCell>
               <TableCell sx={headCellSx}>Academy</TableCell>
-              <TableCell align="center" sx={headCellSx}>Certificate</TableCell>
               <TableCell align="center" sx={{ width: 100 }} />
             </TableRow>
           </TableHead>
@@ -111,14 +109,14 @@ export default function TeacherPage() {
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                   <Typography color="var(--color-neutral04)">
-                    {search ? "No teachers found" : "No teachers"}
+                    {search ? "No students found" : "No students"}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((teacher, idx) => (
+              paginatedData.map((student, idx) => (
                 <TableRow
-                  key={teacher.id}
+                  key={student.id}
                   hover
                   sx={{
                     backgroundColor: idx % 2 === 1 ? "#f5f8fc" : "#ffffff",
@@ -127,35 +125,16 @@ export default function TeacherPage() {
                 >
                   <TableCell align="center">
                     <Avatar
-                      src={teacher.imageUrl}
+                      src={student.imageUrl}
                       sx={{ width: 36, height: 36, mx: "auto" }}
                     />
                   </TableCell>
-                  <TableCell>{teacher.name}</TableCell>
-                  <TableCell>{teacher.email}</TableCell>
-                  <TableCell sx={{ fontSize: 13 }}>{teacher.academy}</TableCell>
-                  <TableCell align="center">
-                    {teacher.certificateUrl ? (
-                      <MuiLink
-                        href={teacher.certificateUrl}
-                        target="_blank"
-                        underline="hover"
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          color: "var(--color-primary03)",
-                          fontWeight: 500,
-                          fontSize: 14,
-                        }}
-                      >
-                        <FindInPageOutlinedIcon fontSize="small" />
-                        See Certificate
-                      </MuiLink>
-                    ) : (
-                      "—"
-                    )}
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>
+                    {student.studentId}
                   </TableCell>
+                  <TableCell>{student.name}</TableCell>
+                  <TableCell>{student.email}</TableCell>
+                  <TableCell sx={{ fontSize: 13 }}>{student.academy}</TableCell>
                   <TableCell align="center">
                     <Tooltip title="Edit">
                       <IconButton size="small" sx={{ color: "var(--color-primary03)" }}>
@@ -165,7 +144,7 @@ export default function TeacherPage() {
                     <Tooltip title="Delete">
                       <IconButton
                         size="small"
-                        onClick={() => setDeleteTarget(teacher)}
+                        onClick={() => setDeleteTarget(student)}
                         sx={{
                           color: "var(--color-accent03)",
                           "&:hover": { backgroundColor: "var(--color-accent01)" },
@@ -198,7 +177,7 @@ export default function TeacherPage() {
       {/* Confirm Dialog */}
       <ConfirmDialog
         open={deleteTarget !== null}
-        title="Delete Teacher"
+        title="Delete Student"
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}

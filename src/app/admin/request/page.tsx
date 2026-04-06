@@ -19,45 +19,57 @@ import {
   Snackbar,
   Alert,
   Typography,
+  Chip,
 } from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
 import { adminService } from "@/services/controller";
-import type { AdminTeacher } from "@/domain/admin";
+import type { AdminTeacherRequest } from "@/domain/admin";
 
 const ROWS_PER_PAGE = 5;
 
 const headCellSx = { fontWeight: 700, color: "var(--color-primary03)" } as const;
 
-export default function TeacherPage() {
-  const [teachers, setTeachers] = useState<AdminTeacher[]>([]);
+export default function RequestPage() {
+  const [requests, setRequests] = useState<AdminTeacherRequest[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   /* confirm dialog */
-  const [deleteTarget, setDeleteTarget] = useState<AdminTeacher | null>(null);
+  const [actionTarget, setActionTarget] = useState<{
+    request: AdminTeacherRequest;
+    action: "approve" | "reject";
+  } | null>(null);
   /* snackbar */
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    adminService.getTeachers(search || undefined).then(setTeachers);
+    adminService.getTeacherRequests(search || undefined).then(setRequests);
   }, [search]);
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    await adminService.deleteTeacher(deleteTarget.id);
-    setTeachers((prev) => prev.filter((t) => t.id !== deleteTarget.id));
-    setToast(`Teacher "${deleteTarget.name}" has been deleted`);
-    setDeleteTarget(null);
+  const handleConfirmAction = async () => {
+    if (!actionTarget) return;
+    const { request, action } = actionTarget;
+
+    if (action === "approve") {
+      await adminService.approveRequest(request.id);
+      setToast(`Teacher "${request.name}" has been approved`);
+    } else {
+      await adminService.rejectRequest(request.id);
+      setToast(`Request from "${request.name}" has been rejected`);
+    }
+
+    setRequests((prev) => prev.filter((r) => r.id !== request.id));
+    setActionTarget(null);
   };
 
-  const totalPages = Math.ceil(teachers.length / ROWS_PER_PAGE);
-  const paginatedData = teachers.slice(
+  const totalPages = Math.ceil(requests.length / ROWS_PER_PAGE);
+  const paginatedData = requests.slice(
     (page - 1) * ROWS_PER_PAGE,
     page * ROWS_PER_PAGE,
   );
@@ -66,7 +78,7 @@ export default function TeacherPage() {
     <AdminLayout>
       {/* Top: Title + Search */}
       <div className="flex items-center justify-between mb-4">
-        <PageHeader title="Teacher" totalCount={teachers.length} />
+        <PageHeader title="Request" totalCount={requests.length} countLabel="Pending" />
         <TextField
           size="small"
           placeholder="Search teacher"
@@ -111,14 +123,14 @@ export default function TeacherPage() {
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                   <Typography color="var(--color-neutral04)">
-                    {search ? "No teachers found" : "No teachers"}
+                    {search ? "No requests found" : "No pending requests"}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((teacher, idx) => (
+              paginatedData.map((request, idx) => (
                 <TableRow
-                  key={teacher.id}
+                  key={request.id}
                   hover
                   sx={{
                     backgroundColor: idx % 2 === 1 ? "#f5f8fc" : "#ffffff",
@@ -127,17 +139,17 @@ export default function TeacherPage() {
                 >
                   <TableCell align="center">
                     <Avatar
-                      src={teacher.imageUrl}
+                      src={request.imageUrl}
                       sx={{ width: 36, height: 36, mx: "auto" }}
                     />
                   </TableCell>
-                  <TableCell>{teacher.name}</TableCell>
-                  <TableCell>{teacher.email}</TableCell>
-                  <TableCell sx={{ fontSize: 13 }}>{teacher.academy}</TableCell>
+                  <TableCell>{request.name}</TableCell>
+                  <TableCell>{request.email}</TableCell>
+                  <TableCell sx={{ fontSize: 13 }}>{request.academy}</TableCell>
                   <TableCell align="center">
-                    {teacher.certificateUrl ? (
+                    {request.certificateUrl ? (
                       <MuiLink
-                        href={teacher.certificateUrl}
+                        href={request.certificateUrl}
                         target="_blank"
                         underline="hover"
                         sx={{
@@ -157,21 +169,32 @@ export default function TeacherPage() {
                     )}
                   </TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Edit">
-                      <IconButton size="small" sx={{ color: "var(--color-primary03)" }}>
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip title="Approve">
                       <IconButton
                         size="small"
-                        onClick={() => setDeleteTarget(teacher)}
+                        onClick={() =>
+                          setActionTarget({ request, action: "approve" })
+                        }
+                        sx={{
+                          color: "var(--color-success01)",
+                          "&:hover": { backgroundColor: "#e8f5e9" },
+                        }}
+                      >
+                        <CheckCircleOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Reject">
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          setActionTarget({ request, action: "reject" })
+                        }
                         sx={{
                           color: "var(--color-accent03)",
                           "&:hover": { backgroundColor: "var(--color-accent01)" },
                         }}
                       >
-                        <DeleteOutlinedIcon fontSize="small" />
+                        <CloseIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </TableCell>
@@ -197,12 +220,17 @@ export default function TeacherPage() {
 
       {/* Confirm Dialog */}
       <ConfirmDialog
-        open={deleteTarget !== null}
-        title="Delete Teacher"
-        message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteTarget(null)}
+        open={actionTarget !== null}
+        title={actionTarget?.action === "approve" ? "Approve Teacher" : "Reject Request"}
+        message={
+          actionTarget?.action === "approve"
+            ? `Are you sure you want to approve "${actionTarget?.request.name}" as a teacher?`
+            : `Are you sure you want to reject the request from "${actionTarget?.request.name}"?`
+        }
+        confirmLabel={actionTarget?.action === "approve" ? "Approve" : "Reject"}
+        confirmColor={actionTarget?.action === "approve" ? "success" : "error"}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setActionTarget(null)}
       />
 
       {/* Toast */}
