@@ -271,36 +271,6 @@ export default function TeacherProfile() {
               </>
             )}
           </div>
-
-          <div className="mt-8">
-            <h5 className="mb-4">Link your account to receive notifications</h5>
-
-            <Button
-              type="button"
-              variant="outlined"
-              endIcon={
-                <LinkIcon
-                  sx={{
-                    fontSize: 16,
-                    color: "var(--color-primary03)",
-                  }}
-                />
-              }
-              sx={{
-                borderColor: "#C7C7C7",
-                color: "#949494",
-              }}
-            >
-              <span className="flex items-center gap-2">
-                <img
-                  src="https://cdn-icons-png.flaticon.com/512/5968/5968756.png"
-                  alt="Discord"
-                  className="h-[20px] w-[20px]"
-                />
-                <h5>Link with Discord</h5>
-              </span>
-            </Button>
-          </div>
         </form>
         <ResetPasswordModal
           open={openResetPassword}
