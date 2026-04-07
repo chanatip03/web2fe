@@ -19,12 +19,11 @@ export default function ClassroomLayout({ children }: Readonly<Props>) {
     <>
       <Navbar />
       <div className="flex bg-neutral01 min-h-screen">
-        <SidebarProfessor classroomName={classroomName} />
-        {/* {user?.roles?.[0]?.name === "teacher" ? (
+        {user?.roles.name === "teacher" ? (
           <SidebarProfessor classroomName={classroomName} />
         ) : (
           <SidebarStudent classroomName={classroomName} />
-        )} */}
+        )}
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto px-20 py-10">{children}</main>

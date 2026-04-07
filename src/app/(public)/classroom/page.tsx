@@ -98,7 +98,7 @@ export default function ListClassroom() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
           <h1 className="text-212121">All Classroom</h1>
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            {user?.roles[0].toString() === "student" ? (
+            {user?.roles.name === "student" ? (
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
@@ -207,7 +207,7 @@ export default function ListClassroom() {
             }}
           />
         )}
-        {user?.roles[0].name === "student" && <StudentDiscordTip />}
+        {user?.roles.name === "student" && <StudentDiscordTip />}
       </div>
        <Snackbar
         open={snackbar.open}

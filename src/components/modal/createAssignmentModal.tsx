@@ -31,7 +31,7 @@ interface Props {
 const mockProjectTypes: ProjectType[] = [
   { id: 1, name: "Frontend" },
   { id: 2, name: "Backend" },
-  { id: 3, name: "Fullstack" },
+  { id: 3, name: "Project" },
 ];
 
 const mockLanguages: Language[] = [

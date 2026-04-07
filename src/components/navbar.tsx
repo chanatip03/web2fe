@@ -99,7 +99,7 @@ export const Navbar = () => {
             },
           }}
         >
-          <MenuItem component={Link} href="/profile/edit" onClick={handleClose}>
+          <MenuItem component={Link} href="/profile" onClick={handleClose}>
             <EditOutlinedIcon fontSize="small" className="mr-2" />
             Edit Profile
           </MenuItem>
