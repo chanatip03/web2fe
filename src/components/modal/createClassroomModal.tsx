@@ -72,9 +72,12 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
           .filter(Boolean)
           .join("|") || "",
     };
+    try {
+      await onSubmit(payload);
+      handleClose();
+    } catch {
 
-    await onSubmit(payload);
-    handleClose();
+    }
   };
 
   return (

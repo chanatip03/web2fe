@@ -24,6 +24,8 @@ import ConfirmNoTestCaseModal from "./confirmCreateAssignmentModal";
 interface Props {
   open: boolean;
   onClose: () => void;
+  onSuccess?: (message: string) => void;
+  onError?: (message: string) => void;
 }
 
 const mockProjectTypes: ProjectType[] = [
@@ -69,7 +71,12 @@ const Schema = z.object({
 
 type FormData = z.infer<typeof Schema>;
 
-const CreateAssignmentModal = ({ open, onClose }: Props) => {
+const CreateAssignmentModal = ({
+  open,
+  onClose,
+  onSuccess,
+  onError,
+}: Props) => {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
 
@@ -152,8 +159,10 @@ const CreateAssignmentModal = ({ open, onClose }: Props) => {
       handleClose();
       setOpenConfirm(false);
       setPendingData(null);
+      onSuccess?.("Assignment created successfully.");
     } catch (err) {
       console.error(err);
+      onError?.("Failed to create assignment. Please try again later.");
     }
   };
 

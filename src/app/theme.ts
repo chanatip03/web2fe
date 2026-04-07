@@ -302,9 +302,10 @@ export const Theme = createTheme({
         MuiSnackbar: {
             defaultProps: {
                 anchorOrigin: {
-                    vertical: "top",
+                    vertical: "bottom",
                     horizontal: "right",
                 },
+                autoHideDuration: 6000,
             },
 
             styleOverrides: {
