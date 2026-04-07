@@ -1,5 +1,4 @@
 import { createTheme } from "@mui/material/styles";
-import { AuthProvider } from "@/context/AuthContext";
 
 export const Theme = createTheme({
     palette: {
