@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
 import ResetPasswordModal from "@/components/modal/resetPasswordModal";
+import { discordService } from "@/services/controller";
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -146,6 +147,10 @@ export default function StudentProfile() {
   if (loading) {
     return <div className="px-8 py-6">Loading...</div>;
   }
+
+  const handleConnectDiscord = () => {
+    discordService.connect();
+  };
 
   return (
     <div className="min-h-screen px-6 py-5">
@@ -291,6 +296,7 @@ export default function StudentProfile() {
             <Button
               type="button"
               variant="outlined"
+              onClick={handleConnectDiscord}
               endIcon={
                 <LinkIcon
                   sx={{
