@@ -29,10 +29,9 @@ import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
 import { adminService } from "@/services/controller";
-import type { AdminTeacherRequest } from "@/domain/admin";
+import { AdminTeacherRequest } from "@/domain/admin";
 
 const ROWS_PER_PAGE = 5;
-
 const headCellSx = { fontWeight: 700, color: "var(--color-primary03)" } as const;
 
 export default function RequestPage() {
@@ -40,12 +39,10 @@ export default function RequestPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  /* confirm dialog */
   const [actionTarget, setActionTarget] = useState<{
     request: AdminTeacherRequest;
     action: "approve" | "reject";
   } | null>(null);
-  /* snackbar */
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -76,7 +73,7 @@ export default function RequestPage() {
 
   return (
     <AdminLayout>
-      {/* Top: Title + Search */}
+
       <div className="flex items-center justify-between mb-4">
         <PageHeader title="Request" totalCount={requests.length} countLabel="Pending" />
         <TextField

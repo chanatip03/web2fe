@@ -26,7 +26,6 @@ import type { Container } from "@/domain/admin";
 
 const ROWS_PER_PAGE = 5;
 
-/** Shared header cell style */
 const headCellSx = { fontWeight: 700, color: "var(--color-primary03)" } as const;
 
 export default function ContainerPage() {

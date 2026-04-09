@@ -3,8 +3,6 @@ import { IAdminRepository } from "./interface";
 export class AdminService {
   constructor(private readonly adminRepository: IAdminRepository) {}
 
-  /* ─── Container ─────────────────────────────────────── */
-
   async getContainers() {
     return this.adminRepository.getContainers();
   }
@@ -12,8 +10,6 @@ export class AdminService {
   async stopContainer(id: string) {
     return this.adminRepository.stopContainer(id);
   }
-
-  /* ─── Student ───────────────────────────────────────── */
 
   async getStudents(search?: string) {
     return this.adminRepository.getStudents(search);
@@ -23,8 +19,6 @@ export class AdminService {
     return this.adminRepository.deleteStudent(id);
   }
 
-  /* ─── Teacher ───────────────────────────────────────── */
-
   async getTeachers(search?: string) {
     return this.adminRepository.getTeachers(search);
   }
@@ -32,8 +26,6 @@ export class AdminService {
   async deleteTeacher(id: number) {
     return this.adminRepository.deleteTeacher(id);
   }
-
-  /* ─── Teacher Request ───────────────────────────────── */
 
   async getTeacherRequests(search?: string) {
     return this.adminRepository.getTeacherRequests(search);

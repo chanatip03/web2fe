@@ -1,4 +1,3 @@
-/** Docker container monitored by admin */
 export interface Container {
   id: string;
   name: string;
@@ -8,7 +7,6 @@ export interface Container {
   teacherName: string;
 }
 
-/** Student record shown in admin panel */
 export interface AdminStudent {
   id: number;
   studentId: string;
@@ -18,7 +16,6 @@ export interface AdminStudent {
   imageUrl?: string;
 }
 
-/** Teacher record shown in admin panel */
 export interface AdminTeacher {
   id: number;
   name: string;
@@ -28,7 +25,6 @@ export interface AdminTeacher {
   imageUrl?: string;
 }
 
-/** Pending teacher registration request */
 export interface AdminTeacherRequest {
   id: number;
   name: string;
