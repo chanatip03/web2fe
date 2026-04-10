@@ -57,7 +57,9 @@ export default function StudentAssignmentInfoPage() {
 
   // Parse actual deploy results
   const deploySuccess = deployResult?.deployment?.status === "success";
-  
+  const submissionId = deployResult?.submission_id as string | undefined;
+  const previewUrl = submissionId ? `/preview/${submissionId}` : null;
+
   const testcase = { 
     pass: deployResult?.testcase?.passed || 0, 
     fail: deployResult?.testcase?.failed || 0, 
@@ -212,18 +214,40 @@ export default function StudentAssignmentInfoPage() {
           </div>
 
           <div className="p-6">
-            {status === "editing" ? (
+          {status === "editing" ? (
               <div className="h-[220px] flex items-center justify-center text-neutral04">
                 The results will appear after you finish uploading the project.
               </div>
             ) : (
-              <DeploymentStatus
-                status={status}
-                projectTypeId={assignment.project_type.id}
-                deploySuccess={deploySuccess}
-                testcase={testcase}
-                security={security}
-              />
+              <>
+                <DeploymentStatus
+                  status={status}
+                  projectTypeId={assignment.project_type.id}
+                  deploySuccess={deploySuccess}
+                  testcase={testcase}
+                  security={security}
+                />
+
+                {/* Preview link — only shown when deploy succeeded */}
+                {status === "done" && deploySuccess && previewUrl && (
+                  <div className="mt-5 pt-5 border-t border-neutral03 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-sm">Deployed Application</p>
+                      <p className="text-xs text-neutral05 mt-0.5">
+                        Container runs for 2 hours then auto-removes.
+                      </p>
+                    </div>
+                    <a
+                      href={previewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 bg-primary03 hover:opacity-90 transition text-white text-sm font-semibold px-5 py-2 rounded-lg shadow"
+                    >
+                      <span>🚀</span> View Deployed App ↗
+                    </a>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
