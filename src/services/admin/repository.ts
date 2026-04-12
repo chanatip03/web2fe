@@ -1,9 +1,4 @@
-import type {
-  Container,
-  AdminStudent,
-  AdminTeacher,
-  AdminTeacherRequest,
-} from "@/domain/admin";
+import type { Container, AdminStudent, AdminTeacher, AdminTeacherRequest, UpdateStudentRequest, UpdateTeacherRequest } from "@/domain/admin";
 import { IAdminRepository } from "./interface";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -14,9 +9,7 @@ export class AdminRepository implements IAdminRepository {
       method: "GET",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch containers: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`getContainers failed: ${res.status}`);
     return res.json();
   }
 
@@ -25,20 +18,16 @@ export class AdminRepository implements IAdminRepository {
       method: "POST",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to stop container: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`stopContainer failed: ${res.status}`);
   }
 
   async getStudents(search?: string): Promise<AdminStudent[]> {
-    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    const query = search ? `?search=${search}` : "";
     const res = await fetch(`${BASE_URL}/admin/students${query}`, {
       method: "GET",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch students: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`getStudents failed: ${res.status}`);
     return res.json();
   }
 
@@ -47,20 +36,27 @@ export class AdminRepository implements IAdminRepository {
       method: "DELETE",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to delete student: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`deleteStudent failed: ${res.status}`);
+  }
+
+  async updateStudent(id: number, data: UpdateStudentRequest): Promise<AdminStudent> {
+    const res = await fetch(`${BASE_URL}/admin/students/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`updateStudent failed: ${res.status}`);
+    return res.json();
   }
 
   async getTeachers(search?: string): Promise<AdminTeacher[]> {
-    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    const query = search ? `?search=${search}` : "";
     const res = await fetch(`${BASE_URL}/admin/teachers${query}`, {
       method: "GET",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch teachers: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`getTeachers failed: ${res.status}`);
     return res.json();
   }
 
@@ -69,20 +65,27 @@ export class AdminRepository implements IAdminRepository {
       method: "DELETE",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to delete teacher: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`deleteTeacher failed: ${res.status}`);
+  }
+
+  async updateTeacher(id: number, data: UpdateTeacherRequest): Promise<AdminTeacher> {
+    const res = await fetch(`${BASE_URL}/admin/teachers/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`updateTeacher failed: ${res.status}`);
+    return res.json();
   }
 
   async getTeacherRequests(search?: string): Promise<AdminTeacherRequest[]> {
-    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    const query = search ? `?search=${search}` : "";
     const res = await fetch(`${BASE_URL}/admin/teacher-requests${query}`, {
       method: "GET",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch teacher requests: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`getTeacherRequests failed: ${res.status}`);
     return res.json();
   }
 
@@ -91,9 +94,7 @@ export class AdminRepository implements IAdminRepository {
       method: "POST",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to approve request: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`approveRequest failed: ${res.status}`);
   }
 
   async rejectRequest(id: number): Promise<void> {
@@ -101,8 +102,6 @@ export class AdminRepository implements IAdminRepository {
       method: "POST",
       credentials: "include",
     });
-    if (!res.ok) {
-      throw new Error(`Failed to reject request: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`rejectRequest failed: ${res.status}`);
   }
 }

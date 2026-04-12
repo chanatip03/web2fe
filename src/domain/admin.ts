@@ -33,3 +33,16 @@ export interface AdminTeacherRequest {
   certificateUrl?: string;
   imageUrl?: string;
 }
+
+export interface UpdateStudentRequest {
+  name?: string;
+  email?: string;
+  academy?: string;
+  studentId?: string;
+}
+
+export interface UpdateTeacherRequest {
+  name?: string;
+  email?: string;
+  academy?: string;
+}

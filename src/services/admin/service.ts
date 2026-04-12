@@ -1,4 +1,5 @@
 import { IAdminRepository } from "./interface";
+import { UpdateStudentRequest, UpdateTeacherRequest } from "@/domain/admin";
 
 export class AdminService {
   constructor(private readonly adminRepository: IAdminRepository) {}
@@ -15,12 +16,20 @@ export class AdminService {
     return this.adminRepository.getStudents(search);
   }
 
+  async updateStudent(id: number, data: UpdateStudentRequest) {
+    return this.adminRepository.updateStudent(id, data);
+  }
+
   async deleteStudent(id: number) {
     return this.adminRepository.deleteStudent(id);
   }
 
   async getTeachers(search?: string) {
     return this.adminRepository.getTeachers(search);
+  }
+
+  async updateTeacher(id: number, data: UpdateTeacherRequest) {
+    return this.adminRepository.updateTeacher(id, data);
   }
 
   async deleteTeacher(id: number) {

@@ -25,6 +25,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
+import EditStudentModal from "@/components/modal/editStudentModal";
 import { adminService } from "@/services/controller";
 import type { AdminStudent } from "@/domain/admin";
 
@@ -37,10 +38,9 @@ export default function StudentPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  /* confirm dialog */
   const [deleteTarget, setDeleteTarget] = useState<AdminStudent | null>(null);
-  /* snackbar */
-  const [toast, setToast] = useState("");
+  const [editTarget, setEditTarget] = useState<AdminStudent | null>(null);
+  const [toast, setToast] = useState("");;
 
   useEffect(() => {
     adminService.getStudents(search || undefined).then(setStudents);
@@ -137,7 +137,11 @@ export default function StudentPage() {
                   <TableCell sx={{ fontSize: 13 }}>{student.academy}</TableCell>
                   <TableCell align="center">
                     <Tooltip title="Edit">
-                      <IconButton size="small" sx={{ color: "var(--color-primary03)" }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => setEditTarget(student)}
+                        sx={{ color: "var(--color-primary03)" }}
+                      >
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -184,7 +188,16 @@ export default function StudentPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* Toast */}
+      <EditStudentModal
+        open={editTarget !== null}
+        student={editTarget}
+        onClose={() => setEditTarget(null)}
+        onUpdated={(updated) => {
+          setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+          setToast(`Student "${updated.name}" has been updated`);
+        }}
+      />
+
       <Snackbar
         open={!!toast}
         autoHideDuration={3000}

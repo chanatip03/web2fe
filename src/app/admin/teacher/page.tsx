@@ -27,6 +27,7 @@ import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
+import EditTeacherModal from "@/components/modal/editTeacherModal";
 import { adminService } from "@/services/controller";
 import type { AdminTeacher } from "@/domain/admin";
 
@@ -39,9 +40,8 @@ export default function TeacherPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  /* confirm dialog */
   const [deleteTarget, setDeleteTarget] = useState<AdminTeacher | null>(null);
-  /* snackbar */
+  const [editTarget, setEditTarget] = useState<AdminTeacher | null>(null);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -158,7 +158,11 @@ export default function TeacherPage() {
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Edit">
-                      <IconButton size="small" sx={{ color: "var(--color-primary03)" }}>
+                      <IconButton
+                        size="small"
+                        onClick={() => setEditTarget(teacher)}
+                        sx={{ color: "var(--color-primary03)" }}
+                      >
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
@@ -205,7 +209,16 @@ export default function TeacherPage() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* Toast */}
+      <EditTeacherModal
+        open={editTarget !== null}
+        teacher={editTarget}
+        onClose={() => setEditTarget(null)}
+        onUpdated={(updated) => {
+          setTeachers((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+          setToast(`Teacher "${updated.name}" has been updated`);
+        }}
+      />
+
       <Snackbar
         open={!!toast}
         autoHideDuration={3000}
