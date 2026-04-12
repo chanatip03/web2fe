@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, MenuItem, Select } from "@mui/material";
+import { Button, MenuItem, Select, Snackbar, Alert} from "@mui/material";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import StudentDiscordTip from "./StudentDiscordTip";
@@ -23,6 +23,11 @@ export default function ListClassroom() {
   const [semesterOptions, setSemesterOptions] = useState<string[]>([]);
   const router = useRouter();
   const { user } = useAuth();
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
   async function loadData() {
     try {
@@ -60,9 +65,23 @@ export default function ListClassroom() {
       }
       setOpenCreate(false);
 
+      setSnackbar({
+        open: true,
+        message: "Classroom created successfully.",
+        severity: "success",
+      });
+
       router.refresh();
     } catch (error) {
       console.error("Error creating classroom:", error);
+
+      setSnackbar({
+        open: true,
+        message: "Failed to create classroom. Please try again later.",
+        severity: "error",
+      });
+
+      throw error;
     }
   };
 
@@ -79,7 +98,7 @@ export default function ListClassroom() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
           <h1 className="text-212121">All Classroom</h1>
           <div className="flex items-center gap-4 w-full sm:w-auto">
-            {user?.roles[0].toString() === "student" ? (
+            {user?.roles.name === "student" ? (
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
@@ -188,8 +207,20 @@ export default function ListClassroom() {
             }}
           />
         )}
-        {user?.roles[0].name === "student" && <StudentDiscordTip />}
+        {user?.roles.name === "student" && <StudentDiscordTip />}
       </div>
+       <Snackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          variant="standard"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

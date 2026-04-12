@@ -14,6 +14,8 @@ interface Props {
   testcase?: string;
   assignmentId: string;
   onSaveSuccess?: () => void;
+  onSuccess?: (message: string) => void;
+  onError?: (message: string) => void;
 }
 
 const Schema = z.object({
@@ -23,7 +25,7 @@ const Schema = z.object({
 
 type FormData = z.infer<typeof Schema>;
 
-const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSuccess }: Props) => {
+const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSuccess, onSuccess, onError }: Props) => {
   const [loading, setLoading] = useState(false);
   const isEditMode = !!testcase;
   const [canEdit, setCanEdit] = useState(isEditMode);
@@ -57,7 +59,12 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
         .then((text) => {
           setValue("testcase", text, { shouldValidate: true });
         })
-        .catch((err) => console.error("Failed to fetch testcase content:", err))
+        .catch((err) => {
+          console.error("Failed to fetch testcase content:", err);
+
+          onError?.("Failed to load testcase.");
+        })
+        
         .finally(() => setLoading(false));
     } else if (open && !testcase) {
       setValue("testcase", "");
@@ -95,8 +102,10 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
       });
 
       setCanEdit(true);
+      onSuccess?.("Testcase generated successfully.");
     } catch (err) {
       console.error(err);
+      onError?.("Failed to generate testcase. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -126,8 +135,15 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
 
       onSaveSuccess?.();
       handleClose();
+
+      onSuccess?.(
+        isEditMode
+          ? "Testcase updated successfully."
+          : "Testcase created successfully.",
+      );
     } catch (err) {
       console.error(err);
+      onError?.("Failed to save testcase. Please try again later.");
     } finally {
       setLoading(false);
     }

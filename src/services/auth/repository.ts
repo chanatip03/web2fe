@@ -1,6 +1,6 @@
 import { User } from "@/domain/user";
 import { IAuthRepository } from "./interface";
-import { AuthResponse, CreateUserRequest, LoginRequest, MeResponse } from "@/domain/auth";
+import { AuthResponse, LoginRequest, MeResponse } from "@/domain/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -87,5 +87,10 @@ export class AuthRepository implements IAuthRepository {
       method: "POST",
       credentials: "include",
     });
+    if (!res.ok) {
+      throw new Error("Logout failed");
+    }
+
+    return res.json();
   }
 }

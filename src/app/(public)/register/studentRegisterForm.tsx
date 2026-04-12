@@ -56,7 +56,7 @@ export default function StudentRegisterForm() {
 
     const response = await authService.requestOTP(
       payload,
-      "student",
+      1,
       null,
       data.studentId,
     );

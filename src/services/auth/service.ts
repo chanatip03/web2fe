@@ -15,7 +15,7 @@ export class AuthService {
     return this.authRepository.login(data);
   }
 
-  async requestOTP(data : CreateUserRequest , role:string ,certificate?:File | null , studentId? :string | null){
+  async requestOTP(data : CreateUserRequest , role_id:number ,certificate?:File | null , studentId? :string | null){
      const formData = new FormData();
     
         formData.append("first_name", data.first_name);
@@ -23,7 +23,7 @@ export class AuthService {
         formData.append("academy", data.academy);
         formData.append("email", data.email);
         formData.append("password", data.password);
-        formData.append("role", role);
+        formData.append("role_id", role_id.toString());
         if(studentId)formData.append("student_id",studentId);
         if(certificate) formData.append("certificate", certificate);
 

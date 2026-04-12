@@ -54,7 +54,7 @@ export default function DeploymentStatus({
       {/* DEPLOY */}
       <div className="flex justify-between items-center">
         <div>
-          {status === "deploying"
+          {status !== "done"
             ? "Waiting for deployment"
             : deploySuccess
               ? "Deployment Successfully"
@@ -62,7 +62,7 @@ export default function DeploymentStatus({
         </div>
 
         <Icon
-          loading={status === "deploying"}
+          loading={status !== "done"}
           done={status === "done" && deploySuccess}
           failed={status === "done" && !deploySuccess}
         />

@@ -1,11 +1,15 @@
 "use client";
 
-import { Breadcrumbs, Box, Typography, Avatar, Button } from "@mui/material";
+import { Breadcrumbs, Box, Typography, Avatar, Button, CircularProgress } from "@mui/material";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { projectService } from "@/services/controller";
+import { Project } from "@/domain/project";
 
 const Schema = z.object({
   score: z.string().regex(/^\d+$/, "Score must be a number").min(1, "Score is required"),
@@ -15,27 +19,15 @@ const Schema = z.object({
 type FormData = z.infer<typeof Schema>;
 
 export default function ScorebookPage() {
-  const students = [
-    {
-      id: "1",
-      name: "Tula patanaboonmee",
-      avatarUrl: "https://i.pravatar.cc/100?img=3",
-    },
-    {
-      id: "2",
-      name: "John Doe",
-      avatarUrl: "https://i.pravatar.cc/100?img=11",
-    },
-    {
-      id: "3",
-      name: "Jane Smith",
-      avatarUrl: "https://i.pravatar.cc/100?img=5",
-    }
-  ];
+  const { id } = useParams();
+  const router = useRouter();
 
+  const [project, setProject] = useState<Project | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-
-  const { control, handleSubmit, formState: { isValid } } = useForm<FormData>({
+  const { control, handleSubmit, reset, formState: { isValid } } = useForm<FormData>({
     resolver: zodResolver(Schema),
     defaultValues: {
       score: "",
@@ -44,40 +36,70 @@ export default function ScorebookPage() {
     mode: "onChange",
   });
 
-  const onSubmitForm = async (data: FormData) => {
-    try {
-      console.log("Submitting Score");
-      console.log("Payload:", {
-        studentIds: students.map(s => s.id),
-        score: Number(data.score),
-        feedback: data.feedback,
-      });
+  useEffect(() => {
+    if (!id) return;
+    const fetchProject = async () => {
+      try {
+        setIsLoading(true);
+        const data = await projectService.getProjectById(Number(id));
+        setProject(data);
+        reset({
+          score: data.score !== null ? String(data.score) : "",
+          feedback: data.feedback || "",
+        });
+      } catch (err: any) {
+        setError(err.message || "Failed to load project details");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      // TODO: Replace with your actual backend fetch call here:
-      // const response = await fetch('/api/score/submit', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ ...your data ... })
-      // });
-      
-    } catch (error) {
-      console.error("Failed to submit:", error);
+    fetchProject();
+  }, [id, reset]);
+
+  const onSubmitForm = async (data: FormData) => {
+    if (!project) return;
+    try {
+      setIsSubmitting(true);
+      await projectService.updateProjectGrading(project.id, {
+        score: Number(data.score),
+        feedback: data.feedback || null,
+      });
+      alert("Grading saved successfully!");
+      // Option: redirect or just stay
+    } catch (err: any) {
+      console.error("Failed to submit:", err);
+      alert("Error saving grading: " + (err.message || "Unknown error"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <Box sx={{ p: 4, color: 'var(--color-accent04)' }}>
+        <Typography>{error || "Project not found"}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <div className="p-3 flex flex-col gap-6">
       {/* Breadcrumb */}
-        <div className="flex flex-col items-start justify-start gap-2 mb-4">
-            <Breadcrumbs aria-label="breadcrumb" separator="/">
-                <Link href="/classroom/listclassroom">Home</Link>
-                <Link href="/classroom/listclassroom">Web programming</Link>
-                <Link href="/assignment">Assignment</Link>
-                <span >Final Project</span>
-                <span >G. Zhì Shèng Háo</span>
-                <span className="text-black">Scorebook and Feedback</span>
-            </Breadcrumbs>
-        </div>
+      <div className="flex flex-col items-start justify-start gap-2 mb-4">
+        <Breadcrumbs aria-label="breadcrumb" separator="/">
+          <Link href="/classroom/listclassroom">Home</Link>
+          <span className="text-black">Scorebook and Feedback</span>
+        </Breadcrumbs>
+      </div>
 
       <h1 className="mb-3">Scorebook and Feedback</h1>
 
@@ -113,12 +135,24 @@ export default function ScorebookPage() {
                 gap: 1,
               }}
             >
-              {students.map((student) => (
-                <Box key={student.id} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Avatar src={student.avatarUrl} alt={student.name} sx={{ width: 40, height: 40 }} />
-                  <Typography sx={{ fontWeight: 500 }}>{student.name}</Typography>
-                </Box>
-              ))}
+              {project.students.length > 0 ? (
+                project.students.map((student) => (
+                  <Box key={student.id} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Avatar
+                      src={student.user.imageUrl || undefined}
+                      alt={student.user.first_name}
+                      sx={{ width: 40, height: 40 }}
+                    />
+                    <Typography sx={{ fontWeight: 500 }}>
+                      {student.user.first_name} {student.user.last_name}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography sx={{ color: "var(--color-neutral05)", fontStyle: "italic" }}>
+                  No students assigned to this project.
+                </Typography>
+              )}
             </Box>
           </Box>
         </div>
@@ -146,10 +180,16 @@ export default function ScorebookPage() {
               rows={12}
               fullWidth
             />
-            
+
             <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button type="submit" variant="contained" color="primary" sx={{ px: 4 }} disabled={!isValid}>
-                Submit
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ px: 4 }}
+                disabled={!isValid || isSubmitting}
+              >
+                {isSubmitting ? "Saving..." : "Submit"}
               </Button>
             </Box>
           </form>
