@@ -2,80 +2,98 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Breadcrumbs, Box, Typography, Accordion, AccordionSummary, AccordionDetails, CircularProgress } from "@mui/material";
+import { Breadcrumbs, Box, Typography, Accordion, AccordionSummary, AccordionDetails, CircularProgress, Chip } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useParams } from "next/navigation";
+import { assignmentService, projectService, userService } from "@/services/controller";
 
-// Define the interface for your backend payload
 export interface StudentAssignment {
   id: number;
   title: string;
-  score?: number;
+  score?: number | null;
   sendDate?: string;
-  feedback?: string;
+  feedback?: string | null;
   status: "graded" | "waiting" | "missing";
 }
 
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function StudentScorebookPage() {
+  const { id: classroomId } = useParams();
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!classroomId) return;
+
     const fetchScores = async () => {
       try {
         setIsLoading(true);
-        // TODO: Replace this timeout with your actual fetch call to the backend
-        // const response = await fetch('/api/student/scores');
-        // if (!response.ok) throw new Error("Failed to fetch score data");
-        // const data = await response.json();
-        // setAssignments(data.assignments);
+        console.log("Fetching data for classroom:", classroomId);
 
-        // --- Mocking Backend Connection ---
-        setTimeout(() => {
-          setAssignments([
-            {
-              id: 1,
-              title: "Lab 1 List Form",
-              score: 10,
-              sendDate: "9 April 2025 at 11.01",
-              feedback:
-                "Software engineering principles. Ethics for software engineering. Process models and software evolution. System development cycle. System feasibility study. Planning of software development project. System analysis methodologies and tools. System design. System development",
-              status: "graded",
-            },
-            {
-              id: 2,
-              title: "HW Flexbox and Grid",
-              score: 8,
-              sendDate: "16 April 2025 at 23.59",
-              feedback: "Good layout, but the mobile view could use some adjustments.",
-              status: "graded",
-            },
-            {
-              id: 3,
-              title: "Final Project",
-              status: "waiting",
-            },
-          ]);
-          setIsLoading(false);
-        }, 1000);
-        // ----------------------------------
+        // 1. Get current logged-in user profile (Must be StudentResponse)
+        const currentUser = await userService.getCurrentUser();
+        const myStudentId = currentUser.id;
 
+        // 2. Fetch all assignments in this classroom
+        const classAssignments = await assignmentService.getAssignments(Number(classroomId));
+
+        // 3. Loop and fetch projects, tracking down the matching one
+        const mappedData: StudentAssignment[] = await Promise.all(
+          classAssignments.map(async (assign: any) => {
+            let userProject = null;
+            try {
+              const projects = await projectService.getProjectsByAssignment(assign.id);
+              // Find the project that includes my student matching ID
+              userProject = projects.find((p: any) => p.students?.some((s: any) => s.id === myStudentId));
+            } catch {
+              userProject = null; // No projects/errors -> implies missing
+            }
+
+            if (!userProject) {
+              return {
+                id: assign.id,
+                title: assign.title,
+                status: "missing" as const,
+              };
+            }
+
+            return {
+              id: assign.id,
+              title: assign.title,
+              score: userProject.score,
+              feedback: userProject.feedback,
+              status: userProject.score !== null ? ("graded" as const) : ("waiting" as const),
+            };
+          })
+        );
+
+        setAssignments(mappedData);
       } catch (err: any) {
-        setError(err.message || "An error occurred");
+        setError(err.message || "An error occurred fetching your scorebook");
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchScores();
-  }, []);
+  }, [classroomId]);
 
   return (
-    <div className=" flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full">
       {/* Breadcrumb */}
       <div className="flex flex-col items-start justify-start gap-2 mb-2">
         <Breadcrumbs aria-label="breadcrumb" separator="/">
           <Link href="/classroom/listclassroom">Home</Link>
-          <Link href="/classroom/listclassroom">Web programming</Link>
           <span className="text-black">Score and feedback</span>
         </Breadcrumbs>
       </div>
@@ -103,6 +121,27 @@ export default function StudentScorebookPage() {
             <Typography>No assignments found.</Typography>
           ) : (
             assignments.map((assignment, index) => {
+              if (assignment.status === "missing") {
+                return (
+                  <Box
+                    key={assignment.id}
+                    sx={{
+                      backgroundColor: "var(--color-neutral01)",
+                      border: "1px dashed var(--color-neutral04)",
+                      borderRadius: "8px",
+                      p: 3,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-neutral04)" }}>
+                        {assignment.title}
+                      </Typography>
+                      <Chip label="Missing Submission" size="small" variant="outlined" />
+                    </Box>
+                  </Box>
+                );
+              }
+
               if (assignment.status === "waiting") {
                 return (
                   <Box
@@ -167,7 +206,7 @@ export default function StudentScorebookPage() {
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                       <Typography sx={{ fontWeight: 700, color: "var(--color-black)" }}>Feedback:</Typography>
                       <Typography sx={{ color: "var(--color-neutral05)", lineHeight: 1.6 }}>
-                        {assignment.feedback}
+                        {assignment.feedback || "-"}
                       </Typography>
                     </Box>
                   </AccordionDetails>
