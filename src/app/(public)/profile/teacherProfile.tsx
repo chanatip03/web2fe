@@ -33,6 +33,9 @@ const mockProfile = {
   imageUrl: "",
 };
 
+import { userService } from "@/services/controller";
+import { Teacher } from "@/domain/teacher";
+
 export default function TeacherProfile() {
   const router = useRouter();
 
@@ -42,6 +45,7 @@ export default function TeacherProfile() {
   const [initialPreviewImage, setInitialPreviewImage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [openResetPassword, setOpenResetPassword] = useState(false);
+  const [currentUserData, setCurrentUserData] = useState<Teacher | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -53,7 +57,6 @@ export default function TeacherProfile() {
       last_name: "",
       email: "",
       academy: "",
-      imageUrl: null,
     },
   });
 
@@ -68,19 +71,19 @@ export default function TeacherProfile() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        await new Promise((res) => setTimeout(res, 300));
+        const data = await userService.getCurrentUser() as Teacher;
+        setCurrentUserData(data);
 
         const profileData = {
-          first_name: mockProfile.first_name,
-          last_name: mockProfile.last_name,
-          email: mockProfile.email,
-          academy: mockProfile.academy,
-          imageUrl: null,
+          first_name: data.user.first_name,
+          last_name: data.user.last_name,
+          email: data.user.email,
+          academy: data.user.academy,
         };
 
         reset(profileData);
-        setPreviewImage(mockProfile.imageUrl);
-        setInitialPreviewImage(mockProfile.imageUrl);
+        setPreviewImage(data.user.imageUrl || "");
+        setInitialPreviewImage(data.user.imageUrl || "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -92,14 +95,20 @@ export default function TeacherProfile() {
   }, [reset]);
 
   const onSubmit = async (data: FormData) => {
+    if (!currentUserData) return;
     try {
       setSaving(true);
-      await new Promise((res) => setTimeout(res, 800));
-      console.log("saved:", data);
+      await userService.updateTeacher(currentUserData.user.id, {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        academy: data.academy,
+      }, data.imageUrl as File);
+
       setIsEditing(false);
-      router.push("/profile");
+      router.refresh();
     } catch (error) {
-      console.error(error);
+      console.error("Failed to update profile:", error);
     } finally {
       setSaving(false);
     }
@@ -122,11 +131,12 @@ export default function TeacherProfile() {
   };
 
   const handleResetEdit = () => {
+    if (!currentUserData) return;
     reset({
-      first_name: mockProfile.first_name,
-      last_name: mockProfile.last_name,
-      email: mockProfile.email,
-      academy: mockProfile.academy,
+      first_name: currentUserData.user.first_name,
+      last_name: currentUserData.user.last_name,
+      email: currentUserData.user.email,
+      academy: currentUserData.user.academy,
       imageUrl: null,
     });
 
@@ -274,7 +284,7 @@ export default function TeacherProfile() {
         </form>
         <ResetPasswordModal
           open={openResetPassword}
-          email={mockProfile.email}
+          email={currentUserData?.user.email || ""}
           onClose={() => setOpenResetPassword(false)}
           onConfirm={(data) => {
             console.log("reset password:", data);

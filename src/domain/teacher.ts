@@ -1,7 +1,7 @@
 import { User } from "./user";
 
 export interface Teacher {
-  id: string;
+  id: number;
   certificateUrl: string;
   isApproved: boolean;
   user: User;

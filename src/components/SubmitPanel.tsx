@@ -171,6 +171,14 @@ export default function SubmitPanel({
     return blob;
   }
 
+  // Strip all whitespace / newlines the user may have copy-pasted with the URL
+  const sanitizeUrl = (raw: string) =>
+    raw
+      .split(/\s+/)           // split on any whitespace (spaces, \n, \r, tabs)
+      .filter(Boolean)        // drop empty parts
+      .join("")               // rejoin (URL should not have internal spaces)
+      .trim();
+
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -192,7 +200,16 @@ export default function SubmitPanel({
       await debugZipPaths(zipBlob);
       form.append("file", zipBlob, "submission.zip");
     } else {
-      form.append("repo_url", githubUrl);
+      const cleanUrl = sanitizeUrl(githubUrl);
+
+      // Basic GitHub URL validation before hitting the server
+      if (!cleanUrl.startsWith("https://") && !cleanUrl.startsWith("http://")) {
+        alert(`❌ Invalid repository URL.\nPlease paste a valid GitHub URL (e.g. https://github.com/user/repo.git)`);
+        setStatus("editing");
+        return;
+      }
+
+      form.append("repo_url", cleanUrl);
     }
 
     if (envText.trim() !== "") {
@@ -236,14 +253,12 @@ export default function SubmitPanel({
         }
         const sData = await sRes.json();
 
-        // 🛑 Breakpoint checking deployment finished status from Backend 🛑
+        // Check when deployment step finishes (for debugging)
         if (
           sData.steps?.deployment?.status === "success" ||
           sData.steps?.deployment?.status === "error"
         ) {
-          console.log("Deployment is finished. Inspect sData below:");
-          console.dir(sData);
-          debugger; 
+          console.log("Deployment finished:", sData.steps?.deployment?.status);
         }
 
         if (sData.pipeline_status === "running") {
