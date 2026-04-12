@@ -8,6 +8,8 @@ import { GroupService } from "./group/service";
 import { GroupRepository } from "./group/repository";
 import { ClassroomMemberService } from "./classroommember/service";
 import { ClassroomMemberRepository } from "./classroommember/repository";
+import { UserService } from "./user/service";
+import { UserRepository } from "./user/repository";
 
 const authRepository = new AuthRepository();
 export const authService = new AuthService(authRepository);
@@ -19,3 +21,6 @@ const groupRepository = new GroupRepository();
 export const groupService = new GroupService(groupRepository);
 const classroomMemberRepository = new ClassroomMemberRepository();
 export const classroomMemberService = new ClassroomMemberService(classroomMemberRepository);
+const userRepository = new UserRepository();
+export const userService = new UserService(userRepository);
+
