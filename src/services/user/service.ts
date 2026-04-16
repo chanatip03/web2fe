@@ -8,6 +8,14 @@ export class UserService {
     return this.userRepository.getUsers(role);
   }
 
+  async getAdminStudents(search?: string) {
+    return this.userRepository.getAdminStudents(search);
+  }
+
+  async getAdminTeachers(search?: string) {
+    return this.userRepository.getAdminTeachers(search);
+  }
+
   async getCurrentUser() {
     return this.userRepository.getCurrentUser();
   }
@@ -40,5 +48,33 @@ export class UserService {
 
   async deleteUser(userId: number) {
     return this.userRepository.deleteUser(userId);
+  }
+
+  async getContainers() {
+    return this.userRepository.getContainers();
+  }
+
+  async getContainerDetails(id: string) {
+    return this.userRepository.getContainerDetails(id);
+  }
+
+  async startContainer(id: string) {
+    return this.userRepository.startContainer(id);
+  }
+
+  async stopContainer(id: string) {
+    return this.userRepository.stopContainer(id);
+  }
+
+  async getTeacherRequests(search?: string) {
+    return this.userRepository.getTeacherRequests(search);
+  }
+
+  async approveRequest(id: number) {
+    return this.userRepository.approveRequest(id);
+  }
+
+  async rejectRequest(id: number) {
+    return this.userRepository.rejectRequest(id);
   }
 }

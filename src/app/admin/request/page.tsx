@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  Box,
   Table,
   TableBody,
   TableCell,
@@ -18,8 +19,8 @@ import {
   Link as MuiLink,
   Snackbar,
   Alert,
+  CircularProgress,
   Typography,
-  Chip,
 } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CloseIcon from "@mui/icons-material/Close";
@@ -28,16 +29,26 @@ import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
-import { adminService } from "@/services/controller";
+import { userService } from "@/services/controller";
 import { AdminTeacherRequest } from "@/domain/admin";
 
 const ROWS_PER_PAGE = 5;
 const headCellSx = { fontWeight: 700, color: "var(--color-primary03)" } as const;
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export default function RequestPage() {
   const [requests, setRequests] = useState<AdminTeacherRequest[]>([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
 
   const [actionTarget, setActionTarget] = useState<{
     request: AdminTeacherRequest;
@@ -46,7 +57,38 @@ export default function RequestPage() {
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    adminService.getTeacherRequests(search || undefined).then(setRequests);
+    let active = true;
+
+    const loadRequests = async () => {
+      setIsLoading(true);
+      setPageError("");
+
+      try {
+        const nextRequests = await userService.getTeacherRequests(search || undefined);
+        if (!active) return;
+
+        setRequests(nextRequests);
+        setPage((currentPage) => {
+          const totalPages = Math.max(1, Math.ceil(nextRequests.length / ROWS_PER_PAGE));
+          return Math.min(currentPage, totalPages);
+        });
+      } catch (error) {
+        if (!active) return;
+
+        setRequests([]);
+        setPageError(getErrorMessage(error, "Failed to load teacher requests"));
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadRequests();
+
+    return () => {
+      active = false;
+    };
   }, [search]);
 
   const handleConfirmAction = async () => {
@@ -54,10 +96,10 @@ export default function RequestPage() {
     const { request, action } = actionTarget;
 
     if (action === "approve") {
-      await adminService.approveRequest(request.id);
+      await userService.approveRequest(request.id);
       setToast(`Teacher "${request.name}" has been approved`);
     } else {
-      await adminService.rejectRequest(request.id);
+      await userService.rejectRequest(request.id);
       setToast(`Request from "${request.name}" has been rejected`);
     }
 
@@ -116,7 +158,24 @@ export default function RequestPage() {
           </TableHead>
 
           <TableBody>
-            {paginatedData.length === 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                  <Box className="flex items-center justify-center gap-3">
+                    <CircularProgress size={22} />
+                    <Typography color="var(--color-neutral04)">Loading requests...</Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ) : pageError ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                  <Alert severity="error" sx={{ justifyContent: "center" }}>
+                    {pageError}
+                  </Alert>
+                </TableCell>
+              </TableRow>
+            ) : paginatedData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                   <Typography color="var(--color-neutral04)">

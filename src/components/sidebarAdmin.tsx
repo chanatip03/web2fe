@@ -8,7 +8,7 @@ import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined
 import { Badge } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { adminService } from "@/services/controller";
+import { userService } from "@/services/controller";
 
 const sidebarAdminItems = [
   {
@@ -39,7 +39,24 @@ export const SidebarAdmin = () => {
   const [requestCount, setRequestCount] = useState(0);
 
   useEffect(() => {
-    adminService.getTeacherRequests().then((r) => setRequestCount(r.length));
+    let active = true;
+
+    const loadRequestCount = async () => {
+      try {
+        const requests = await userService.getTeacherRequests();
+        if (!active) return;
+        setRequestCount(requests.length);
+      } catch {
+        if (!active) return;
+        setRequestCount(0);
+      }
+    };
+
+    void loadRequestCount();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (

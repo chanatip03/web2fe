@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
-import { adminService } from "@/services/controller";
+import { userService } from "@/services/controller";
 import type { AdminTeacher } from "@/domain/admin";
 
 interface Props {
@@ -17,7 +17,8 @@ interface Props {
 }
 
 const Schema = z.object({
-  name: z.string().min(1, "Please enter name"),
+  first_name: z.string().min(1, "Please enter first name"),
+  last_name: z.string().min(1, "Please enter last name"),
   email: z.string().email("Invalid email format"),
   academy: z.string().min(1, "Please enter academy"),
 });
@@ -35,9 +36,10 @@ const EditTeacherModal = ({ open, teacher, onClose, onUpdated }: Props) => {
     mode: "onChange",
     values: teacher
       ? {
-          name: teacher.name,
+          first_name: teacher.first_name,
+          last_name: teacher.last_name,
           email: teacher.email,
-          academy: teacher.academy,
+          academy: teacher.academy || "",
         }
       : undefined,
   });
@@ -51,8 +53,19 @@ const EditTeacherModal = ({ open, teacher, onClose, onUpdated }: Props) => {
     if (!teacher) return;
 
     try {
-      const updated = await adminService.updateTeacher(teacher.id, data);
-      onUpdated(updated);
+      await userService.updateTeacher(teacher.id, {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        academy: data.academy,
+      });
+      onUpdated({
+        ...teacher,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        academy: data.academy,
+      });
       handleClose();
     } catch (err) {
       console.error(err);
@@ -90,7 +103,10 @@ const EditTeacherModal = ({ open, teacher, onClose, onUpdated }: Props) => {
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-3 py-4 px-8"
         >
-          <RHFTextField name="name" control={control} label="Name" fullWidth />
+          <div className="grid grid-cols-2 gap-4">
+            <RHFTextField name="first_name" control={control} label="First Name" fullWidth />
+            <RHFTextField name="last_name" control={control} label="Last Name" fullWidth />
+          </div>
           <RHFTextField name="email" control={control} label="Email" fullWidth />
           <RHFTextField name="academy" control={control} label="Academy" fullWidth />
 

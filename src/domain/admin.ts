@@ -1,28 +1,63 @@
 export interface Container {
   id: string;
-  name: string;
-  cpuPercent: number;
-  memoryUsageMB: number;
-  uptime: string;
+  assignmentName: string;
+  projectName: string;
+  studentId?: string | null;
   teacherName: string;
+  memoryUsageMB?: number | null;
+  status: string;
+  canStop: boolean;
+}
+
+export interface ContainerPort {
+  containerPort: number;
+  hostPort: number;
+  protocol?: string;
+  serviceName?: string | null;
+}
+
+export interface ContainerLogEntry {
+  id: string;
+  category: string;
+  level: string;
+  message: string;
+}
+
+export interface ContainerDetails {
+  status: string;
+  currentStep?: number | null;
+  previewUrl?: string | null;
+  errorMessage?: string | null;
+  updatedAt?: string | null;
+  containerId?: string | null;
+  containerState?: string | null;
+  hostPort?: number | null;
+  extraPorts: ContainerPort[];
+  imageTag?: string | null;
+  runtimeLogs: ContainerLogEntry[];
+  buildLogs: string;
+  canStart: boolean;
 }
 
 export interface AdminStudent {
   id: number;
-  studentId: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  academy: string;
+  academy?: string;
   imageUrl?: string;
+  studentId?: string;
 }
 
 export interface AdminTeacher {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
   email: string;
-  academy: string;
-  certificateUrl?: string;
+  academy?: string;
   imageUrl?: string;
+  certificateUrl?: string;
+  isApproved: boolean;
 }
 
 export interface AdminTeacherRequest {
@@ -32,17 +67,4 @@ export interface AdminTeacherRequest {
   academy: string;
   certificateUrl?: string;
   imageUrl?: string;
-}
-
-export interface UpdateStudentRequest {
-  name?: string;
-  email?: string;
-  academy?: string;
-  studentId?: string;
-}
-
-export interface UpdateTeacherRequest {
-  name?: string;
-  email?: string;
-  academy?: string;
 }

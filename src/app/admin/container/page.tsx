@@ -2,52 +2,194 @@
 
 import { useEffect, useState } from "react";
 import {
+  Alert,
+  AlertColor,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Link as MuiLink,
+  Pagination,
+  Paper,
+  Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  IconButton,
-  Pagination,
   Tooltip,
-  Snackbar,
-  Alert,
   Typography,
-  Chip,
 } from "@mui/material";
+import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
+import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
 import StopCircleIcon from "@mui/icons-material/StopCircle";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
-import { adminService } from "@/services/controller";
-import type { Container } from "@/domain/admin";
+import type { Container, ContainerDetails } from "@/domain/admin";
+import { userService } from "@/services/controller";
 
 const ROWS_PER_PAGE = 5;
-
 const headCellSx = { fontWeight: 700, color: "var(--color-primary03)" } as const;
+
+type ToastState = {
+  message: string;
+  severity: AlertColor;
+};
+
+function formatMemory(memoryUsageMB?: number | null): string {
+  if (memoryUsageMB === null || memoryUsageMB === undefined) return "—";
+  return Number(memoryUsageMB).toFixed(2);
+}
+
+function formatStudentId(studentId?: string | null): string {
+  return studentId?.trim() || "—";
+}
+
+function formatDateTime(value?: string | null): string {
+  if (!value) return "—";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return parsed.toLocaleString();
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function getStatusChipColor(status: string): "success" | "default" | "error" | "warning" {
+  if (status === "running") return "success";
+  if (status === "stopped") return "default";
+  if (status === "error") return "error";
+  return "warning";
+}
 
 export default function ContainerPage() {
   const [containers, setContainers] = useState<Container[]>([]);
   const [page, setPage] = useState(1);
-
-  /* confirm dialog */
+  const [isLoading, setIsLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
-  /* snackbar */
-  const [toast, setToast] = useState("");
+  const [detailsTarget, setDetailsTarget] = useState<Container | null>(null);
+  const [details, setDetails] = useState<ContainerDetails | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState("");
+  const [toast, setToast] = useState<ToastState | null>(null);
+
+  const fetchContainers = async (): Promise<Container[]> => {
+    setIsLoading(true);
+    setPageError("");
+
+    try {
+      const nextContainers = await userService.getContainers();
+      setContainers(nextContainers);
+      setPage((currentPage) => {
+        const totalPages = Math.max(1, Math.ceil(nextContainers.length / ROWS_PER_PAGE));
+        return Math.min(currentPage, totalPages);
+      });
+      return nextContainers;
+    } catch (error) {
+      const message = getErrorMessage(error, "Failed to fetch deployments");
+      setContainers([]);
+      setPageError(message);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchContainerDetails = async (container: Container): Promise<void> => {
+    setDetailsTarget(container);
+    setDetails(null);
+    setDetailsError("");
+    setDetailsLoading(true);
+
+    try {
+      const nextDetails = await userService.getContainerDetails(container.id);
+      setDetails(nextDetails);
+    } catch (error) {
+      setDetailsError(getErrorMessage(error, "Failed to fetch deployment details"));
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    adminService.getContainers().then(setContainers);
+    void fetchContainers();
   }, []);
 
   const handleStop = async () => {
     if (!confirmTarget) return;
-    await adminService.stopContainer(confirmTarget);
-    const name = containers.find((c) => c.id === confirmTarget)?.name;
-    setContainers((prev) => prev.filter((c) => c.id !== confirmTarget));
-    setConfirmTarget(null);
-    setToast(`Container "${name}" has been stopped`);
+
+    const target = containers.find((container) => container.id === confirmTarget);
+
+    try {
+      await userService.stopContainer(confirmTarget);
+      const nextContainers = await fetchContainers();
+
+      if (detailsTarget?.id === confirmTarget) {
+        const nextTarget = nextContainers.find((container) => container.id === confirmTarget) || target;
+        if (nextTarget) {
+          await fetchContainerDetails(nextTarget);
+        }
+      }
+
+      setToast({
+        message: `Deployment for "${target?.assignmentName || confirmTarget}" has been stopped`,
+        severity: "success",
+      });
+    } catch (error) {
+      setToast({
+        message: getErrorMessage(error, "Failed to stop container"),
+        severity: "error",
+      });
+    } finally {
+      setConfirmTarget(null);
+    }
+  };
+
+  const handleStart = async () => {
+    if (!detailsTarget) return;
+
+    try {
+      await userService.startContainer(detailsTarget.id);
+      const nextContainers = await fetchContainers();
+      const nextTarget = nextContainers.find((container) => container.id === detailsTarget.id) || detailsTarget;
+      await fetchContainerDetails(nextTarget);
+      setToast({
+        message: `Deployment for "${detailsTarget.assignmentName}" has been started`,
+        severity: "success",
+      });
+    } catch (error) {
+      setToast({
+        message: getErrorMessage(error, "Failed to start container"),
+        severity: "error",
+      });
+    }
+  };
+
+  const handleRefreshDetails = async () => {
+    if (!detailsTarget) return;
+    await fetchContainerDetails(detailsTarget);
+  };
+
+  const handleOpenPreview = () => {
+    if (!details?.previewUrl) return;
+    window.open(details.previewUrl, "_blank", "noopener,noreferrer");
   };
 
   const totalPages = Math.ceil(containers.length / ROWS_PER_PAGE);
@@ -56,9 +198,16 @@ export default function ContainerPage() {
     page * ROWS_PER_PAGE,
   );
 
+  const detailStatus = (details?.containerState || details?.status || detailsTarget?.status || "unknown").toLowerCase();
+  const canStopSelected = !!detailsTarget?.canStop && detailStatus !== "stopped";
+
   return (
     <AdminLayout>
-      <PageHeader title="Container" totalCount={containers.length} countLabel="Running" />
+      <PageHeader
+        title="Container"
+        totalCount={containers.filter((container) => container.canStop).length}
+        countLabel="Active"
+      />
 
       <TableContainer
         component={Paper}
@@ -69,69 +218,87 @@ export default function ContainerPage() {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: "var(--color-primary01)" }}>
-              <TableCell sx={headCellSx}>CONTAINER</TableCell>
-              <TableCell align="center" sx={headCellSx}>CPU %</TableCell>
-              <TableCell align="center" sx={headCellSx}>Memory usage(MB)</TableCell>
-              <TableCell align="center" sx={headCellSx}>Uptime</TableCell>
-              <TableCell align="center" sx={headCellSx}>teacher</TableCell>
-              <TableCell align="center" sx={{ width: 60 }} />
+              <TableCell sx={headCellSx}>ASSIGNMENT</TableCell>
+              <TableCell sx={headCellSx}>STUDENT ID / DEPLOYMENT ID</TableCell>
+              <TableCell align="center" sx={headCellSx}>MEMORY (MB)</TableCell>
+              <TableCell align="center" sx={headCellSx}>TEACHER</TableCell>
+              <TableCell align="center" sx={headCellSx}>STATUS</TableCell>
+              <TableCell align="center" sx={{ width: 96 }} />
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {paginatedData.length === 0 ? (
+            {isLoading ? (
               <TableRow>
                 <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                  <Typography color="var(--color-neutral04)">
-                    No running containers
+                  <Stack direction="row" spacing={2} justifyContent="center" alignItems="center">
+                    <CircularProgress size={20} />
+                    <Typography color="var(--color-neutral04)">Loading deployments...</Typography>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ) : paginatedData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                  <Typography color={pageError ? "error" : "var(--color-neutral04)"}>
+                    {pageError || "No deployments found"}
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((container, idx) => (
+              paginatedData.map((container, index) => (
                 <TableRow
                   key={container.id}
                   hover
                   sx={{
-                    backgroundColor: idx % 2 === 1 ? "#f5f8fc" : "#ffffff",
+                    backgroundColor: index % 2 === 1 ? "#f5f8fc" : "#ffffff",
                     transition: "background-color 0.15s",
                   }}
                 >
-                  <TableCell sx={{ fontWeight: 600 }}>{container.name}</TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={`${container.cpuPercent}%`}
-                      size="small"
-                      sx={{
-                        fontWeight: 600,
-                        backgroundColor:
-                          container.cpuPercent > 10
-                            ? "var(--color-accent01)"
-                            : "var(--color-primary01)",
-                        color:
-                          container.cpuPercent > 10
-                            ? "var(--color-accent04)"
-                            : "var(--color-primary04)",
-                      }}
-                    />
+                  <TableCell sx={{ fontWeight: 600 }}>{container.assignmentName}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                      <Typography sx={{ fontWeight: 600, color: "#212121" }}>{formatStudentId(container.studentId)}</Typography>
+                      <Typography variant="caption" color="var(--color-neutral04)">
+                        Deployment ID: {container.id}
+                      </Typography>
+                    </Box>
                   </TableCell>
-                  <TableCell align="center">{container.memoryUsageMB}</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600 }}>
-                    {container.uptime}
-                  </TableCell>
+                  <TableCell align="center">{formatMemory(container.memoryUsageMB)}</TableCell>
                   <TableCell align="center">{container.teacherName}</TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Stop container">
+                    <Chip
+                      label={container.status}
+                      size="small"
+                      color={getStatusChipColor(container.status)}
+                      variant={container.status === "running" ? "filled" : "outlined"}
+                      sx={{ textTransform: "capitalize", fontWeight: 600 }}
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="View details">
                       <IconButton
                         size="small"
-                        onClick={() => setConfirmTarget(container.id)}
-                        sx={{
-                          color: "var(--color-accent03)",
-                          "&:hover": { backgroundColor: "var(--color-accent01)" },
-                        }}
+                        onClick={() => void fetchContainerDetails(container)}
+                        sx={{ color: "var(--color-primary03)" }}
                       >
-                        <StopCircleIcon />
+                        <VisibilityOutlinedIcon />
                       </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Stop container">
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => setConfirmTarget(container.id)}
+                          disabled={!container.canStop}
+                          sx={{
+                            color: "var(--color-accent03)",
+                            "&:hover": { backgroundColor: "var(--color-accent01)" },
+                          }}
+                        >
+                          <StopCircleIcon />
+                        </IconButton>
+                      </span>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
@@ -141,7 +308,6 @@ export default function ContainerPage() {
         </Table>
       </TableContainer>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-6">
           <Pagination
@@ -154,25 +320,180 @@ export default function ContainerPage() {
         </div>
       )}
 
-      {/* Confirm Dialog */}
       <ConfirmDialog
         open={confirmTarget !== null}
         title="Stop Container"
-        message={`Are you sure you want to stop "${containers.find((c) => c.id === confirmTarget)?.name}"? The container will be terminated.`}
+        message={`Are you sure you want to stop "${containers.find((container) => container.id === confirmTarget)?.assignmentName}"? This deployment will no longer be running.`}
         confirmLabel="Stop"
         onConfirm={handleStop}
         onCancel={() => setConfirmTarget(null)}
       />
 
-      {/* Toast */}
+      <Dialog
+        open={detailsTarget !== null}
+        onClose={() => {
+          setDetailsTarget(null);
+          setDetails(null);
+          setDetailsError("");
+        }}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Deployment Details</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--color-primary03)" }}>
+                {detailsTarget?.assignmentName}
+              </Typography>
+              <Typography sx={{ color: "var(--color-neutral05)", fontWeight: 500 }}>
+                Student ID: {formatStudentId(detailsTarget?.studentId)}
+              </Typography>
+            </Box>
+
+            {detailsLoading ? (
+              <Stack direction="row" spacing={2} alignItems="center">
+                <CircularProgress size={20} />
+                <Typography color="text.secondary">Loading deployment details...</Typography>
+              </Stack>
+            ) : detailsError ? (
+              <Alert severity="error">{detailsError}</Alert>
+            ) : details ? (
+              <>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} flexWrap="wrap">
+                  <Chip label={`Status: ${details.status}`} color={getStatusChipColor(details.status)} sx={{ textTransform: "capitalize" }} />
+                  <Chip label={`Container: ${details.containerState || "unknown"}`} variant="outlined" sx={{ textTransform: "capitalize" }} />
+                  <Chip label={`Step: ${details.currentStep ?? "—"}`} variant="outlined" />
+                </Stack>
+
+                <Stack spacing={1}>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Teacher:</strong> {detailsTarget?.teacherName || "—"}</Typography>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Deployment ID:</strong> {detailsTarget?.id || "—"}</Typography>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Student ID:</strong> {formatStudentId(detailsTarget?.studentId)}</Typography>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Image Tag:</strong> {details.imageTag || "—"}</Typography>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Updated:</strong> {formatDateTime(details.updatedAt)}</Typography>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Memory:</strong> {formatMemory(detailsTarget?.memoryUsageMB)} MB</Typography>
+                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Preview URL:</strong> {details.previewUrl ? (
+                    <MuiLink href={details.previewUrl} target="_blank" rel="noreferrer" underline="hover">
+                      {details.previewUrl}
+                    </MuiLink>
+                  ) : " —"}</Typography>
+                </Stack>
+
+                {details.extraPorts.length > 0 && (
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary03)" }}>Published Ports</Typography>
+                    <Stack spacing={0.75}>
+                      {details.extraPorts.map((port, index) => (
+                        <Typography key={`${port.containerPort}-${port.hostPort}-${index}`} sx={{ color: "#212121" }}>
+                          {port.hostPort} → {port.containerPort}{port.protocol ? `/${port.protocol}` : ""}{port.serviceName ? ` (${port.serviceName})` : ""}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+
+                {details.errorMessage && (
+                  <Alert severity="warning">{details.errorMessage}</Alert>
+                )}
+
+                <Box>
+                  <Typography sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary03)" }}>Runtime Logs</Typography>
+                  <Paper variant="outlined" sx={{ p: 1.5, maxHeight: 260, overflow: "auto", bgcolor: "#0f172a" }}>
+                    {details.runtimeLogs.length === 0 ? (
+                      <Typography sx={{ color: "#cbd5e1" }}>No runtime logs available</Typography>
+                    ) : (
+                      <Stack spacing={0.75}>
+                        {details.runtimeLogs.map((entry) => (
+                          <Typography
+                            key={entry.id}
+                            component="pre"
+                            sx={{
+                              m: 0,
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word",
+                              color: entry.level === "error" ? "#fca5a5" : "#e2e8f0",
+                              fontSize: 13,
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            {entry.message}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    )}
+                  </Paper>
+                </Box>
+
+                <Box>
+                  <Typography sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary03)" }}>Build Logs</Typography>
+                  <Paper variant="outlined" sx={{ p: 1.5, maxHeight: 220, overflow: "auto", bgcolor: "#111827" }}>
+                    <Typography
+                      component="pre"
+                      sx={{
+                        m: 0,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        color: "#d1d5db",
+                        fontSize: 13,
+                        fontFamily: "monospace",
+                      }}
+                    >
+                      {details.buildLogs || "No build logs available"}
+                    </Typography>
+                  </Paper>
+                </Box>
+              </>
+            ) : null}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => void handleRefreshDetails()} disabled={!detailsTarget || detailsLoading}>
+            Refresh
+          </Button>
+          <Button
+            startIcon={<OpenInNewOutlinedIcon />}
+            onClick={handleOpenPreview}
+            disabled={!details?.previewUrl}
+          >
+            Open Preview
+          </Button>
+          <Button
+            startIcon={<PlayCircleOutlineIcon />}
+            onClick={() => void handleStart()}
+            disabled={!detailsTarget || detailsLoading || !details?.canStart}
+          >
+            Start
+          </Button>
+          <Button
+            color="error"
+            startIcon={<StopCircleIcon />}
+            onClick={() => setConfirmTarget(detailsTarget?.id || null)}
+            disabled={!detailsTarget || detailsLoading || !canStopSelected}
+          >
+            Stop
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setDetailsTarget(null);
+              setDetails(null);
+              setDetailsError("");
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Snackbar
         open={!!toast}
-        autoHideDuration={3000}
-        onClose={() => setToast("")}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert severity="success" onClose={() => setToast("")}>
-          {toast}
+        <Alert severity={toast?.severity || "info"} onClose={() => setToast(null)}>
+          {toast?.message}
         </Alert>
       </Snackbar>
     </AdminLayout>

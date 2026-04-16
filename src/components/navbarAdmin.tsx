@@ -7,6 +7,8 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { authService } from "@/services/controller";
+
 export const NavbarAdmin = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
@@ -20,9 +22,14 @@ export const NavbarAdmin = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleClose();
-    router.push("/admin/login");
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore logout failures and still return to the login page.
+    }
+    router.replace("/admin/login");
   };
 
   return (

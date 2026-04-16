@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
-import { adminService } from "@/services/controller";
+import { userService } from "@/services/controller";
 import type { AdminStudent } from "@/domain/admin";
 
 interface Props {
@@ -17,10 +17,11 @@ interface Props {
 }
 
 const Schema = z.object({
-  name: z.string().min(1, "Please enter name"),
-  studentId: z.string().min(1, "Please enter student ID"),
+  first_name: z.string().min(1, "Please enter first name"),
+  last_name: z.string().min(1, "Please enter last name"),
   email: z.string().email("Invalid email format"),
   academy: z.string().min(1, "Please enter academy"),
+  student_id: z.string().optional(),
 });
 
 type FormData = z.infer<typeof Schema>;
@@ -36,10 +37,11 @@ const EditStudentModal = ({ open, student, onClose, onUpdated }: Props) => {
     mode: "onChange",
     values: student
       ? {
-          name: student.name,
-          studentId: student.studentId,
+          first_name: student.first_name,
+          last_name: student.last_name,
           email: student.email,
-          academy: student.academy,
+          academy: student.academy || "",
+          student_id: student.studentId || "",
         }
       : undefined,
   });
@@ -53,8 +55,21 @@ const EditStudentModal = ({ open, student, onClose, onUpdated }: Props) => {
     if (!student) return;
 
     try {
-      const updated = await adminService.updateStudent(student.id, data);
-      onUpdated(updated);
+      await userService.updateStudent(student.id, {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        academy: data.academy,
+        student_id: data.student_id || undefined,
+      });
+      onUpdated({
+        ...student,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        academy: data.academy,
+        studentId: data.student_id || undefined,
+      });
       handleClose();
     } catch (err) {
       console.error(err);
@@ -92,8 +107,11 @@ const EditStudentModal = ({ open, student, onClose, onUpdated }: Props) => {
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-3 py-4 px-8"
         >
-          <RHFTextField name="name" control={control} label="Name" fullWidth />
-          <RHFTextField name="studentId" control={control} label="Student ID" fullWidth />
+          <div className="grid grid-cols-2 gap-4">
+            <RHFTextField name="first_name" control={control} label="First Name" fullWidth />
+            <RHFTextField name="last_name" control={control} label="Last Name" fullWidth />
+          </div>
+          <RHFTextField name="student_id" control={control} label="Student ID" fullWidth />
           <RHFTextField name="email" control={control} label="Email" fullWidth />
           <RHFTextField name="academy" control={control} label="Academy" fullWidth />
 
