@@ -263,12 +263,14 @@ const CreateAssignmentModal = ({
               name="publishDate"
               control={control}
               label="Publish date"
+              disablePast
             />
 
             <RHFDateTimePickerDayjs
               name="dueDate"
               control={control}
               label="Due date"
+              disablePast
             />
           </div>
 
