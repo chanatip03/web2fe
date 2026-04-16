@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, IconButton, Button } from "@mui/material";
+import { Dialog, DialogContent, IconButton, Button, CircularProgress } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -198,7 +198,14 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
               onClick={handleGenerate}
               disabled={loading}
             >
-              Generate
+              {loading ? (
+                <>
+                  <CircularProgress size={16} color="inherit" className="mr-2" />
+                  Generating...
+                </>
+              ) : (
+                "Generate"
+              )}
             </Button>
           </div>
 
@@ -208,6 +215,11 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
             </div>
 
             <div className="relative">
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
+                  <CircularProgress size={24} />
+                </div>
+              )}
               {!watch("testcase") && !canEdit && (
                 <div className="absolute inset-0 flex items-center justify-center bg-neutral02 text-neutral05 pointer-events-none font-mono">
                   No testcase yet. Please generate from prompt.
@@ -216,7 +228,7 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
 
               <textarea
                 value={watch("testcase")}
-                disabled={!canEdit}
+                disabled={!canEdit || loading}
                 onChange={(e) => handleEdit(e.target.value)}
                 className="w-full h-[320px] p-4 outline-none font-mono text-primary03"
               />
@@ -227,9 +239,16 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
             <Button
               type="submit"
               variant="contained"
-              disabled={!isValid || !canEdit}
+              disabled={!isValid || !canEdit || loading}
             >
-              Save
+              {loading ? (
+                <>
+                  <CircularProgress size={16} color="inherit" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </form>
