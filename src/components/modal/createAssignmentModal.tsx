@@ -7,6 +7,7 @@ import {
   IconButton,
   Button,
   MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
@@ -79,6 +80,7 @@ const CreateAssignmentModal = ({
 }: Props) => {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const params = useParams();
   const id = params.id;
@@ -138,6 +140,7 @@ const CreateAssignmentModal = ({
   };
 
   const handleCreate = async (data: FormData) => {
+    setIsSubmitting(true);
     try {
       const payload = {
         title: data.name,
@@ -160,9 +163,14 @@ const CreateAssignmentModal = ({
       setOpenConfirm(false);
       setPendingData(null);
       onSuccess?.("Assignment created successfully.");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      onError?.("Failed to create assignment. Please try again later.");
+      const message =
+        err?.message ||
+        "Failed to create assignment. Please try again later.";
+      onError?.(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,8 +322,19 @@ const CreateAssignmentModal = ({
           </div>
 
           <div className="flex justify-end mt-6">
-            <Button type="submit" variant="contained" disabled={!isValid}>
-              Save
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!isValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <CircularProgress size={20} color="inherit" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </div>
         </form>
@@ -325,6 +344,7 @@ const CreateAssignmentModal = ({
         onClose={() => {
           setOpenConfirm(false);
         }}
+        isLoading={isSubmitting}
         onConfirm={() => {
           if (pendingData) {
             handleCreate(pendingData);
