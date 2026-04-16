@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Link } from "@mui/material";
+import { Button, Link, CircularProgress } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +33,9 @@ export default function TeacherRegisterForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [openVerifyModal, setOpenVerifyModal] = useState<boolean>(false);
   const [email, setEmail] = useState("");
+  const [isOtpRequested, setIsOtpRequested] = useState(false);
+  const [otpRequestedAt, setOtpRequestedAt] = useState<number | undefined>();
+  const [loading, setLoading] = useState(false);
   const { control, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(Schema),
     defaultValues: {
@@ -51,11 +54,18 @@ export default function TeacherRegisterForm() {
       return;
     }
 
-    const response = await authService.requestOTP(data, 2, selectedFile, null);
+    setLoading(true);
+    try {
+      const response = await authService.requestOTP(data, 2, selectedFile, null);
 
-    if (response) {
-      setEmail(data.email);
-      setOpenVerifyModal(true);
+      if (response) {
+        setEmail(data.email);
+        setOpenVerifyModal(true);
+        setIsOtpRequested(true);
+        setOtpRequestedAt(Date.now());
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,14 +156,28 @@ export default function TeacherRegisterForm() {
             </span>
           </div>
 
-          <Button type="submit" variant="contained" fullWidth className="!mt-6">
-            Register
+          <Button type="submit" variant="contained" fullWidth className="!mt-6" disabled={isOtpRequested || loading}>
+            {loading ? (
+              <>
+                <CircularProgress size={20} color="inherit" className="mr-2" />
+                Requesting OTP...
+              </>
+            ) : isOtpRequested ? (
+              "OTP Sent - Check Email"
+            ) : (
+              "Register"
+            )}
           </Button>
         </form>
         {
           <VerifyOtpModal
             open={openVerifyModal}
-            onClose={() => setOpenVerifyModal(false)}
+            onClose={() => {
+              setOpenVerifyModal(false);
+              setIsOtpRequested(false);
+              setOtpRequestedAt(undefined);
+            }}
+            otpRequestedAt={otpRequestedAt}
             email={email}
           />
         }

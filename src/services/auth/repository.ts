@@ -60,7 +60,16 @@ export class AuthRepository implements IAuthRepository {
     });
 
     if (!res.ok) {
-      throw new Error(`Request otp failed: ${res.status}`);
+      let errorMessage = `Request otp failed: ${res.status}`;
+      try {
+        const json = await res.json();
+        if (json?.message) {
+          errorMessage = String(json.message);
+        }
+      } catch {
+        // ignore parse errors
+      }
+      throw new Error(errorMessage);
     }
 
     return res.json();
@@ -76,14 +85,23 @@ export class AuthRepository implements IAuthRepository {
     });
 
     if (!res.ok) {
-      throw new Error(`Verify otp failed: ${res.status}`);
+      let errorMessage = `Verify otp failed: ${res.status}`;
+      try {
+        const json = await res.json();
+        if (json?.message) {
+          errorMessage = String(json.message);
+        }
+      } catch {
+        // ignore parse errors
+      }
+      throw new Error(errorMessage);
     }
 
     return res.json();
   }
 
   async logout(): Promise<void> {
-    await fetch(`${BASE_URL}/auth/logout`, {
+    const res = await fetch(`${BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });
