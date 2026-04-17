@@ -180,14 +180,18 @@ export default function StudentAssignmentInfoPage() {
         {/* Submit file */}
         <div
           className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
-            ${!assignment.is_group && hasGroup ? "border-neutral03" : "border-neutral03 bg-white"}
+            ${
+              !assignment.is_group || hasGroup
+                ? "border-primary03 bg-white"
+                : "border-neutral03 bg-white"
+            }
         `}
         >
           {/* HEADER */}
           <div
             className={`px-6 py-3 font-semibold flex items-center justify-between
                 ${
-                  !assignment.is_group && hasGroup
+                  !assignment.is_group || hasGroup
                     ? "bg-primary03 text-white"
                     : "bg-neutral02 text-neutral06"
                 }

@@ -153,6 +153,10 @@ export default function SubmitPanel({
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const isSubmissionReady =
+    (type === "file" && uploadedFiles.length > 0) ||
+    (type === "github" && githubUrl.trim() !== "");
+
   async function zipFiles(files: File[]) {
     const zip = new JSZip();
 
@@ -419,7 +423,7 @@ export default function SubmitPanel({
 
           {/* RIGHT BOX */}
           <textarea
-            placeholder="Input environment variables"
+            placeholder="Input environment variables (if any)"
             value={envText}
             onChange={(e) => setEnvText(e.target.value)}
             className="border rounded-lg h-[200px] p-3 outline-none resize-none border-neutral03"
@@ -431,7 +435,12 @@ export default function SubmitPanel({
           {status === "editing" && (
             <button
               onClick={handleSubmit}
-              className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-2xl"
+              disabled={!isSubmissionReady}
+              className={`text-white px-6 py-2 rounded-lg shadow-2xl ${
+                isSubmissionReady
+                  ? "bg-primary03 hover:opacity-90 cursor-pointer"
+                  : "bg-neutral04 cursor-not-allowed"
+              }`}
             >
               Submit
             </button>
