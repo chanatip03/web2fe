@@ -117,14 +117,26 @@ export default function StudentAssignmentInfoPage() {
           {/* Attachments */}
           <h2 className="font-bold text-lg mb-2">Attachments</h2>
 
-          <ul className="mb-5 space-y-1">
-            <li className="hover:text-primary03 transition cursor-pointer">
-              <InsertDriveFileIcon /> Assignment.pdf
-            </li>
-            <li className="hover:text-primary03 transition cursor-pointer">
-              <InsertDriveFileIcon /> image1.png
-            </li>
-          </ul>
+          {assignment.attachments && assignment.attachments.length > 0 ? (
+            <ul className="mb-5 space-y-1">
+              {assignment.attachments.map((attachment) => (
+                <li key={attachment.id} className="hover:text-primary03 transition cursor-pointer">
+                  <a
+                    href={attachment.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <InsertDriveFileIcon />
+                    {attachment.file_url.split('/').pop() || 'Attachment'}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-neutral06 mb-5">No attachments available</p>
+          )}
+
         </div>
 
         {/* RIGHT SIDE GROUP BOX */}
