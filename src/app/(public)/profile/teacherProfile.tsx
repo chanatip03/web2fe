@@ -13,6 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
 import ResetPasswordModal from "@/components/modal/resetPasswordModal";
+import { ANONYMOUS_AVATAR_URL } from "@/constants";
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -180,14 +181,12 @@ export default function TeacherProfile() {
                   </div>
                 ) : (
                   <Avatar
+                    src={ANONYMOUS_AVATAR_URL}
                     sx={{
                       width: 148,
                       height: 148,
-                      bgcolor: "#b3b3b3",
                     }}
-                  >
-                    <PersonIcon sx={{ fontSize: 80, color: "#fff" }} />
-                  </Avatar>
+                  />
                 )}
 
                 <button
