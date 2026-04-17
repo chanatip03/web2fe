@@ -1,8 +1,8 @@
 "use client";
 
 import { Navbar } from "@/components/navbar";
-import { SidebarProfessor } from "@/components/sidebarProfessor";
 import { SidebarStudent } from "@/components/sidebarStudent";
+import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 
 interface Props {
@@ -10,7 +10,11 @@ interface Props {
 }
 
 export default function ClassroomLayout({ children }: Readonly<Props>) {
-  const classroomName = Cookies.get("classroomName");
+  // Read cookie only on the client to avoid SSR/client hydration mismatch.
+  const [classroomName, setClassroomName] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    setClassroomName(Cookies.get("classroomName"));
+  }, []);
 
   return (
     <>

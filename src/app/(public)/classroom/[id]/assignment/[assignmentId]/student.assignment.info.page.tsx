@@ -104,7 +104,7 @@ export default function StudentAssignmentInfoPage() {
           {/* Due Date */}
           <p className="mb-3">
             <span className="font-bold">Due Date :</span>{" "}
-            <span className="text-red-500">
+            <span className={new Date(assignment.due_date).getTime() < Date.now() ? "text-red-500" : "text-black"}>
               {dayjs(assignment.due_date).format("D MMMM YYYY [at] HH.mm")}
             </span>
           </p>
