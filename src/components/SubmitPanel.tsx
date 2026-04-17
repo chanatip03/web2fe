@@ -312,7 +312,14 @@ export default function SubmitPanel({
             <input
               type="radio"
               checked={type === "github"}
-              onChange={() => setType("github")}
+              onChange={() => {
+                if (uploadedFiles.length > 0) {
+                  // Clear uploaded files first
+                  setUploadedFiles([]);
+                }
+                setType("github");
+              }}
+              disabled={uploadedFiles.length > 0 && type === "file"}
               className="mr-2 size-4"
             />
             Github Repository
@@ -322,7 +329,14 @@ export default function SubmitPanel({
             <input
               type="radio"
               checked={type === "file"}
-              onChange={() => setType("file")}
+              onChange={() => {
+                if (githubUrl.trim() !== "") {
+                  // Clear GitHub URL first
+                  setGithubUrl("");
+                }
+                setType("file");
+              }}
+              disabled={githubUrl.trim() !== "" && type === "github"}
               className="mr-2 size-4"
             />
             Project files
