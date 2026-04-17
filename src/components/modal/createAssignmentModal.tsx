@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -274,53 +275,90 @@ const CreateAssignmentModal = ({
             />
           </div>
 
-          <div className="flex items-center gap-3 mb-4">
-            <span className="flex items-center gap-2">
-              <h4 className="m-0">Test case</h4>
-              <p className="p2 m-0">(optional)</p>
-            </span>
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
+                <h4 className="m-0">Test case</h4>
+                <p className="p2 m-0">(optional)</p>
+              </span>
+              <Button variant="outlined" component="label" sx={{ height: 32 }}>
+                <span>Add File</span>
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) => setValue("testCase", e.target.files?.[0])}
+                />
+              </Button>
+            </div>
 
-            <Button variant="outlined" component="label" sx={{ height: 32 }}>
-              <span>Add File</span>
-              <input
-                type="file"
-                hidden
-                onChange={(e) => setValue("testCase", e.target.files?.[0])}
-              />
-            </Button>
-
-            <p className="text-neutral03 p2 truncate max-w-[400px]">
-              {watch("testCase")?.name ?? "No file chosen"}
-            </p>
+            {watch("testCase") ? (
+              <div className="flex items-center justify-between gap-3 rounded border border-neutral03 bg-neutral01 px-3 py-2">
+                <span className="text-neutral05 break-all">
+                  {watch("testCase")?.name}
+                </span>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => setValue("testCase", undefined)}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </div>
+            ) : (
+              <p className="text-neutral05 p2">No file chosen</p>
+            )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-2">
-              <h4 className="m-0">Attachments</h4>
-              <p className="p2 m-0">(optional)</p>
-            </span>
-            <Button variant="outlined" component="label" sx={{ height: 32 }}>
-              <span>Add File</span>
-              <input
-                type="file"
-                multiple
-                hidden
-                onChange={(e) => {
-                  const newFiles = Array.from(e.target.files || []);
-                  const currentFiles = watch("attachment") || [];
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
+                <h4 className="m-0">Attachments</h4>
+                <p className="p2 m-0">(optional)</p>
+              </span>
+              <Button variant="outlined" component="label" sx={{ height: 32 }}>
+                <span>Add File</span>
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    const newFiles = Array.from(e.target.files || []);
+                    const currentFiles = watch("attachment") || [];
 
-                  setValue("attachment", [...currentFiles, ...newFiles], {
-                    shouldValidate: true,
-                  });
-                }}
-              />
-            </Button>
+                    setValue("attachment", [...currentFiles, ...newFiles], {
+                      shouldValidate: true,
+                    });
+                  }}
+                />
+              </Button>
+            </div>
 
-            <p className="text-neutral03 p2 truncate max-w-[400px]">
-              {attachments.length > 0
-                ? attachments.map((f) => f.name).join(", ")
-                : "No file chosen"}
-            </p>
+            {attachments.length > 0 ? (
+              attachments.map((file, index) => (
+                <div
+                  key={`${file.name}-${index}`}
+                  className="flex items-center justify-between gap-3 rounded border border-neutral03 bg-neutral01 px-3 py-2"
+                >
+                  <span className="text-neutral05 break-all">{file.name}</span>
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => {
+                      const currentFiles = watch("attachment") || [];
+                      setValue(
+                        "attachment",
+                        currentFiles.filter((_, idx) => idx !== index),
+                        { shouldValidate: true },
+                      );
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </div>
+              ))
+            ) : (
+              <p className="text-neutral05 p2">No file chosen</p>
+            )}
           </div>
 
           <div className="flex justify-end mt-6">
