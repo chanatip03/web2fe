@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, IconButton, Breadcrumbs } from "@mui/material";
+import { Button, IconButton, Breadcrumbs, Snackbar, Alert } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { RHFTextField } from "@/components/form/RHFTextField";
@@ -35,6 +35,11 @@ type FormData = z.infer<typeof Schema>;
 export default function ClassroomSetting() {
   const [classroom, setClassroom] = useState<Classroom | null>(null);
   const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
   const router = useRouter();
 
   const params = useParams();
@@ -104,10 +109,24 @@ export default function ClassroomSetting() {
       if (!res) throw new Error("Failed to update classroom");
 
       Cookies.set("classroomName", String(payload.name));
+      setSnackbar({
+        open: true,
+        message: "Classroom updated successfully!",
+        severity: "success",
+      });
       router.refresh();
     } catch (error) {
       console.error("Error updating classroom:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to update classroom. Please try again.",
+        severity: "error",
+      });
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -209,6 +228,21 @@ export default function ClassroomSetting() {
           </Button>
         </div>
       </form>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
