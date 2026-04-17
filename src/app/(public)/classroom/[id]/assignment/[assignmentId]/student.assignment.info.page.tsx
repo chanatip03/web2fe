@@ -13,6 +13,7 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CreateGroupModal from "../../../../../../components/modal/CreateGroupModal";
 import GroupCard from "../../../../../../components/GroupCard";
 import { Breadcrumbs } from "@mui/material";
+import { Snackbar, Alert } from "@mui/material";
 import { Group } from "@/domain/group";
 import { Assignment } from "@/domain/assignment";
 import { assignmentService, groupService } from "@/services/controller";
@@ -26,6 +27,7 @@ export default function StudentAssignmentInfoPage() {
   const [status, setStatus] = useState<SubmitStatus>("editing");
   const [deployResult, setDeployResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const params = useParams();
   const id = params.id;
@@ -166,7 +168,10 @@ export default function StudentAssignmentInfoPage() {
         <CreateGroupModal
           open={open}
           onClose={() => setOpen(false)}
-          onSave={(g) => setGroup(g)}
+          onSave={(g) => {
+            setGroup(g);
+            setSnackbar({ open: true, message: 'Group saved successfully!', severity: 'success' });
+          }}
           assignmentId={Number(assignMentId)}
           classroomId={Number(id)}
           initialGroup={group}
@@ -264,6 +269,21 @@ export default function StudentAssignmentInfoPage() {
           </div>
         </div>
       </div>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

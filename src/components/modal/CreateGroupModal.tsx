@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import { useState, useEffect } from "react";
-import { groupService, authService } from "@/services/controller";
+import { groupService, userService, authService } from "@/services/controller";
 import { Group } from "@/domain/group";
 import { IStudent } from "@/domain/student";
 
@@ -46,24 +46,34 @@ export default function CreateGroupModal({ open, onClose, onSave, assignmentId, 
 
       const fetchData = async () => {
         try {
-          const [authData, students] = await Promise.all([
-             authService.me(),
-             groupService.getAvailableMembers(assignmentId, classroomId)
+          const [authData, currentUserData, students] = await Promise.all([
+            authService.me(),
+            userService.getCurrentUser(),
+            groupService.getAvailableMembers(assignmentId, classroomId),
           ]);
 
           setAvailableStudents(students);
-          
+
           let myId: number | null = null;
-          if (authData.student) {
-            myId = authData.student.id;
+          let currentStudent: IStudent | null = null;
+
+          if ("student_id" in currentUserData) {
+            currentStudent = currentUserData;
+            myId = currentStudent.id;
+          } else {
+            const foundStudent = students.find((s) => s.user.id === authData.user.id);
+            if (foundStudent) {
+              currentStudent = foundStudent;
+              myId = foundStudent.id;
+            }
+          }
+
+          if (myId) {
             setCurrentStudentId(myId);
           }
 
-          if (!initialGroup && myId) {
-             const me = students.find(s => s.id === myId);
-             if (me) {
-                 setMembers([me]);
-             }
+          if (!initialGroup && currentStudent) {
+            setMembers([currentStudent]);
           }
         } catch (err) {
           console.error(err);
