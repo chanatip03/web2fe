@@ -21,20 +21,10 @@ const schema = z.object({
   email: z.string().min(1, "Please enter email").email("Invalid email format"),
   student_id: z.string().min(1, "Please enter student ID"),
   academy: z.string().min(1, "Please enter academy"),
-  imageUrl: z.instanceof(File).nullable().optional(),
+  image_url: z.instanceof(File).nullable().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
-
-const mockProfile = {
-  id: 1,
-  first_name: "Tula",
-  last_name: "Patanaboonmee",
-  email: "Tulalnwza007@gmail.com",
-  student_id: "66090500405",
-  academy: "KMUTT",
-  imageUrl: "",
-};
 
 import { userService } from "@/services/controller";
 import { IStudent } from "@/domain/student";
@@ -61,7 +51,7 @@ export default function StudentProfile() {
       email: "",
       student_id: "",
       academy: "",
-      imageUrl: null,
+      image_url: null,
     },
   });
 
@@ -76,7 +66,7 @@ export default function StudentProfile() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const data = await userService.getCurrentUser() as IStudent;
+        const data = (await userService.getCurrentUser()) as IStudent;
         setCurrentUserData(data);
 
         const profileData = {
@@ -88,8 +78,8 @@ export default function StudentProfile() {
         };
 
         reset(profileData);
-        setPreviewImage(data.user.imageUrl || "");
-        setInitialPreviewImage(data.user.imageUrl || "");
+        setPreviewImage(data.user.image_url || "");
+        setInitialPreviewImage(data.user.image_url || "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -104,13 +94,17 @@ export default function StudentProfile() {
     if (!currentUserData) return;
     try {
       setSaving(true);
-      await userService.updateStudent(currentUserData.user.id, {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        academy: data.academy,
-        student_id: data.student_id,
-      }, data.imageUrl as File);
+      await userService.updateStudent(
+        currentUserData.user.id,
+        {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          academy: data.academy,
+          student_id: data.student_id,
+        },
+        data.image_url as File,
+      );
 
       setIsEditing(false);
       // Wait for revalidation or just leave it
@@ -127,7 +121,7 @@ export default function StudentProfile() {
 
     const file = event.target.files?.[0] ?? null;
 
-    setValue("imageUrl", file, {
+    setValue("image_url", file, {
       shouldDirty: true,
       shouldValidate: true,
     });
@@ -146,7 +140,7 @@ export default function StudentProfile() {
       email: currentUserData.user.email,
       student_id: currentUserData.student_id,
       academy: currentUserData.user.academy,
-      imageUrl: null,
+      image_url: null,
     });
 
     setPreviewImage(initialPreviewImage);
@@ -169,10 +163,7 @@ export default function StudentProfile() {
           <span className="font-medium text-black">Profile</span>
         </Breadcrumbs>
 
-        <form
-          className="pt-4"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form className="pt-4" onSubmit={(e) => e.preventDefault()}>
           <div className="relative mb-8 h-[180px]">
             <div className="flex h-full items-center justify-center">
               <div className="relative">

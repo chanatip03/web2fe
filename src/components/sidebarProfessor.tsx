@@ -52,7 +52,7 @@ export const SidebarProfessor = ({ classroomName: classroomNameProp }: SidebarPr
     setClassroomName(classroomNameProp ?? Cookies.get("classroomName") ?? "");
   }, [classroomNameProp]);
   return (
-    <aside className="w-[260px] h-screen bg-[#ffffff] border-r border-neutral02 ">
+    <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 ">
       <div className="bg-secondary04 text-white h-[145px] flex items-center px-2">
         <h3>{classroomName}</h3>
       </div>

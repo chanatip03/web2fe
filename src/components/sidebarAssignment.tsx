@@ -1,103 +1,101 @@
 "use client";
-import TvIcon from '@mui/icons-material/Tv';
-import SourceOutlinedIcon from '@mui/icons-material/SourceOutlined';
-import AssignmentLateOutlinedIcon from '@mui/icons-material/AssignmentLateOutlined';
-import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import TvIcon from "@mui/icons-material/Tv";
+import SourceOutlinedIcon from "@mui/icons-material/SourceOutlined";
+import AssignmentLateOutlinedIcon from "@mui/icons-material/AssignmentLateOutlined";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 
-interface SidebarAssignmentProps {
-
-}
-
 const sidebarAssignmentItems = [
-    {
-        name: "Preview",
-        href: "/preview",
-        icon: <TvIcon />,
-    },
-    {
-        name: "Source Code",
-        href: "/sourceCode",
-        icon: <SourceOutlinedIcon />,
-    },
-    {
-        name: "Test Result ",
-        href: "/testResult",
-        icon: <AssignmentLateOutlinedIcon />,
-    },
-    {
-        name: "Score and Feedback",
-        href: "/scoreFeedback",
-        icon: <EmojiEventsOutlinedIcon />,
-    },
+  {
+    name: "Preview",
+    href: "/preview",
+    icon: <TvIcon />,
+  },
+  {
+    name: "Source Code",
+    href: "/sourceCode",
+    icon: <SourceOutlinedIcon />,
+  },
+  {
+    name: "Test Result ",
+    href: "/testResult",
+    icon: <AssignmentLateOutlinedIcon />,
+  },
+  {
+    name: "Score and Feedback",
+    href: "/scoreFeedback",
+    icon: <EmojiEventsOutlinedIcon />,
+  },
 ];
 
-export const SidebarAssignment = ({ }: SidebarAssignmentProps) => {
-    const pathname = usePathname();
-    const params = useParams();
-    const classroomId = params.id;
+export const SidebarAssignment = () => {
+  const pathname = usePathname();
+  const params = useParams();
+  const classroomId = params.id;
 
-    return (
-        <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 flex flex-col justify-between">
-            <div>
-                <div className="bg-secondary04 text-white h-[145px] flex flex-col justify-between p-6 pt-8">
-                    <h3>Final Project</h3>
+  return (
+    <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 flex flex-col justify-between">
+      <div>
+        <div className="bg-secondary04 text-white h-[145px] flex flex-col justify-between p-6 pt-8">
+          <h3>Final Project</h3>
 
-                    <p>G. Zhī Shēng Hào</p>
-                </div>
+          <p>G. Zhī Shēng Hào</p>
+        </div>
 
-                <nav className="mt-4">
-                    <ul className="flex flex-col">
-                        {sidebarAssignmentItems.map((item) => {
-                            const isActive = pathname.startsWith(
-                                `/classroom/${classroomId}${item.href}`,
-                            );
+        <nav className="mt-4">
+          <ul className="flex flex-col">
+            {sidebarAssignmentItems.map((item) => {
+              const isActive = pathname.startsWith(`/preview${item.href}`);
 
-                            return (
-                                <li key={item.name}>
-                                    <Link
-                                        href={`/classroom/${classroomId}${item.href}`}
-                                        className={`group flex items-center gap-3 h-[52px] px-6 transition-colors border-l-6
-                                    ${isActive
-                                                ? "bg-primary01 border-primary03"
-                                                : "border-transparent hover:bg-neutral02/50"
-                                            }
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={`/preview${item.href}`}
+                    className={`group flex items-center gap-3 h-[52px] px-6 transition-colors border-l-6
+                                    ${
+                                      isActive
+                                        ? "bg-primary01 border-primary03"
+                                        : "border-transparent hover:bg-neutral02/50"
+                                    }
                                     `}
-                                    >
-                                        <span
-                                            className={`transition-colors ${isActive
-                                                    ? "text-primary03"
-                                                    : "text-neutral05 group-hover:text-black"
-                                                }`}
-                                        >
-                                            {item.icon}
-                                        </span>
+                  >
+                    <span
+                      className={`transition-colors ${
+                        isActive
+                          ? "text-primary03"
+                          : "text-neutral05 group-hover:text-black"
+                      }`}
+                    >
+                      {item.icon}
+                    </span>
 
-                                        {isActive ? (
-                                            <h5 className="text-primary03">{item.name}</h5>
-                                        ) : (
-                                            <p className="text-neutral05 group-hover:text-black p2">
-                                                {item.name}
-                                            </p>
-                                        )}
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </nav>
-            </div>
-            <div className="mt-auto pb-2">
- <Link
-                    href={`/classroom/${classroomId}/assignment`}
-                    className="group flex items-center gap-2 h-[52px] p-6 hover:bg-neutral02/50 transition-colors"
-                >
-                    <ArrowBackIcon className="text-neutral05 group-hover:text-black transition-colors"/>
-                    <p className="text-neutral05 group-hover:text-black p2">Back to assignment</p>
-                </Link>
-            </div>
-        </aside>
-    );
+                    {isActive ? (
+                      <h5 className="text-primary03">{item.name}</h5>
+                    ) : (
+                      <p className="text-neutral05 group-hover:text-black p2">
+                        {item.name}
+                      </p>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
+      <div className="mt-auto pb-2">
+        <Link
+          href={`/classroom/${classroomId}/assignment`}
+          className="group flex items-center gap-2 h-[52px] p-6 hover:bg-neutral02/50 transition-colors"
+        >
+          <ArrowBackIcon className="text-neutral05 group-hover:text-black transition-colors" />
+          <p className="text-neutral05 group-hover:text-black p2">
+            Back to assignment
+          </p>
+        </Link>
+      </div>
+    </aside>
+  );
 };
