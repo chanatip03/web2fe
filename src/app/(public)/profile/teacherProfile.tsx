@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Breadcrumbs, Avatar } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import LinkIcon from "@mui/icons-material/Link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,15 +22,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const mockProfile = {
-  id: 1,
-  first_name: "Tula",
-  last_name: "Patanaboonmee",
-  email: "Tulalnwza007@gmail.com",
-  academy: "KMUTT",
-  imageUrl: "",
-};
 
 import { userService } from "@/services/controller";
 import { Teacher } from "@/domain/teacher";
@@ -71,7 +61,7 @@ export default function TeacherProfile() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const data = await userService.getCurrentUser() as Teacher;
+        const data = (await userService.getCurrentUser()) as Teacher;
         setCurrentUserData(data);
 
         const profileData = {
@@ -82,8 +72,8 @@ export default function TeacherProfile() {
         };
 
         reset(profileData);
-        setPreviewImage(data.user.imageUrl || "");
-        setInitialPreviewImage(data.user.imageUrl || "");
+        setPreviewImage(data.user.image_url || "");
+        setInitialPreviewImage(data.user.image_url || "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -98,12 +88,16 @@ export default function TeacherProfile() {
     if (!currentUserData) return;
     try {
       setSaving(true);
-      await userService.updateTeacher(currentUserData.user.id, {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        academy: data.academy,
-      }, data.imageUrl as File);
+      await userService.updateTeacher(
+        currentUserData.user.id,
+        {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          academy: data.academy,
+        },
+        data.imageUrl as File,
+      );
 
       setIsEditing(false);
       router.refresh();
@@ -160,10 +154,7 @@ export default function TeacherProfile() {
           <span className="font-medium text-black">Profile</span>
         </Breadcrumbs>
 
-        <form
-          className="pt-4"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form className="pt-4" onSubmit={(e) => e.preventDefault()}>
           <div className="relative mb-8 h-[180px]">
             <div className="flex h-full items-center justify-center">
               <div className="relative">

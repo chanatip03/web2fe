@@ -83,7 +83,7 @@ export class AuthRepository implements IAuthRepository {
   }
 
   async logout(): Promise<void> {
-    await fetch(`${BASE_URL}/auth/logout`, {
+    const res = await fetch(`${BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });
