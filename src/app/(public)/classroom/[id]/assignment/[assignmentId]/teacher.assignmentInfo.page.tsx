@@ -106,7 +106,7 @@ export default function TeacherAssignmentInfoPage() {
     <div>
       <div className="mb-6">
         <Breadcrumbs separator="/">
-          <Link href="/classroom/listclassroom">Home</Link>
+          <Link href="/classroom">Home</Link>
           <span>{Cookies.get("classroomName")}</span>
           <Link href={`/classroom/${id}/assignment`}>Assignment</Link>
           <span className="text-black font-medium">{assignments.title}</span>

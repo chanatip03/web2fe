@@ -18,6 +18,7 @@ import { Group } from "@/domain/group";
 import { Assignment } from "@/domain/assignment";
 import { assignmentService, groupService } from "@/services/controller";
 import { useParams } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function StudentAssignmentInfoPage() {
   const [assignment, setAssignments] = useState<Assignment>();
@@ -86,11 +87,9 @@ export default function StudentAssignmentInfoPage() {
       {/* Breadcrumb */}
       <Breadcrumbs className="text-sm mb-6">
         <Link href="/classroom">Home</Link>
-        {/* <span>{classrooms?.name}</span> */}
-        <span>Mock up data</span>
-        <span className="text-black font-medium">Assigment</span>
-        {/* <span>{assignment?.name}</span> */}
-        <span>Mock up data</span>
+        <span>{Cookies.get("classroomName")}</span>
+        <Link href={`/classroom/${id}/assignment`}>Assignment</Link>
+        <span className="text-black font-medium">{assignment.title}</span>
       </Breadcrumbs>
 
       {/* Title */}
