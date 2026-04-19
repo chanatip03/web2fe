@@ -45,8 +45,8 @@ export default function ProjectPreviewPage() {
     const startPreview = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/start`,
-          { method: "POST", credentials: "include" }
+          `${process.env.NEXT_PUBLIC_API_URL}/submission/project/${id}/activate`,
+          { method: "GET", credentials: "include" }
         );
         if (!res.ok) {
           const text = await res.text();
@@ -66,7 +66,7 @@ export default function ProjectPreviewPage() {
         pollRef.current = setInterval(async () => {
           try {
             const sRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/status`,
+              `${process.env.NEXT_PUBLIC_API_URL}/submission/project/${id}/activate`,
               { credentials: "include" }
             );
             const sData = await sRes.json();
