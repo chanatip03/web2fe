@@ -10,6 +10,7 @@ interface Props {
   isGroup: boolean;
   hasGroup?: boolean;
   assignmentId: number;
+  projectTypeId?: number;
   groupId?: number;
   status: "editing" | "submitting" | "deploying" | "done";
   setStatus: (s: Props["status"]) => void;
@@ -21,6 +22,7 @@ export default function SubmitPanel({
   isGroup,
   hasGroup,
   assignmentId,
+  projectTypeId,
   groupId,
   status,
   setStatus,
@@ -221,6 +223,9 @@ export default function SubmitPanel({
     }
     if (groupId) {
       form.append("group_id", groupId.toString());
+    }
+    if (projectTypeId) {
+      form.append("project_type_id", projectTypeId.toString());
     }
 
     try {

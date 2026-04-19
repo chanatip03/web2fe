@@ -208,6 +208,7 @@ export default function StudentAssignmentInfoPage() {
               isGroup={assignment.is_group}
               hasGroup={hasGroup}
               assignmentId={Number(assignMentId)}
+              projectTypeId={assignment.project_type?.id}
               groupId={group?.id}
               status={status}
               setStatus={setStatus}
@@ -249,7 +250,7 @@ export default function StudentAssignmentInfoPage() {
                 />
 
                 {/* Preview link — only shown when deploy succeeded */}
-                {status === "done" && deploySuccess && previewUrl && (
+                {status === "done" && deploySuccess && (
                   <div className="mt-5 pt-5 border-t border-neutral03 flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-sm">Deployed Application</p>
@@ -257,14 +258,32 @@ export default function StudentAssignmentInfoPage() {
                         Container runs for 2 hours then auto-removes.
                       </p>
                     </div>
-                    <a
-                      href={previewUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 bg-primary03 hover:opacity-90 transition text-white text-sm font-semibold px-5 py-2 rounded-lg shadow"
-                    >
-                      <span>🚀</span> View Deployed App ↗
-                    </a>
+                    <div className="flex flex-wrap gap-3">
+                      {/* Detection logic for backend-only projects */}
+                      {(deployResult.deployment?.deploy_mode === "backend-only" || 
+                        deployResult.execution_mode === "backend-only" || 
+                        assignment.project_type?.id === 2) ? (
+                        <>
+                          <a
+                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '')}${deployResult.deployment?.api_url || `/api/deployments/${deployResult.submission_id}/swagger`}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-200/50 active:scale-95"
+                          >
+                            <span className="text-lg">📜</span> View API Docs (Swagger) ↗
+                          </a>
+                        </>
+                      ) : (
+                        <a
+                          href={previewUrl || `/preview/${deployResult.submission_id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
+                        >
+                          <span className="text-lg">🚀</span> Open Live Preview ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
