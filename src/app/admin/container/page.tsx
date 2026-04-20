@@ -11,7 +11,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   IconButton,
   Link as MuiLink,
   Pagination,
@@ -29,8 +28,10 @@ import {
 } from "@mui/material";
 import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-import StopCircleIcon from "@mui/icons-material/StopCircle";
+import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -78,17 +79,32 @@ function getStatusChipColor(status: string): "success" | "default" | "error" | "
   return "warning";
 }
 
+function canStartContainer(status: string): boolean {
+  return !["running", "analyzing", "building", "deploying"].includes(status);
+}
+
+function canStopContainer(status: string, canStop?: boolean): boolean {
+  return Boolean(canStop) && status !== "stopped";
+}
+
 export default function ContainerPage() {
   const [containers, setContainers] = useState<Container[]>([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState("");
-  const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Container | null>(null);
   const [detailsTarget, setDetailsTarget] = useState<Container | null>(null);
   const [details, setDetails] = useState<ContainerDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailsError, setDetailsError] = useState("");
+  const [actionTargetId, setActionTargetId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+
+  const handleCloseDetails = () => {
+    setDetailsTarget(null);
+    setDetails(null);
+    setDetailsError("");
+  };
 
   const fetchContainers = async (): Promise<Container[]> => {
     setIsLoading(true);
@@ -132,59 +148,75 @@ export default function ContainerPage() {
     void fetchContainers();
   }, []);
 
-  const handleStop = async () => {
-    if (!confirmTarget) return;
+  const handleRefreshDetails = async () => {
+    if (!detailsTarget) return;
 
-    const target = containers.find((container) => container.id === confirmTarget);
+    const nextContainers = await fetchContainers();
+    const nextTarget = nextContainers.find((container) => container.id === detailsTarget.id) || detailsTarget;
+    await fetchContainerDetails(nextTarget);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
 
     try {
-      await userService.stopContainer(confirmTarget);
-      const nextContainers = await fetchContainers();
-
-      if (detailsTarget?.id === confirmTarget) {
-        const nextTarget = nextContainers.find((container) => container.id === confirmTarget) || target;
-        if (nextTarget) {
-          await fetchContainerDetails(nextTarget);
-        }
-      }
-
+      await userService.deleteContainer(deleteTarget.id);
+      await fetchContainers();
+      handleCloseDetails();
       setToast({
-        message: `Deployment for "${target?.assignmentName || confirmTarget}" has been stopped`,
+        message: `Deployment for "${deleteTarget.assignmentName}" has been deleted`,
         severity: "success",
       });
     } catch (error) {
       setToast({
-        message: getErrorMessage(error, "Failed to stop container"),
+        message: getErrorMessage(error, "Failed to delete container"),
         severity: "error",
       });
     } finally {
-      setConfirmTarget(null);
+      setDeleteTarget(null);
     }
   };
 
-  const handleStart = async () => {
-    if (!detailsTarget) return;
+  const handleToggleContainer = async (container: Container) => {
+    const normalizedStatus = container.status.toLowerCase();
+    const shouldStop = normalizedStatus === "running";
+
+    if (!shouldStop && !canStartContainer(normalizedStatus)) {
+      return;
+    }
+
+    if (shouldStop && !canStopContainer(normalizedStatus, container.canStop)) {
+      return;
+    }
+
+    setActionTargetId(container.id);
 
     try {
-      await userService.startContainer(detailsTarget.id);
+      if (shouldStop) {
+        await userService.stopContainer(container.id);
+      } else {
+        await userService.startContainer(container.id);
+      }
+
       const nextContainers = await fetchContainers();
-      const nextTarget = nextContainers.find((container) => container.id === detailsTarget.id) || detailsTarget;
-      await fetchContainerDetails(nextTarget);
+      const nextTarget = nextContainers.find((item) => item.id === container.id) || container;
+
+      if (detailsTarget?.id === container.id) {
+        await fetchContainerDetails(nextTarget);
+      }
+
       setToast({
-        message: `Deployment for "${detailsTarget.assignmentName}" has been started`,
+        message: `Deployment for "${container.assignmentName}" has been ${shouldStop ? "stopped" : "started"}`,
         severity: "success",
       });
     } catch (error) {
       setToast({
-        message: getErrorMessage(error, "Failed to start container"),
+        message: getErrorMessage(error, `Failed to ${shouldStop ? "stop" : "start"} container`),
         severity: "error",
       });
+    } finally {
+      setActionTargetId(null);
     }
-  };
-
-  const handleRefreshDetails = async () => {
-    if (!detailsTarget) return;
-    await fetchContainerDetails(detailsTarget);
   };
 
   const handleOpenPreview = () => {
@@ -198,8 +230,8 @@ export default function ContainerPage() {
     page * ROWS_PER_PAGE,
   );
 
-  const detailStatus = (details?.containerState || details?.status || detailsTarget?.status || "unknown").toLowerCase();
-  const canStopSelected = !!detailsTarget?.canStop && detailStatus !== "stopped";
+  const detailStatus = (detailsTarget?.status || details?.containerState || details?.status || "unknown").toLowerCase();
+  const detailContainerState = (details?.containerState || detailsTarget?.status || details?.status || "unknown").toLowerCase();
 
   return (
     <AdminLayout>
@@ -221,9 +253,9 @@ export default function ContainerPage() {
               <TableCell sx={headCellSx}>ASSIGNMENT</TableCell>
               <TableCell sx={headCellSx}>STUDENT ID / DEPLOYMENT ID</TableCell>
               <TableCell align="center" sx={headCellSx}>MEMORY (MB)</TableCell>
-              <TableCell align="center" sx={headCellSx}>TEACHER</TableCell>
+              <TableCell align="center" sx={headCellSx}>OWNER</TableCell>
               <TableCell align="center" sx={headCellSx}>STATUS</TableCell>
-              <TableCell align="center" sx={{ width: 96 }} />
+              <TableCell align="center" sx={{ width: 112 }} />
             </TableRow>
           </TableHead>
 
@@ -246,7 +278,14 @@ export default function ContainerPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedData.map((container, index) => (
+              paginatedData.map((container, index) => {
+                const normalizedStatus = container.status.toLowerCase();
+                const isRunning = normalizedStatus === "running";
+                const canToggle = isRunning
+                  ? canStopContainer(normalizedStatus, container.canStop)
+                  : canStartContainer(normalizedStatus);
+
+                return (
                 <TableRow
                   key={container.id}
                   hover
@@ -282,27 +321,34 @@ export default function ContainerPage() {
                         onClick={() => void fetchContainerDetails(container)}
                         sx={{ color: "var(--color-primary03)" }}
                       >
-                        <VisibilityOutlinedIcon />
+                        <VisibilityOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Stop container">
+                    <Tooltip title={isRunning ? "Stop container" : "Start container"}>
                       <span>
                         <IconButton
                           size="small"
-                          onClick={() => setConfirmTarget(container.id)}
-                          disabled={!container.canStop}
+                          onClick={() => void handleToggleContainer(container)}
+                          disabled={!canToggle || actionTargetId === container.id}
                           sx={{
-                            color: "var(--color-accent03)",
-                            "&:hover": { backgroundColor: "var(--color-accent01)" },
+                            color: isRunning ? "var(--color-accent03)" : "var(--color-success01)",
+                            "&:hover": {
+                              backgroundColor: isRunning ? "var(--color-accent01)" : "#d7f0cc",
+                            },
                           }}
                         >
-                          <StopCircleIcon />
+                          {actionTargetId === container.id
+                            ? <CircularProgress size={16} sx={{ color: "inherit" }} />
+                            : isRunning
+                              ? <StopCircleOutlinedIcon fontSize="small" />
+                              : <PlayCircleOutlineIcon fontSize="small" />}
                         </IconButton>
                       </span>
                     </Tooltip>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -320,26 +366,23 @@ export default function ContainerPage() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={confirmTarget !== null}
-        title="Stop Container"
-        message={`Are you sure you want to stop "${containers.find((container) => container.id === confirmTarget)?.assignmentName}"? This deployment will no longer be running.`}
-        confirmLabel="Stop"
-        onConfirm={handleStop}
-        onCancel={() => setConfirmTarget(null)}
-      />
-
       <Dialog
         open={detailsTarget !== null}
-        onClose={() => {
-          setDetailsTarget(null);
-          setDetails(null);
-          setDetailsError("");
-        }}
+        onClose={handleCloseDetails}
         fullWidth
         maxWidth="md"
+        slotProps={{
+          paper: {
+            sx: { borderRadius: "12px" },
+          },
+        }}
       >
-        <DialogTitle>Deployment Details</DialogTitle>
+        <div className="flex items-center justify-between bg-primary03 px-12 py-3 text-white">
+          <h3>Deployment Details</h3>
+          <IconButton onClick={handleCloseDetails}>
+            <CloseIcon className="text-white" />
+          </IconButton>
+        </div>
         <DialogContent dividers>
           <Stack spacing={2.5}>
             <Box>
@@ -361,8 +404,8 @@ export default function ContainerPage() {
             ) : details ? (
               <>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} flexWrap="wrap">
-                  <Chip label={`Status: ${details.status}`} color={getStatusChipColor(details.status)} sx={{ textTransform: "capitalize" }} />
-                  <Chip label={`Container: ${details.containerState || "unknown"}`} variant="outlined" sx={{ textTransform: "capitalize" }} />
+                  <Chip label={`Status: ${detailStatus}`} color={getStatusChipColor(detailStatus)} sx={{ textTransform: "capitalize" }} />
+                  <Chip label={`Container: ${detailContainerState}`} variant="outlined" sx={{ textTransform: "capitalize" }} />
                   <Chip label={`Step: ${details.currentStep ?? "—"}`} variant="outlined" />
                 </Stack>
 
@@ -374,7 +417,17 @@ export default function ContainerPage() {
                   <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Updated:</strong> {formatDateTime(details.updatedAt)}</Typography>
                   <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Memory:</strong> {formatMemory(detailsTarget?.memoryUsageMB)} MB</Typography>
                   <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Preview URL:</strong> {details.previewUrl ? (
-                    <MuiLink href={details.previewUrl} target="_blank" rel="noreferrer" underline="hover">
+                    <MuiLink
+                      href={details.previewUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      underline="hover"
+                      sx={{
+                        color: "var(--color-secondary04)",
+                        fontWeight: 600,
+                        wordBreak: "break-all",
+                      }}
+                    >
                       {details.previewUrl}
                     </MuiLink>
                   ) : " —"}</Typography>
@@ -443,6 +496,18 @@ export default function ContainerPage() {
                     </Typography>
                   </Paper>
                 </Box>
+
+                <Box sx={{ pt: 0.5 }}>
+                  <Button
+                    color="error"
+                    variant="outlined"
+                    startIcon={<DeleteOutlineIcon />}
+                    onClick={() => setDeleteTarget(detailsTarget)}
+                    disabled={!detailsTarget || detailsLoading}
+                  >
+                    Delete Container
+                  </Button>
+                </Box>
               </>
             ) : null}
           </Stack>
@@ -454,37 +519,21 @@ export default function ContainerPage() {
           <Button
             startIcon={<OpenInNewOutlinedIcon />}
             onClick={handleOpenPreview}
-            disabled={!details?.previewUrl}
+            disabled={!details?.previewUrl || detailStatus !== "running"}
           >
             Open Preview
           </Button>
-          <Button
-            startIcon={<PlayCircleOutlineIcon />}
-            onClick={() => void handleStart()}
-            disabled={!detailsTarget || detailsLoading || !details?.canStart}
-          >
-            Start
-          </Button>
-          <Button
-            color="error"
-            startIcon={<StopCircleIcon />}
-            onClick={() => setConfirmTarget(detailsTarget?.id || null)}
-            disabled={!detailsTarget || detailsLoading || !canStopSelected}
-          >
-            Stop
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              setDetailsTarget(null);
-              setDetails(null);
-              setDetailsError("");
-            }}
-          >
-            Close
-          </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Container"
+        message={`Are you sure you want to delete "${deleteTarget?.assignmentName}"? This deployment record and its runtime will be removed.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       <Snackbar
         open={!!toast}

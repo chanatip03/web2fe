@@ -15,6 +15,7 @@ export interface IUserRepository {
   getContainerDetails(id: string): Promise<ContainerDetails>;
   startContainer(id: string): Promise<void>;
   stopContainer(id: string): Promise<void>;
+  deleteContainer(id: string): Promise<void>;
   getTeacherRequests(search?: string): Promise<AdminTeacherRequest[]>;
   approveRequest(id: number): Promise<void>;
   rejectRequest(id: number): Promise<void>;

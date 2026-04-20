@@ -21,13 +21,12 @@ import {
   CircularProgress,
   Typography,
   Chip,
-  Link as MuiLink,
 } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import SearchIcon from "@mui/icons-material/Search";
-import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import AdminLayout from "@/components/AdminLayout";
+import CertificatePreview from "@/components/CertificatePreview";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
 import EditTeacherModal from "@/components/modal/editTeacherModal";
@@ -198,22 +197,7 @@ export default function TeacherPage() {
                   <TableCell sx={{ fontSize: 13 }}>{teacher.academy || "—"}</TableCell>
                   <TableCell align="center">
                     {teacher.certificateUrl ? (
-                      <MuiLink
-                        href={teacher.certificateUrl}
-                        target="_blank"
-                        underline="hover"
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          color: "var(--color-primary03)",
-                          fontWeight: 500,
-                          fontSize: 14,
-                        }}
-                      >
-                        <FindInPageOutlinedIcon fontSize="small" />
-                        Certificate
-                      </MuiLink>
+                      <CertificatePreview url={teacher.certificateUrl} />
                     ) : (
                       "—"
                     )}

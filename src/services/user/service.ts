@@ -66,6 +66,10 @@ export class UserService {
     return this.userRepository.stopContainer(id);
   }
 
+  async deleteContainer(id: string) {
+    return this.userRepository.deleteContainer(id);
+  }
+
   async getTeacherRequests(search?: string) {
     return this.userRepository.getTeacherRequests(search);
   }

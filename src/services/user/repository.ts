@@ -204,6 +204,14 @@ export class UserRepository implements IUserRepository {
     await throwIfNotOk(res, "Failed to stop container");
   }
 
+  async deleteContainer(id: string): Promise<void> {
+    const res = await fetch(`${BASE_URL}/deployments/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    await throwIfNotOk(res, "Failed to delete container");
+  }
+
   async getTeacherRequests(search?: string): Promise<AdminTeacherRequest[]> {
     const query = search ? `?search=${encodeURIComponent(search)}` : "";
     const res = await fetch(`${BASE_URL}/admin/teacher-requests${query}`, {

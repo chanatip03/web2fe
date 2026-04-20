@@ -16,7 +16,6 @@ import {
   Tooltip,
   TextField,
   InputAdornment,
-  Link as MuiLink,
   Snackbar,
   Alert,
   CircularProgress,
@@ -25,8 +24,8 @@ import {
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
-import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import AdminLayout from "@/components/AdminLayout";
+import CertificatePreview from "@/components/CertificatePreview";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
 import { userService } from "@/services/controller";
@@ -204,22 +203,7 @@ export default function RequestPage() {
                   <TableCell sx={{ fontSize: 13 }}>{request.academy}</TableCell>
                   <TableCell align="center">
                     {request.certificateUrl ? (
-                      <MuiLink
-                        href={request.certificateUrl}
-                        target="_blank"
-                        underline="hover"
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          color: "var(--color-primary03)",
-                          fontWeight: 500,
-                          fontSize: 14,
-                        }}
-                      >
-                        <FindInPageOutlinedIcon fontSize="small" />
-                        See Certificate
-                      </MuiLink>
+                      <CertificatePreview url={request.certificateUrl} label="See Certificate" />
                     ) : (
                       "—"
                     )}
