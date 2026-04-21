@@ -44,9 +44,11 @@ export default function ProjectPreviewPage() {
 
     const startPreview = async () => {
       try {
+        // Submission preview uses deployment subsystem endpoints:
+        // POST /api/project/{submission_id}/preview/start then poll /status
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/submission/project/${id}/activate`,
-          { method: "GET", credentials: "include" }
+          `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/start`,
+          { method: "POST", credentials: "include" }
         );
         if (!res.ok) {
           const text = await res.text();
@@ -66,9 +68,13 @@ export default function ProjectPreviewPage() {
         pollRef.current = setInterval(async () => {
           try {
             const sRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/submission/project/${id}/activate`,
-              { credentials: "include" }
+              `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/status`,
+              { method: "GET", credentials: "include" }
             );
+            if (!sRes.ok) {
+              const text = await sRes.text();
+              throw new Error(text);
+            }
             const sData = await sRes.json();
 
             if (sData.status === "running") {

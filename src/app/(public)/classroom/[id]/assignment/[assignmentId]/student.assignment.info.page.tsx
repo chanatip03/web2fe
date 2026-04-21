@@ -265,7 +265,7 @@ export default function StudentAssignmentInfoPage() {
                         assignment.project_type?.id === 2) ? (
                         <>
                           <a
-                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '')}${deployResult.deployment?.api_url || `/api/deployments/${deployResult.submission_id}/swagger`}`}
+                            href={previewUrl || `/preview/${deployResult.submission_id}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-200/50 active:scale-95"

@@ -185,6 +185,12 @@ export default function SubmitPanel({
       .join("")               // rejoin (URL should not have internal spaces)
       .trim();
 
+  const toDeployMode = (typeId?: number) => {
+    if (typeId === 1) return "frontend-only";
+    if (typeId === 2) return "backend-only";
+    return "fullstack";
+  };
+
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
 
@@ -224,9 +230,9 @@ export default function SubmitPanel({
     if (groupId) {
       form.append("group_id", groupId.toString());
     }
-    if (projectTypeId) {
-      form.append("project_type_id", projectTypeId.toString());
-    }
+    // Tell backend what kind of project this submission is.
+    // The backend normalizes these values and will prefer this over LLM auto-detect.
+    form.append("projectType", toDeployMode(projectTypeId));
 
     try {
       const res = await fetch(
