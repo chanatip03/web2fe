@@ -12,6 +12,8 @@ import { UserService } from "./user/service";
 import { UserRepository } from "./user/repository";
 import { ProjectService } from "./project/service";
 import { ProjectRepository } from "./project/repository";
+import { DiscordService } from "./discord/service";
+import { DiscordRepository } from "./discord/repository";
 
 const authRepository = new AuthRepository();
 export const authService = new AuthService(authRepository);
@@ -27,3 +29,5 @@ const userRepository = new UserRepository();
 export const userService = new UserService(userRepository);
 const projectRepository = new ProjectRepository();
 export const projectService = new ProjectService(projectRepository);
+const discordRepository = new DiscordRepository();
+export const discordService = new DiscordService(discordRepository);
