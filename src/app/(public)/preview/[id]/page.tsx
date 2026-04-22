@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { projectService } from "@/services/controller";
 
-const TTL_SECONDS = 2 * 60 * 60; // 2 hours — must match backend
+const TTL_SECONDS = 10 * 60; // must match backend default
 
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return "00:00:00";
@@ -15,6 +16,8 @@ function formatCountdown(seconds: number): string {
 
 export default function ProjectPreviewPage() {
   const { id } = useParams();
+  const projectId = Number(Array.isArray(id) ? id[0] : id);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("loading");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,72 +42,98 @@ export default function ProjectPreviewPage() {
     }, 1000);
   };
 
-  useEffect(() => {
-    if (!id) return;
+  const startPreview = async (submissionId?: string | null) => {
+    if (!submissionId) {
+      setStatus("error");
+      setError("No submission found for this project");
+      return;
+    }
 
-    const startPreview = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/start`,
-          { method: "POST", credentials: "include" }
-        );
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text);
-        }
-        const data = await res.json();
+    setError(null);
 
-        if (data.status === "running") {
-          setStatus("ready");
-          setPreviewUrl(data.preview_url);
-          startCountdown(data.seconds_remaining ?? TTL_SECONDS);
-          return;
-        }
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/project/${submissionId}/preview/start`,
+        { method: "POST", credentials: "include" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Failed to start preview");
+      }
 
-        // Status is "starting" — begin polling
-        setStatus("deploying");
-        pollRef.current = setInterval(async () => {
-          try {
-            const sRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/status`,
-              { credentials: "include" }
-            );
-            const sData = await sRes.json();
+      const data = await res.json();
 
-            if (sData.status === "running") {
-              clearInterval(pollRef.current!);
-              setStatus("ready");
-              setPreviewUrl(sData.preview_url);
-              startCountdown(sData.seconds_remaining ?? TTL_SECONDS);
-            } else if (sData.status === "error") {
-              clearInterval(pollRef.current!);
-              setStatus("error");
-              setError(sData.error ?? "Container failed to start");
-            }
-          } catch {
-            // network hiccup — keep polling
+      if (data.status === "running") {
+        setStatus("ready");
+        setPreviewUrl(data.preview_url);
+        startCountdown(data.seconds_remaining ?? TTL_SECONDS);
+        return;
+      }
+
+      setStatus("deploying");
+      pollRef.current = setInterval(async () => {
+        try {
+          const sRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/project/${submissionId}/preview/status`,
+            { credentials: "include" }
+          );
+          if (!sRes.ok) {
+            const payload = await sRes.json().catch(() => ({}));
+            throw new Error(payload.detail || "Failed to fetch preview status");
           }
-        }, 3000);
+
+          const sData = await sRes.json();
+
+          if (sData.status === "running") {
+            clearInterval(pollRef.current!);
+            setStatus("ready");
+            setPreviewUrl(sData.preview_url);
+            startCountdown(sData.seconds_remaining ?? TTL_SECONDS);
+          } else if (sData.status === "error") {
+            clearInterval(pollRef.current!);
+            setStatus("error");
+            setError(sData.error ?? "Container failed to start");
+          }
+        } catch {
+          // network hiccup — keep polling
+        }
+      }, 3000);
+    } catch (err: unknown) {
+      setStatus("error");
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  useEffect(() => {
+    if (!Number.isFinite(projectId)) {
+      setStatus("error");
+      setError("Invalid project id");
+      return;
+    }
+
+    const loadProjectAndStartPreview = async () => {
+      try {
+        const data = await projectService.getProjectById(projectId);
+        setSubmissionId(data.submission_id ?? null);
+        await startPreview(data.submission_id ?? null);
       } catch (err: unknown) {
         setStatus("error");
         setError(err instanceof Error ? err.message : String(err));
       }
     };
 
-    startPreview();
+    void loadProjectAndStartPreview();
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
     };
-  }, [id]);
+  }, [projectId]);
 
-  // ── Loading / Starting ───────────────────────────────────────────────────
   if (status === "loading" || status === "deploying") {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white flex-col gap-6">
-        {/* Spinner */}
-        <div className="relative w-16 h-16">
+      <div className="flex h-screen items-center justify-center bg-gray-950 text-white flex-col gap-6 p-6">
+        <div className="relative h-16 w-16">
           <div className="absolute inset-0 rounded-full border-4 border-white/10" />
           <div className="absolute inset-0 rounded-full border-4 border-t-indigo-400 animate-spin" />
         </div>
@@ -120,8 +149,7 @@ export default function ProjectPreviewPage() {
           </p>
         </div>
 
-        {/* Step hints */}
-        <div className="flex flex-col gap-2 text-sm text-gray-400 bg-white/5 rounded-xl px-6 py-4 max-w-xs w-full">
+        <div className="flex w-full max-w-xs flex-col gap-2 rounded-xl bg-white/5 px-6 py-4 text-sm text-gray-400">
           {[
             "Downloading bundle from storage",
             "Loading Docker images",
@@ -138,7 +166,6 @@ export default function ProjectPreviewPage() {
     );
   }
 
-  // ── Error ─────────────────────────────────────────────────────────────────
   if (status === "error") {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white p-6">
@@ -157,7 +184,6 @@ export default function ProjectPreviewPage() {
     );
   }
 
-  // ── Expired ───────────────────────────────────────────────────────────────
   if (status === "expired") {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-950 text-white p-6">
@@ -165,7 +191,7 @@ export default function ProjectPreviewPage() {
           <div className="text-5xl">⏰</div>
           <h1 className="text-2xl font-bold">Session Expired</h1>
           <p className="text-gray-400 text-sm">
-            The 2-hour preview has ended and the container was automatically
+            The preview session has ended and the container was automatically
             removed to free resources.
           </p>
           <button
@@ -173,7 +199,7 @@ export default function ProjectPreviewPage() {
               setStatus("loading");
               setPreviewUrl(null);
               setError(null);
-              window.location.reload();
+              void startPreview(submissionId);
             }}
             className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition"
           >
@@ -184,7 +210,6 @@ export default function ProjectPreviewPage() {
     );
   }
 
-  // ── Ready (iframe) ────────────────────────────────────────────────────────
   if (status === "ready" && previewUrl) {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ?? "";
     const fullUrl = previewUrl.startsWith("http")
@@ -195,34 +220,27 @@ export default function ProjectPreviewPage() {
 
     return (
       <div className="w-full h-screen flex flex-col overflow-hidden bg-gray-950">
-        {/* Top bar */}
         <div className="h-11 bg-gray-900 border-b border-white/10 flex items-center px-4 gap-3 shrink-0">
-          {/* Traffic lights */}
           <div className="flex gap-1.5">
             <span className="w-3 h-3 rounded-full bg-red-500" />
             <span className="w-3 h-3 rounded-full bg-yellow-500" />
             <span className="w-3 h-3 rounded-full bg-green-500" />
           </div>
 
-          {/* URL bar */}
-          <div className="flex-1 bg-gray-800 rounded-md px-3 py-1 text-xs text-gray-300 font-mono truncate select-all">
+          <div className="flex-1 rounded-md bg-gray-800 px-3 py-1 text-xs text-gray-300 font-mono truncate select-all">
             {fullUrl}
           </div>
 
-          {/* Countdown */}
           <div
-            className={`flex items-center gap-1.5 text-xs font-mono font-semibold px-3 py-1 rounded-md ${
-              isWarning
-                ? "bg-red-900/60 text-red-300"
-                : "bg-gray-800 text-gray-300"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-mono font-semibold ${
+              isWarning ? "bg-red-900/60 text-red-300" : "bg-gray-800 text-gray-300"
             }`}
-            title="Container auto-removes after 2 hours"
+            title="Container auto-removes when the preview TTL expires"
           >
             <span>⏱</span>
             <span>{formatCountdown(secondsLeft)}</span>
           </div>
 
-          {/* Open in tab */}
           <a
             href={fullUrl}
             target="_blank"
@@ -233,7 +251,6 @@ export default function ProjectPreviewPage() {
           </a>
         </div>
 
-        {/* Preview iframe */}
         <iframe
           src={fullUrl}
           className="flex-1 border-0 w-full"

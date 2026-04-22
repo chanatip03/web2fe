@@ -51,6 +51,7 @@ export const ConfirmDialog = ({
           gap: 1,
           fontWeight: 700,
           fontSize: 18,
+          color: "text.primary",
         }}
       >
         <WarningAmberRoundedIcon
