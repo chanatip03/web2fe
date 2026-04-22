@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Breadcrumbs, Button } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import ScorebookTable from "./scorebookTable";
+import Cookies from "js-cookie";
 
 export const mockData = {
   assignments: [
@@ -123,8 +124,8 @@ export default function TeacherScorebookPage() {
     <div>
       <div className="flex flex-col items-start justify-start gap-2 mb-6">
         <Breadcrumbs aria-label="breadcrumb" separator="/">
-          <Link href="/classroom/listclassroom">Home</Link>
-          <span>{mockData.classroom.name}</span>
+          <Link href="/classroom">Home</Link>
+          <span>{Cookies.get("classroomName")}</span>
           <span className="text-black">Scorebook</span>
         </Breadcrumbs>
       </div>

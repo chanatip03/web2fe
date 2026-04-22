@@ -12,6 +12,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonIcon from "@mui/icons-material/Person";
 import { IClassroomMember } from "@/domain/classroom";
+import { ANONYMOUS_AVATAR_URL } from "@/constants";
 
 interface StudentTableComponentsProps {
      members: IClassroomMember[];
@@ -56,24 +57,11 @@ const StudentTable = ({ members, onDelete }: StudentTableComponentsProps) => {
                             }}
                         >
                             <TableCell align="center">
-                                {student.user?.imageUrl ? (
-                                    <Avatar
-                                        src={student.user.imageUrl}
-                                        alt={`${student.user.first_name} ${student.user.last_name}`}
-                                        sx={{ width: 46, height: 46 , mx: "auto",}}
-                                    />
-                                ) : (
-                                    <Avatar
-                                        sx={{
-                                            width: 46,
-                                            height: 46,
-                                            backgroundColor: "var(--color-neutral03)",
-                                            mx: "auto",
-                                        }}
-                                    >
-                                        <PersonIcon sx={{ color: "#FFFFFF", fontSize: 24 }} />
-                                    </Avatar>
-                                )}
+                                <Avatar
+                                    src={student.user?.imageUrl || ANONYMOUS_AVATAR_URL}
+                                    alt={`${student.user.first_name} ${student.user.last_name}`}
+                                    sx={{ width: 46, height: 46, mx: "auto" }}
+                                />
                             </TableCell>
 
                             <TableCell><h5 className="text-[18px]">{student.student_id}</h5></TableCell>

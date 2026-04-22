@@ -13,10 +13,12 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CreateGroupModal from "../../../../../../components/modal/CreateGroupModal";
 import GroupCard from "../../../../../../components/GroupCard";
 import { Breadcrumbs } from "@mui/material";
+import { Snackbar, Alert } from "@mui/material";
 import { Group } from "@/domain/group";
 import { Assignment } from "@/domain/assignment";
 import { assignmentService, groupService } from "@/services/controller";
 import { useParams } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function StudentAssignmentInfoPage() {
   const [assignment, setAssignments] = useState<Assignment>();
@@ -26,6 +28,7 @@ export default function StudentAssignmentInfoPage() {
   const [status, setStatus] = useState<SubmitStatus>("editing");
   const [deployResult, setDeployResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const params = useParams();
   const id = params.id;
@@ -84,11 +87,9 @@ export default function StudentAssignmentInfoPage() {
       {/* Breadcrumb */}
       <Breadcrumbs className="text-sm mb-6">
         <Link href="/classroom">Home</Link>
-        {/* <span>{classrooms?.name}</span> */}
-        <span>Mock up data</span>
-        <span className="text-black font-medium">Assigment</span>
-        {/* <span>{assignment?.name}</span> */}
-        <span>Mock up data</span>
+        <span>{Cookies.get("classroomName")}</span>
+        <Link href={`/classroom/${id}/assignment`}>Assignment</Link>
+        <span className="text-black font-medium">{assignment.title}</span>
       </Breadcrumbs>
 
       {/* Title */}
@@ -102,7 +103,7 @@ export default function StudentAssignmentInfoPage() {
           {/* Due Date */}
           <p className="mb-3">
             <span className="font-bold">Due Date :</span>{" "}
-            <span className="text-red-500">
+            <span className={new Date(assignment.due_date).getTime() < Date.now() ? "text-red-500" : "text-black"}>
               {dayjs(assignment.due_date).format("D MMMM YYYY [at] HH.mm")}
             </span>
           </p>
@@ -117,14 +118,26 @@ export default function StudentAssignmentInfoPage() {
           {/* Attachments */}
           <h2 className="font-bold text-lg mb-2">Attachments</h2>
 
-          <ul className="mb-5 space-y-1">
-            <li className="hover:text-primary03 transition cursor-pointer">
-              <InsertDriveFileIcon /> Assignment.pdf
-            </li>
-            <li className="hover:text-primary03 transition cursor-pointer">
-              <InsertDriveFileIcon /> image1.png
-            </li>
-          </ul>
+          {assignment.attachments && assignment.attachments.length > 0 ? (
+            <ul className="mb-5 space-y-1">
+              {assignment.attachments.map((attachment) => (
+                <li key={attachment.id} className="hover:text-primary03 transition cursor-pointer">
+                  <a
+                    href={attachment.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <InsertDriveFileIcon />
+                    {attachment.file_url.split('/').pop() || 'Attachment'}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-neutral06 mb-5">No attachments available</p>
+          )}
+
         </div>
 
         {/* RIGHT SIDE GROUP BOX */}
@@ -154,7 +167,10 @@ export default function StudentAssignmentInfoPage() {
         <CreateGroupModal
           open={open}
           onClose={() => setOpen(false)}
-          onSave={(g) => setGroup(g)}
+          onSave={(g) => {
+            setGroup(g);
+            setSnackbar({ open: true, message: 'Group saved successfully!', severity: 'success' });
+          }}
           assignmentId={Number(assignMentId)}
           classroomId={Number(id)}
           initialGroup={group}
@@ -163,14 +179,18 @@ export default function StudentAssignmentInfoPage() {
         {/* Submit file */}
         <div
           className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
-            ${!assignment.is_group && hasGroup ? "border-neutral03" : "border-neutral03 bg-white"}
+            ${
+              !assignment.is_group || hasGroup
+                ? "border-primary03 bg-white"
+                : "border-neutral03 bg-white"
+            }
         `}
         >
           {/* HEADER */}
           <div
             className={`px-6 py-3 font-semibold flex items-center justify-between
                 ${
-                  !assignment.is_group && hasGroup
+                  !assignment.is_group || hasGroup
                     ? "bg-primary03 text-white"
                     : "bg-neutral02 text-neutral06"
                 }
@@ -188,6 +208,7 @@ export default function StudentAssignmentInfoPage() {
               isGroup={assignment.is_group}
               hasGroup={hasGroup}
               assignmentId={Number(assignMentId)}
+              projectTypeId={assignment.project_type?.id}
               groupId={group?.id}
               status={status}
               setStatus={setStatus}
@@ -229,7 +250,7 @@ export default function StudentAssignmentInfoPage() {
                 />
 
                 {/* Preview link — only shown when deploy succeeded */}
-                {status === "done" && deploySuccess && previewUrl && (
+                {status === "done" && deploySuccess && (
                   <div className="mt-5 pt-5 border-t border-neutral03 flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-sm">Deployed Application</p>
@@ -237,14 +258,32 @@ export default function StudentAssignmentInfoPage() {
                         Container runs for 2 hours then auto-removes.
                       </p>
                     </div>
-                    <a
-                      href={previewUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 bg-primary03 hover:opacity-90 transition text-white text-sm font-semibold px-5 py-2 rounded-lg shadow"
-                    >
-                      <span>🚀</span> View Deployed App ↗
-                    </a>
+                    <div className="flex flex-wrap gap-3">
+                      {/* Detection logic for backend-only projects */}
+                      {(deployResult.deployment?.deploy_mode === "backend-only" || 
+                        deployResult.execution_mode === "backend-only" || 
+                        assignment.project_type?.id === 2) ? (
+                        <>
+                          <a
+                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '')}${deployResult.deployment?.api_url || `/api/deployments/${deployResult.submission_id}/swagger`}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-200/50 active:scale-95"
+                          >
+                            <span className="text-lg">📜</span> View API Docs (Swagger) ↗
+                          </a>
+                        </>
+                      ) : (
+                        <a
+                          href={previewUrl || `/preview/${deployResult.submission_id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
+                        >
+                          <span className="text-lg">🚀</span> Open Live Preview ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
@@ -252,6 +291,21 @@ export default function StudentAssignmentInfoPage() {
           </div>
         </div>
       </div>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
