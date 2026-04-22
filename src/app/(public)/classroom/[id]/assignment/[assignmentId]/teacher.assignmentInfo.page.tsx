@@ -93,7 +93,7 @@ export default function TeacherAssignmentInfoPage() {
     <div>
       <div className="mb-6">
         <Breadcrumbs separator="/">
-          <Link href="/classroom/listclassroom">Home</Link>
+          <Link href="/classroom">Home</Link>
           <span>{Cookies.get("classroomName")}</span>
           <Link href={`/classroom/${id}/assignment`}>Assignment</Link>
           <span className="text-black font-medium">{assignments.title}</span>
@@ -102,13 +102,15 @@ export default function TeacherAssignmentInfoPage() {
 
       <div className="flex items-center justify-between mb-3">
         <h1>{assignments.title}</h1>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenTestcase(true)}
-        >
-          {hasTestcase ? "Edit TestCase" : "Create TestCase"}
-        </Button>
+        {assignments.project_type?.id !== 3 && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenTestcase(true)}
+          >
+            {hasTestcase ? "Edit TestCase" : "Create TestCase"}
+          </Button>
+        )}
       </div>
       <TestCaseFormModal
         open={openTestcase}
@@ -135,7 +137,7 @@ export default function TeacherAssignmentInfoPage() {
       <div className="flex gap-2 mb-2">
         <h5>Due Date</h5>
 
-        <p className="text-accent03 p2">
+        <p className={`p2 ${new Date(assignments.due_date).getTime() < Date.now() ? "text-accent03 font-semibold" : "text-black"}`}>
           {new Date(assignments.due_date).toLocaleString("en-GB", {
             timeZone: "Asia/Bangkok",
             day: "numeric",

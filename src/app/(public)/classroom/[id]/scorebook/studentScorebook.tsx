@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Breadcrumbs, Box, Typography, Accordion, AccordionSummary, AccordionDetails, CircularProgress, Chip } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useParams } from "next/navigation";
+import Cookies from "js-cookie";
 import { assignmentService, projectService, userService } from "@/services/controller";
 
 export interface StudentAssignment {
@@ -93,7 +94,8 @@ export default function StudentScorebookPage() {
       {/* Breadcrumb */}
       <div className="flex flex-col items-start justify-start gap-2 mb-2">
         <Breadcrumbs aria-label="breadcrumb" separator="/">
-          <Link href="/classroom/listclassroom">Home</Link>
+          <Link href="/classroom">Home</Link>
+          <span>{Cookies.get("classroomName")}</span>
           <span className="text-black">Score and feedback</span>
         </Breadcrumbs>
       </div>

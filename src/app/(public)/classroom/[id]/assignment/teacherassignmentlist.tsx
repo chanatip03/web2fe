@@ -24,14 +24,6 @@ import Cookies from "js-cookie";
 const checkOverdue = (date: string | Date) =>
   new Date(date).getTime() < Date.now();
 
-async function onDelete(AssignmentId: number) {
-  const response = await assignmentService.deleteAssignment(AssignmentId);
-
-  if (response) {
-    console.log("deletesuccess");
-  }
-}
-
 const TeacherAssignmentListPage = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [openCreate, setOpenCreate] = useState(false);
@@ -58,6 +50,30 @@ const TeacherAssignmentListPage = () => {
       setLoading(false);
     }
   }
+
+  const handleDelete = async (assignmentId: number) => {
+    try {
+      const response = await assignmentService.deleteAssignment(assignmentId);
+
+      if (!response) {
+        throw new Error("Failed to delete assignment");
+      }
+
+      setAssignments((prev) => prev.filter((item) => item.id !== assignmentId));
+      setSnackbar({
+        open: true,
+        message: "Assignment deleted successfully.",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Unable to delete assignment. Please try again.",
+        severity: "error",
+      });
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -212,7 +228,7 @@ const TeacherAssignmentListPage = () => {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => onDelete(item.id)}
+                  onClick={() => handleDelete(item.id)}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>

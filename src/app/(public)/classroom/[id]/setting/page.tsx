@@ -135,7 +135,7 @@ export default function ClassroomSetting() {
       <Breadcrumbs>
         <Link href="/classroom">Home</Link>
         <span>{classroom?.name}</span>
-        <span className="text-black font-medium">Syllabus</span>
+        <span className="text-black font-medium">Setting</span>
       </Breadcrumbs>
       <h1 className="mb-8">Classroom Setting</h1>
 
