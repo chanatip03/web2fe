@@ -1,5 +1,5 @@
 import { IProjectRepository } from "./interface";
-import { Project, ProjectUpdateGradingRequest } from "@/domain/project";
+import { Project, ProjectSourceCode, ProjectUpdateGradingRequest } from "@/domain/project";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -49,6 +49,20 @@ export class ProjectRepository implements IProjectRepository {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "Failed to update grading");
+    }
+
+    return res.json();
+  }
+
+  async getProjectSourceCode(projectId: number): Promise<ProjectSourceCode> {
+    const res = await fetch(`${BASE_URL}/project/${projectId}/sourcecode`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || "Failed to fetch source code");
     }
 
     return res.json();

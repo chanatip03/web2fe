@@ -15,4 +15,8 @@ export class ProjectService {
   async updateProjectGrading(projectId: number, data: ProjectUpdateGradingRequest) {
     return this.projectRepository.updateProjectGrading(projectId, data);
   }
+
+  async getProjectSourceCode(projectId: number) {
+    return this.projectRepository.getProjectSourceCode(projectId);
+  }
 }
