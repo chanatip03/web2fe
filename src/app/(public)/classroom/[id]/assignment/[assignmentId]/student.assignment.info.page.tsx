@@ -320,9 +320,9 @@ export default function StudentAssignmentInfoPage() {
                             href={previewUrl || `/preview/${deployResult.submission_id}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-200/50 active:scale-95"
+                            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                           >
-                            <span className="text-lg">📜</span> View API Docs (Swagger) ↗
+                            <span className="text-lg"></span> View API Docs (Swagger) ↗
                           </a>
                         </>
                       ) : (
@@ -332,7 +332,7 @@ export default function StudentAssignmentInfoPage() {
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                         >
-                          <span className="text-lg">🚀</span> Open Live Preview ↗
+                          <span className="text-lg"></span> Open Live Preview ↗
                         </a>
                       )}
                     </div>
