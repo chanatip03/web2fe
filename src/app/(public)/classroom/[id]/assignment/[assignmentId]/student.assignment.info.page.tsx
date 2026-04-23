@@ -75,8 +75,9 @@ export default function StudentAssignmentInfoPage() {
               testcase: tc,
               cyber: cyber,
               deployment: { status: "success" },
-              submission_id: userProject.submission_uuid || userProject.id.toString(),
+              submission_id: userProject.id.toString(), // Use numeric project ID for cleaner URLs
               execution_mode: userProject.env,
+              submission_uuid: userProject.submission_uuid, // Keep UUID for internal reference if needed
             });
             setStatus("done");
           }
@@ -95,8 +96,8 @@ export default function StudentAssignmentInfoPage() {
 
   // Parse actual deploy results
   const deploySuccess = deployResult?.deployment?.status === "success";
-  const submissionId = deployResult?.submission_id as string | undefined;
-  const previewUrl = submissionId ? `/preview/${submissionId}` : null;
+  const displayId = deployResult?.project_db_id?.toString() || deployResult?.submission_id;
+  const previewUrl = displayId ? `/preview/${displayId}` : null;
 
   const testcase = { 
     pass: deployResult?.testcase?.passed ?? 0, 
