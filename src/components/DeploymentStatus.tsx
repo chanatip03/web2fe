@@ -13,6 +13,8 @@ interface Props {
   deploySuccess?: boolean;
   testcase?: { pass: number; fail: number; success?: boolean };
   security?: { success?: boolean };
+
+  onViewSecurity?: () => void;
 }
 
 function Icon({
@@ -39,6 +41,7 @@ export default function DeploymentStatus({
   deploySuccess = true,
   testcase = { pass: 0, fail: 0, success: true },
   security = { success: true },
+  onViewSecurity,
 }: Props) {
   const showExtra = projectTypeId === 1 || projectTypeId === 2;
   const hasCriticalError = status === "done" && !deploySuccess;
@@ -84,7 +87,9 @@ export default function DeploymentStatus({
             {status !== "done" ? (
               <AutorenewIcon className="animate-spin text-blue-500" />
             ) : testcase.success ? (
-              <div className="flex items-center">
+              <div
+                className="flex items-center"
+              >
                 <div className="text-green-600">Pass {testcase.pass}</div>
                 <div className="text-red-600 ml-3">Fail {testcase.fail}</div>
               </div>
@@ -106,7 +111,12 @@ export default function DeploymentStatus({
             {status !== "done" ? (
               <AutorenewIcon className="animate-spin text-blue-500" />
             ) : security.success ? (
-              <button className="text-primary03 underline">View Result</button>
+              <button
+                className="text-primary03 underline cursor-pointer"
+                onClick={onViewSecurity}
+              >
+                View Result
+              </button>
             ) : (
               <CancelIcon className="text-red-600" />
             )}
