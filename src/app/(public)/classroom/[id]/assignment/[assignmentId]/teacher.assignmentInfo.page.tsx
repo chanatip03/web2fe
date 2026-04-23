@@ -20,49 +20,16 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { assignmentService } from "@/services/controller";
+import { projectService } from "@/services/controller";
 import Cookies from "js-cookie";
 import { useParams } from "next/navigation";
 import { Assignment } from "@/domain/assignment";
+import { Project } from "@/domain/project";
 import TestCaseFormModal from "@/components/modal/testCaseFormModal";
-
-interface IProject {
-  id: number;
-  groupName: string;
-  sendDate: Date;
-  isLate: boolean;
-  isComplete: boolean;
-  languages: string[];
-}
-
-const mockProjects: IProject[] = [
-  {
-    id: 1,
-    groupName: "G. Zhī Shēng Hào",
-    sendDate: new Date("2025-04-07"),
-    isLate: false,
-    isComplete: true,
-    languages: ["Next.js"],
-  },
-  {
-    id: 2,
-    groupName: "G. PixelPioneers",
-    sendDate: new Date("2025-04-10"),
-    isLate: true,
-    isComplete: true,
-    languages: ["Golang", "React"],
-  },
-  {
-    id: 3,
-    groupName: "G. TechTitans",
-    sendDate: new Date("2025-04-08"),
-    isLate: false,
-    isComplete: false,
-    languages: ["Express.js", "React"],
-  },
-];
 
 export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
   const [openTestcase, setOpenTestcase] = useState(false);
@@ -79,10 +46,12 @@ export default function TeacherAssignmentInfoPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await assignmentService.getAssignmentById(
-          Number(assignMentId),
-        );
-        setAssignments(data);
+        const [assignmentData, projectData] = await Promise.all([
+          assignmentService.getAssignmentById(Number(assignMentId)),
+          projectService.getProjectsByAssignment(Number(assignMentId)),
+        ]);
+        setAssignments(assignmentData);
+        setProjects(projectData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -91,11 +60,29 @@ export default function TeacherAssignmentInfoPage() {
     }
 
     loadData();
-  }, [id]);
+  }, [assignMentId]);
 
-  const filteredProjects = mockProjects.filter((project) =>
-    tab === "complete" ? project.isComplete : !project.isComplete,
-  );
+  // In-progress: score AND feedback are both null/undefined
+  // Complete: score OR feedback has a value
+  const filteredProjects = projects.filter((project) => {
+    const isComplete = project.score != null || project.feedback != null;
+    return tab === "complete" ? isComplete : !isComplete;
+  });
+
+  const isLate = (project: Project) => {
+    if (!assignments?.due_date || !project.created_date) return false;
+    return new Date(project.created_date) > new Date(assignments.due_date);
+  };
+
+  const getDisplayName = (project: Project) => {
+    if (project.group_name) return project.group_name;
+    if (project.students && project.students.length > 0) {
+      return project.students
+        .map((s) => `${s.user.first_name} ${s.user.last_name}`)
+        .join(", ");
+    }
+    return `Project #${project.id}`;
+  };
 
   if (loading || !assignments) return <div>Loading...</div>;
 
@@ -238,8 +225,8 @@ export default function TeacherAssignmentInfoPage() {
                 Status
               </TableCell>
 
-              <TableCell align="center" sx={{ width: "35%" }}>
-                Language
+              <TableCell align="center" sx={{ width: "25%" }}>
+                Members
               </TableCell>
 
               <TableCell sx={{ width: "15%" }} />
@@ -266,42 +253,52 @@ export default function TeacherAssignmentInfoPage() {
                   }}
                 >
                   <TableCell>
-                    <h5>{project.groupName}</h5>
+                    <h5>{getDisplayName(project)}</h5>
                   </TableCell>
 
                   <TableCell align="center">
-                    {project.sendDate.toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {project.created_date
+                      ? new Date(project.created_date).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )
+                      : "-"}
                   </TableCell>
 
                   <TableCell align="center">
                     <div
                       className={`inline-block px-4 py-2 w-[78px] rounded-md text-white
-                       ${project.isLate ? "bg-[#FFC107]" : "bg-[#3CB40B]"}
+                       ${isLate(project) ? "bg-[#FFC107]" : "bg-[#3CB40B]"}
                      `}
                     >
-                      <h6>{project.isLate ? "Late" : "Ontime"}</h6>
+                      <h6>{isLate(project) ? "Late" : "Ontime"}</h6>
                     </div>
                   </TableCell>
 
                   <TableCell align="left">
-                    {project.languages.map((lang) => (
-                      <Chip
-                        key={lang}
-                        label={lang}
-                        size="small"
-                        sx={{ mr: 1, p: 2 }}
-                      />
-                    ))}
+                    {project.students && project.students.length > 0
+                      ? project.students.map((s) => (
+                          <Chip
+                            key={s.id}
+                            label={`${s.user.first_name} ${s.user.last_name}`}
+                            size="small"
+                            sx={{ mr: 1, mb: 0.5 }}
+                          />
+                        ))
+                      : <Typography variant="body2" color="text.secondary">—</Typography>
+                    }
                   </TableCell>
 
                   <TableCell align="right" sx={{ pr: 6 }}>
-                    <Button variant="contained" size="small" sx={{ px: 4 }}>
-                      Preview
-                    </Button>
+                    <Link href={`/preview/${project.id}`}>
+                      <Button variant="contained" size="small" sx={{ px: 4 }}>
+                        Preview
+                      </Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))

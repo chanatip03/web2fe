@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import {
   SandpackProvider,
   SandpackLayout,
@@ -12,108 +13,29 @@ import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 
-type FileNode = {
-  name: string;
-  type: "file" | "folder";
-  path: string;
-  url?: string;
-  children?: FileNode[];
-};
+import { ProjectRepository } from "@/services/project/repository";
+import type { FileNode, ProjectSourceCode } from "@/domain/project";
 
 type SandpackFiles = Record<string, { code: string }>;
 
-//Mock tree
-const projectTree: FileNode = {
-  name: "root",
-  type: "folder",
-  path: "",
-  children: [
-    {
-      name: "src",
-      type: "folder",
-      path: "src",
-      children: [
-        {
-          name: "App.tsx",
-          type: "file",
-          path: "src/App.tsx",
-          url: "https://raw.githubusercontent.com/AnukoolBaiban/GoSmooth-WebPro2/main/frontend/src/App.tsx",
-        },
-        {
-          name: "main.tsx",
-          type: "file",
-          path: "src/main.tsx",
-          url: "https://raw.githubusercontent.com/AnukoolBaiban/GoSmooth-WebPro2/main/frontend/src/main.tsx",
-        },
-      ],
-    },
-    {
-      name: "index.html",
-      type: "file",
-      path: "index.html",
-      url: "https://raw.githubusercontent.com/AnukoolBaiban/GoSmooth-WebPro2/main/frontend/index.html",
-    },
-  ],
-};
-
-//helper
+// ─── helpers ────────────────────────────────────────────────────────────────
 
 function getAllFiles(node: FileNode): FileNode[] {
   if (node.type === "file") return [node];
-  return (node.children || []).flatMap(getAllFiles);
+  return (node.children ?? []).flatMap(getAllFiles);
 }
 
-async function buildFiles(root: FileNode): Promise<SandpackFiles> {
-  const fileNodes = getAllFiles(root);
-
-  const entries = await Promise.all(
-    fileNodes.map(async (file) => {
-      try {
-        const res = await fetch(file.url || "");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-
-        return [`/${file.path}`, { code: text }] as const;
-      } catch (error) {
-        return [
-          `/${file.path}`,
-          {
-            code: `// Failed to load ${file.path}\n// ${(error as Error).message
-              }`,
-          },
-        ] as const;
-      }
-    })
-  );
-
-  return Object.fromEntries(entries);
+function getIndentStyle(level: number): React.CSSProperties {
+  return { paddingLeft: `${level * 16 + 12}px` };
 }
 
-//Indent
-function getIndentClass(level: number) {
-  const map: Record<number, string> = {
-    0: "pl-3",
-    1: "pl-7",
-    2: "pl-11",
-    3: "pl-15",
-    4: "pl-20",
-  };
-  return map[level] || "pl-24";
-}
+// ─── tree node ──────────────────────────────────────────────────────────────
 
-//Tree
-function TreeNode({
-  node,
-  level = 0,
-}: {
-  node: FileNode;
-  level?: number;
-}) {
+function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
   const [open, setOpen] = useState(true);
   const { sandpack } = useSandpack();
-
-  const indent = getIndentClass(level);
 
   if (node.type === "file") {
     const fullPath = `/${node.path}`;
@@ -122,43 +44,57 @@ function TreeNode({
     return (
       <button
         onClick={() => sandpack.setActiveFile(fullPath)}
+        style={getIndentStyle(level)}
         className={[
-          "flex w-full items-center gap-2 rounded-lg py-2 pr-3 text-sm transition-colors",
-          indent,
+          "flex w-full items-center gap-2 rounded-lg py-[5px] pr-3 text-sm transition-colors",
           isActive
             ? "bg-primary01 text-primary03 font-semibold"
             : "text-black hover:bg-neutral02",
         ].join(" ")}
       >
-        <InsertDriveFileIcon fontSize="small" className="text-gray-500" />
+        <InsertDriveFileIcon
+          fontSize="small"
+          className="text-gray-400 shrink-0"
+        />
         <span className="truncate">{node.name}</span>
       </button>
     );
   }
 
+  const children = node.children ?? [];
+
   return (
     <div>
       <button
-        onClick={() => setOpen((prev) => !prev)}
-        className={[
-          "flex w-full items-center gap-1 rounded-lg py-2 pr-3 text-sm font-semibold transition-colors hover:bg-neutral02",
-          indent,
-        ].join(" ")}
+        onClick={() => setOpen((v) => !v)}
+        style={getIndentStyle(level)}
+        className="flex w-full items-center gap-1 rounded-lg py-[5px] pr-3 text-sm font-semibold transition-colors hover:bg-neutral02"
       >
-          <KeyboardArrowDownIcon fontSize="small" className="text-neutral04" />
-
         {open ? (
-          <FolderOpenIcon fontSize="small" className="text-warning01" />
+          <KeyboardArrowDownIcon
+            fontSize="small"
+            className="text-neutral04 shrink-0"
+          />
         ) : (
-          <FolderIcon fontSize="small" className="text-warning01" />
+          <KeyboardArrowRightIcon
+            fontSize="small"
+            className="text-neutral04 shrink-0"
+          />
         )}
-
+        {open ? (
+          <FolderOpenIcon
+            fontSize="small"
+            className="text-warning01 shrink-0"
+          />
+        ) : (
+          <FolderIcon fontSize="small" className="text-warning01 shrink-0" />
+        )}
         <span className="truncate">{node.name}</span>
       </button>
 
-      {open && (
-        <div className="space-y-1">
-          {node.children?.map((child) => (
+      {open && children.length > 0 && (
+        <div>
+          {children.map((child) => (
             <TreeNode key={child.path} node={child} level={level + 1} />
           ))}
         </div>
@@ -167,64 +103,112 @@ function TreeNode({
   );
 }
 
+// ─── file explorer ───────────────────────────────────────────────────────────
 
-function FileExplorer() {
+function FileExplorer({ rootNode }: { rootNode: FileNode }) {
   return (
-    <aside className="w-[260px] overflow-y-auto border-r border-neutral02 bg-neutral01">
-      <div className="p-2">
-        <TreeNode node={projectTree} />
+    <aside className="w-[260px] h-full shrink-0 overflow-y-auto border-r border-neutral02 bg-neutral01">
+      <div className="p-2 space-y-0.5">
+        {(rootNode.children ?? []).map((child) => (
+          <TreeNode key={child.path} node={child} level={0} />
+        ))}
       </div>
     </aside>
   );
 }
 
+// ─── code panel ──────────────────────────────────────────────────────────────
+
 function PreviewCode() {
   return (
-    <section className="flex flex-1 flex-col h-screen">
-      <SandpackLayout>
-        <div className="flex flex-1 h-screen overflow-y-auto
-                    [&_code]:!text-[16px]">
-          <SandpackCodeViewer
-            showTabs={false}
-            showLineNumbers
-            wrapContent
-            initMode="immediate"
-          />
-        </div>
+    <section className="flex flex-1 w-screen min-h-0 overflow-hidden bg-white">
+      <SandpackLayout className="w-full h-full">
+        <SandpackCodeViewer
+          showTabs={false}
+          showLineNumbers
+          wrapContent
+          initMode="immediate"
+          style={{ height: "100%" }}
+        />
       </SandpackLayout>
     </section>
   );
 }
 
+// ─── page ────────────────────────────────────────────────────────────────────
 
 export default function SourceCodeViewer() {
-  const [files, setFiles] = useState<SandpackFiles | null>(null);
+  const params = useParams();
+  const projectId = Number(params?.id);
 
-  const firstFile = useMemo(() => getAllFiles(projectTree)[0], []);
+  const [data, setData] = useState<ProjectSourceCode | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    buildFiles(projectTree).then(setFiles);
-  }, []);
+    if (!projectId || isNaN(projectId)) {
+      setError("Invalid project ID");
+      setLoading(false);
+      return;
+    }
 
-if (!files || !firstFile) {
+    const repo = new ProjectRepository();
+    repo
+      .getProjectSourceCode(projectId)
+      .then((result) => {
+        setData(result);
+      })
+      .catch((err: Error) => {
+        setError(err.message ?? "Failed to load source code");
+      })
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-md text-neutral05 bg-white">
+        Loading source code…
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-white">
+        <p className="text-sm text-red-500 font-medium">
+          {error ?? "Source code unavailable"}
+        </p>
+      </div>
+    );
+  }
+
+  const { projectTree, files } = data;
+
+  const allFiles = getAllFiles(projectTree);
+  const firstFile = allFiles[0];
+
+  if (!firstFile || Object.keys(files).length === 0) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-neutral05 bg-white">
+        No source files found.
+      </div>
+    );
+  }
+
+  const activeFile = `/${firstFile.path}`;
+
   return (
-    <div className="flex h-full w-full items-center justify-center text-md text-neutral05 bg-[#ffffff]">
-      Loading source code...
-    </div>
-  );
-}
-  return (
-    <div className="w-full overflow-hidden bg-neutral01">
+    <div className="flex w-full h-[100dvh] overflow-hidden bg-neutral01">
       <SandpackProvider
         template="static"
-        files={files}
+        files={files as SandpackFiles}
         options={{
-          activeFile: `/${firstFile.path}`,
-          visibleFiles: [`/${firstFile.path}`],
+          activeFile,
+          visibleFiles: [activeFile],
         }}
       >
-        <div className="flex w-full overflow-hidden bg-white">
-          <FileExplorer />
+        <div className="flex w-full h-full min-h-0 overflow-hidden bg-white">
+          <FileExplorer rootNode={projectTree} />
           <PreviewCode />
         </div>
       </SandpackProvider>
