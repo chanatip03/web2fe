@@ -43,22 +43,22 @@ export default function TeacherAssignmentInfoPage() {
   const id = params.id;
   const assignMentId = params.assignmentId;
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [assignmentData, projectData] = await Promise.all([
-          assignmentService.getAssignmentById(Number(assignMentId)),
-          projectService.getProjectsByAssignment(Number(assignMentId)),
-        ]);
-        setAssignments(assignmentData);
-        setProjects(projectData);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  async function loadData() {
+    try {
+      const [assignmentData, projectData] = await Promise.all([
+        assignmentService.getAssignmentById(Number(assignMentId)),
+        projectService.getProjectsByAssignment(Number(assignMentId)),
+      ]);
+      setAssignments(assignmentData);
+      setProjects(projectData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     loadData();
   }, [assignMentId]);
 
@@ -117,7 +117,7 @@ export default function TeacherAssignmentInfoPage() {
         onClose={() => setOpenTestcase(false)}
         testcase={assignments.testcase_url}
         assignmentId={assignMentId as string}
-        onSaveSuccess={() => window.location.reload()}
+        onSaveSuccess={() => loadData()}
          onSuccess={(message) => {
             setSnackbar({
               open: true,

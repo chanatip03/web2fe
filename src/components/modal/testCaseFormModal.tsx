@@ -133,14 +133,13 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
         throw new Error(errData.detail || "Failed to save testcase");
       }
 
-      onSaveSuccess?.();
-      handleClose();
-
       onSuccess?.(
         isEditMode
           ? "Testcase updated successfully."
           : "Testcase created successfully.",
       );
+      handleClose();
+      onSaveSuccess?.();
     } catch (err) {
       console.error(err);
       onError?.("Failed to save testcase. Please try again later.");
