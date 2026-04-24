@@ -5,6 +5,7 @@ import SubmitPanel from "../../../../../../components/SubmitPanel";
 import DeploymentStatus, {
   SubmitStatus,
 } from "../../../../../../components/DeploymentStatus";
+import CyberScanResultModal from "../../../../../../components/modal/CyberScanResultModal";
 import dayjs from "dayjs";
 import Link from "next/link";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -16,7 +17,7 @@ import { Breadcrumbs } from "@mui/material";
 import { Snackbar, Alert } from "@mui/material";
 import { Group } from "@/domain/group";
 import { Assignment } from "@/domain/assignment";
-import { assignmentService, groupService } from "@/services/controller";
+import { assignmentService, groupService, projectService, userService } from "@/services/controller";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
 
@@ -25,9 +26,10 @@ export default function StudentAssignmentInfoPage() {
   const [open, setOpen] = useState(false);
   const [group, setGroup] = useState<Group | null>(null);
   const hasGroup = !!group;
-  const [status, setStatus] = useState<SubmitStatus>("editing");
+   const [status, setStatus] = useState<SubmitStatus>("editing");
   const [deployResult, setDeployResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [cyberModalOpen, setCyberModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
 
   const params = useParams();
@@ -48,6 +50,40 @@ export default function StudentAssignmentInfoPage() {
         } catch (groupErr) {
           console.error("Failed to fetch group", groupErr);
         }
+
+        // Fetch existing project results
+        try {
+          const [projects, currentUser] = await Promise.all([
+            projectService.getProjectsByAssignment(Number(assignMentId)),
+            userService.getCurrentUser(),
+          ]);
+          
+          const myStudentId = currentUser.id;
+          // Find the LATEST project where current student is a member
+          const studentProjects = projects.filter((p: any) => 
+            p.students?.some((s: any) => s.id === myStudentId)
+          );
+          
+          const userProject = studentProjects.sort((a: any, b: any) => b.id - a.id)[0];
+
+          if (userProject) {
+            console.log("Loading latest user project:", userProject);
+            const tc = userProject.testcase_result ? JSON.parse(userProject.testcase_result) : null;
+            const cyber = userProject.cybersecurity_result ? JSON.parse(userProject.cybersecurity_result) : null;
+            
+            setDeployResult({
+              testcase: tc,
+              cyber: cyber,
+              deployment: { status: "success" },
+              submission_id: userProject.id.toString(), // Use numeric project ID for cleaner URLs
+              execution_mode: userProject.env,
+              submission_uuid: userProject.submission_uuid, // Keep UUID for internal reference if needed
+            });
+            setStatus("done");
+          }
+        } catch (projErr) {
+          console.error("Failed to fetch existing project results", projErr);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -60,17 +96,20 @@ export default function StudentAssignmentInfoPage() {
 
   // Parse actual deploy results
   const deploySuccess = deployResult?.deployment?.status === "success";
-  const submissionId = deployResult?.submission_id as string | undefined;
-  const previewUrl = submissionId ? `/preview/${submissionId}` : null;
+  const displayId = deployResult?.project_db_id?.toString() || deployResult?.submission_id;
+  const previewUrl = displayId ? `/preview/${displayId}` : null;
 
   const testcase = { 
-    pass: deployResult?.testcase?.passed || 0, 
-    fail: deployResult?.testcase?.failed || 0, 
-    success: deployResult?.testcase?.status === "success" 
+    pass: deployResult?.testcase?.passed ?? 0, 
+    fail: deployResult?.testcase?.failed ?? 0, 
+    success: !!deployResult?.testcase && (
+      ["success", "fail"].includes(deployResult?.testcase?.status) || 
+      typeof deployResult?.testcase?.passed === 'number'
+    )
   };
   
   const security = { 
-    success: deployResult?.cyber?.status === "success" 
+    success: !!deployResult?.cyber && deployResult?.cyber?.status !== "error" 
   };
 
   const hasFail =
@@ -247,6 +286,20 @@ export default function StudentAssignmentInfoPage() {
                   deploySuccess={deploySuccess}
                   testcase={testcase}
                   security={security}
+                  onViewSecurity={() => setCyberModalOpen(true)}
+                />
+
+                <CyberScanResultModal
+                  open={cyberModalOpen}
+                  onClose={() => setCyberModalOpen(false)}
+                  data={deployResult?.cyber ? {
+                    ...deployResult.cyber,
+                    download_url: deployResult.cyber.download_url?.startsWith('http')
+                      ? deployResult.cyber.download_url
+                      : `${process.env.NEXT_PUBLIC_API_URL}${deployResult.cyber.download_url?.startsWith('/api') 
+                          ? deployResult.cyber.download_url.substring(4) 
+                          : deployResult.cyber.download_url}`
+                  } : null}
                 />
 
                 {/* Preview link — only shown when deploy succeeded */}
@@ -265,12 +318,12 @@ export default function StudentAssignmentInfoPage() {
                         assignment.project_type?.id === 2) ? (
                         <>
                           <a
-                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '')}${deployResult.deployment?.api_url || `/api/deployments/${deployResult.submission_id}/swagger`}`}
+                            href={previewUrl || `/preview/${deployResult.submission_id}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-200/50 active:scale-95"
+                            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                           >
-                            <span className="text-lg">📜</span> View API Docs (Swagger) ↗
+                            <span className="text-lg"></span> View API Docs (Swagger) ↗
                           </a>
                         </>
                       ) : (
@@ -280,7 +333,7 @@ export default function StudentAssignmentInfoPage() {
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                         >
-                          <span className="text-lg">🚀</span> Open Live Preview ↗
+                          <span className="text-lg"></span> Open Live Preview ↗
                         </a>
                       )}
                     </div>

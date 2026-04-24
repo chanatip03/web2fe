@@ -5,6 +5,7 @@ export interface Project {
   group_id?: number | null;
   group_name?: string | null;
   submission_type: "file" | "github";
+  submission_uuid?: string | null;
   project_source_url?: string | null;
   env: string;
   testcase_result?: string | null;
