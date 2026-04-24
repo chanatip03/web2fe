@@ -10,6 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { projectService } from "@/services/controller";
 import { Project } from "@/domain/project";
+import { ANONYMOUS_AVATAR_URL } from "@/constants";
 
 const Schema = z.object({
   score: z.string().regex(/^\d+$/, "Score must be a number").min(1, "Score is required"),
@@ -139,7 +140,7 @@ export default function ScorebookPage() {
                 project.students.map((student) => (
                   <Box key={student.id} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar
-                      src={student.user.imageUrl || undefined}
+                      src={student.user.imageUrl || ANONYMOUS_AVATAR_URL}
                       alt={student.user.first_name}
                       sx={{ width: 40, height: 40 }}
                     />
