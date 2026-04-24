@@ -34,11 +34,6 @@ const sidebarProfessorItems = [
     href: "/scorebook",
     icon: <EmojiEventsOutlinedIcon />,
   },
-  {
-    name: "Setting",
-    href: "/setting",
-    icon: <SettingsOutlinedIcon />,
-  },
 ];
 
 export const SidebarProfessor = ({ classroomName: classroomNameProp }: SidebarProfessorProps) => {
