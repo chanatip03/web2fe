@@ -100,6 +100,7 @@ export default function StudentAssignmentInfoPage() {
   
   // Use the backend redirect API so we don't have to rebuild, but without hardcoding proxy logic in frontend
   const previewUrl = displayId ? `${process.env.NEXT_PUBLIC_API_URL}/project/${displayId}/preview/redirect` : null;
+  const swaggerUrl = displayId ? `/preview/${displayId}?type=backend&role=student` : null;
 
   const testcase = {
     pass: deployResult?.testcase?.passed ?? 0,
@@ -317,7 +318,7 @@ export default function StudentAssignmentInfoPage() {
                         assignment.project_type?.id === 2) ? (
                         <>
                           <a
-                            href={previewUrl || `${process.env.NEXT_PUBLIC_API_URL}/project/${deployResult.submission_id}/preview/redirect`}
+                            href={swaggerUrl || `/preview/${deployResult.submission_id}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
