@@ -31,6 +31,7 @@ export default function StudentAssignmentInfoPage() {
   const [loading, setLoading] = useState(true);
   const [cyberModalOpen, setCyberModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [frontendUrl, setFrontendUrl] = useState("");
 
   const params = useParams();
   const id = params.id;
@@ -92,6 +93,9 @@ export default function StudentAssignmentInfoPage() {
     }
 
     loadData();
+    if (typeof window !== "undefined") {
+      setFrontendUrl(window.location.origin);
+    }
   }, [id, assignMentId]);
 
   // Parse actual deploy results
@@ -99,7 +103,8 @@ export default function StudentAssignmentInfoPage() {
   const displayId = deployResult?.project_db_id?.toString() || deployResult?.submission_id;
   
   // Use the backend redirect API so we don't have to rebuild, but without hardcoding proxy logic in frontend
-  const previewUrl = displayId ? `${process.env.NEXT_PUBLIC_API_URL}/project/${displayId}/preview/redirect` : null;
+  const fallbackUrl = displayId && frontendUrl ? encodeURIComponent(`${frontendUrl}/preview/${displayId}?role=student`) : "";
+  const previewUrl = displayId ? `${process.env.NEXT_PUBLIC_API_URL}/project/${displayId}/preview/redirect?role=student${fallbackUrl ? `&fallback=${fallbackUrl}` : ''}` : null;
   const swaggerUrl = displayId ? `/preview/${displayId}?type=backend&role=student` : null;
 
   const testcase = {
