@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 const TTL_SECONDS = 2 * 60 * 60; // 2 hours — must match backend
 
@@ -15,6 +15,8 @@ function formatCountdown(seconds: number): string {
 
 export default function ProjectPreviewPage() {
   const { id } = useParams();
+  const searchParams = useSearchParams();
+  const isBackend = searchParams?.get("type") === "backend";
   const [status, setStatus] = useState<string>("loading");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -202,47 +204,49 @@ export default function ProjectPreviewPage() {
     return (
       <div className="w-full h-screen flex flex-col overflow-hidden bg-gray-950">
         {/* Top bar */}
-        <div className="h-11 bg-gray-900 border-b border-white/10 flex items-center px-4 gap-3 shrink-0">
-          {/* Traffic lights */}
-          <div className="flex gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="w-3 h-3 rounded-full bg-yellow-500" />
-            <span className="w-3 h-3 rounded-full bg-green-500" />
-          </div>
+        {!isBackend && (
+          <div className="h-11 bg-gray-900 border-b border-white/10 flex items-center px-4 gap-3 shrink-0">
+            {/* Traffic lights */}
+            <div className="flex gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span className="w-3 h-3 rounded-full bg-green-500" />
+            </div>
 
-          {/* URL bar */}
-          <div className="flex-1 bg-gray-800 rounded-md px-3 py-1 text-xs text-gray-300 font-mono truncate select-all">
-            {fullUrl}
-          </div>
+            {/* URL bar */}
+            <div className="flex-1 bg-gray-800 rounded-md px-3 py-1 text-xs text-gray-300 font-mono truncate select-all">
+              {fullUrl}
+            </div>
 
-          {/* Countdown */}
-          <div
-            className={`flex items-center gap-1.5 text-xs font-mono font-semibold px-3 py-1 rounded-md ${
-              isWarning
-                ? "bg-red-900/60 text-red-300"
-                : "bg-gray-800 text-gray-300"
-            }`}
-            title="Container auto-removes after 2 hours"
-          >
-            <span>⏱</span>
-            <span>{formatCountdown(secondsLeft)}</span>
-          </div>
+            {/* Countdown */}
+            <div
+              className={`flex items-center gap-1.5 text-xs font-mono font-semibold px-3 py-1 rounded-md ${
+                isWarning
+                  ? "bg-red-900/60 text-red-300"
+                  : "bg-gray-800 text-gray-300"
+              }`}
+              title="Container auto-removes after 2 hours"
+            >
+              <span>⏱</span>
+              <span>{formatCountdown(secondsLeft)}</span>
+            </div>
 
-          {/* Open in tab */}
-          <a
-            href={fullUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-indigo-300 hover:text-indigo-200 hover:underline font-medium transition whitespace-nowrap"
-          >
-            Open ↗
-          </a>
-        </div>
+            {/* Open in tab */}
+            <a
+              href={fullUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-indigo-300 hover:text-indigo-200 hover:underline font-medium transition whitespace-nowrap"
+            >
+              Open ↗
+            </a>
+          </div>
+        )}
 
         {/* Preview iframe */}
         <iframe
           src={fullUrl}
-          className="flex-1 border-0 w-full"
+          className={`flex-1 border-0 w-full ${isBackend ? 'bg-white' : ''}`}
           allow="clipboard-read; clipboard-write; microphone; camera"
         />
       </div>
