@@ -15,17 +15,17 @@ const sidebarAssignmentItems = [
   },
   {
     name: "Source Code",
-    href: "/sourceCode",
+    href: "/sourcecode",
     icon: <SourceOutlinedIcon />,
   },
   {
     name: "Test Result ",
-    href: "/testResult",
+    href: "/testresult",
     icon: <AssignmentLateOutlinedIcon />,
   },
   {
     name: "Score and Feedback",
-    href: "/scoreFeedback",
+    href: "/scorebook",
     icon: <EmojiEventsOutlinedIcon />,
   },
 ];
@@ -33,7 +33,7 @@ const sidebarAssignmentItems = [
 export const SidebarAssignment = () => {
   const pathname = usePathname();
   const params = useParams();
-  const classroomId = params.id;
+  const projectId = params.id;
 
   return (
     <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 flex flex-col justify-between">
@@ -47,12 +47,15 @@ export const SidebarAssignment = () => {
         <nav className="mt-4">
           <ul className="flex flex-col">
             {sidebarAssignmentItems.map((item) => {
-              const isActive = pathname.startsWith(`/preview${item.href}`);
+              const targetHref = item.href === "/preview"
+                ? `/preview/${projectId}`
+                : `/preview/${projectId}${item.href}`;
+              const isActive = pathname === targetHref || pathname.startsWith(`${targetHref}/`);
 
               return (
                 <li key={item.name}>
                   <Link
-                    href={`/preview${item.href}`}
+                    href={targetHref}
                     className={`group flex items-center gap-3 h-[52px] px-6 transition-colors border-l-6
                                     ${
                                       isActive
@@ -87,7 +90,7 @@ export const SidebarAssignment = () => {
       </div>
       <div className="mt-auto pb-2">
         <Link
-          href={`/classroom/${classroomId}/assignment`}
+          href="/classroom"
           className="group flex items-center gap-2 h-[52px] p-6 hover:bg-neutral02/50 transition-colors"
         >
           <ArrowBackIcon className="text-neutral05 group-hover:text-black transition-colors" />

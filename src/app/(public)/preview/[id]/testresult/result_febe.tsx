@@ -1,17 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Breadcrumbs,
-  Box,
-  CircularProgress,
-  InputAdornment,
-  OutlinedInput,
-  Typography,
-} from "@mui/material";
+import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, OutlinedInput, InputAdornment, Box, CircularProgress, Typography } from "@mui/material";
 import Link from "next/link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
@@ -34,7 +24,32 @@ function getUniqueComparisons(rows: TestResultPageData["plagiarismData"]) {
   return Array.from(byPair.values());
 }
 
-export default function TestResultFull({ data, isLoading, error }: Props) {
+function getStatusBadgeClass(status?: string) {
+  switch (status) {
+    case "success":
+    case "passed":
+      return "bg-[var(--color-success01)] text-white";
+    case "failed":
+    case "error":
+      return "bg-[#da291c] text-white";
+    case "running":
+    case "pending":
+      return "bg-[#ffb300] text-white";
+    default:
+      return "bg-[var(--color-neutral03)] text-[var(--color-black)]";
+  }
+}
+
+function formatStatus(status?: string) {
+  if (!status) return "Unknown";
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/[_-]/g, " ");
+}
+
+function getCount(value: unknown) {
+  return typeof value === "number" ? value : null;
+}
+
+export default function TestResultFeBe({ data, isLoading, error }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const projectComparisons = useMemo(() => {
@@ -56,15 +71,8 @@ export default function TestResultFull({ data, isLoading, error }: Props) {
 
   const averageSimilarity = useMemo(() => {
     if (projectComparisons.length === 0) return 0;
-    return projectComparisons.reduce((sum, item) => sum + item.score, 0) / projectComparisons.length;
+    return projectComparisons.reduce((acc, curr) => acc + curr.score, 0) / projectComparisons.length;
   }, [projectComparisons]);
-
-  let avgColorClass = "bg-[var(--color-success01)]";
-  if (averageSimilarity >= 80) avgColorClass = "bg-[#da291c]";
-  else if (averageSimilarity >= 60) avgColorClass = "bg-[#ffb300]";
-
-  const showNoPlagiarismData = projectComparisons.length === 0;
-  const showNoSearchMatches = searchQuery.trim().length > 0 && filteredPlagiarism.length === 0 && projectComparisons.length > 0;
 
   if (isLoading) {
     return (
@@ -83,6 +91,18 @@ export default function TestResultFull({ data, isLoading, error }: Props) {
     );
   }
 
+  const testcaseStatus = String(data.testcaseResult?.status || "unknown");
+  const testcasePassed = getCount(data.testcaseResult?.passed);
+  const testcaseFailed = getCount(data.testcaseResult?.failed);
+  const testcaseTotal = getCount(data.testcaseResult?.total);
+  const testcaseRunId = typeof data.testcaseResult?.run_id === "string" ? data.testcaseResult.run_id : null;
+  const showNoPlagiarismData = projectComparisons.length === 0;
+  const showNoSearchMatches = searchQuery.trim().length > 0 && filteredPlagiarism.length === 0 && projectComparisons.length > 0;
+
+  let avgColorClass = "bg-[var(--color-success01)]";
+  if (averageSimilarity >= 80) avgColorClass = "bg-[#da291c]";
+  else if (averageSimilarity >= 60) avgColorClass = "bg-[#ffb300]";
+
   return (
     <div className="flex flex-col gap-6">
       <Breadcrumbs className="my-6 mb-6">
@@ -92,6 +112,73 @@ export default function TestResultFull({ data, isLoading, error }: Props) {
         <span>{data.projectLabel}</span>
         <span style={{ color: "var(--color-black)", fontWeight: 500 }}>Test Result</span>
       </Breadcrumbs>
+
+      <Accordion
+        defaultExpanded
+        disableGutters
+        elevation={0}
+        sx={{
+          border: "1px solid var(--color-neutral03)",
+          borderRadius: "8px !important",
+          "&:before": { display: "none" },
+          overflow: "hidden",
+          boxShadow: "3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)",
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: "var(--color-black)" }} />}
+          sx={{
+            borderBottom: "1px solid var(--color-neutral03)",
+            px: 3,
+            py: 1,
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Test Case</h4>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(testcaseStatus)}`}>
+              {formatStatus(testcaseStatus)}
+            </span>
+          </div>
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          <div className="flex flex-wrap gap-3 border-b border-[var(--color-neutral03)] px-6 py-4 bg-[#fafafa]">
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Total</div>
+              <div className="text-lg font-semibold text-black">{testcaseTotal ?? "-"}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Passed</div>
+              <div className="text-lg font-semibold text-[var(--color-success02)]">{testcasePassed ?? "-"}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Failed</div>
+              <div className="text-lg font-semibold text-[#da291c]">{testcaseFailed ?? "-"}</div>
+            </div>
+            {testcaseRunId && (
+              <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2 min-w-[220px]">
+                <div className="text-xs uppercase tracking-wide text-neutral05">Run ID</div>
+                <div className="truncate text-sm font-medium text-black">{testcaseRunId}</div>
+              </div>
+            )}
+          </div>
+          {data.testcaseLogUrl ? (
+            <iframe
+              src={data.testcaseLogUrl}
+              title="Robot Framework Log"
+              style={{ width: "100%", height: "500px", border: "none", display: "block" }}
+            />
+          ) : (
+            <div className="px-6 py-5 text-neutral05 space-y-2">
+              <div>{String(data.testcaseResult?.message || "No testcase log artifact was generated for this submission.")}</div>
+              {testcaseStatus === "failed" && (
+                <div className="text-sm text-[#da291c]">
+                  The testcase run finished with failures. Open the project artifacts if you need the raw Robot Framework report files.
+                </div>
+              )}
+            </div>
+          )}
+        </AccordionDetails>
+      </Accordion>
 
       <Accordion
         defaultExpanded
@@ -195,7 +282,6 @@ export default function TestResultFull({ data, isLoading, error }: Props) {
                   let colorClass = "bg-[var(--color-success01)]";
                   if (item.score >= 80) colorClass = "bg-[#da291c]";
                   else if (item.score >= 60) colorClass = "bg-[#ffb300]";
-
                   return (
                     <tr key={`${item.name}-${index}`} className={`border-b border-[var(--color-neutral03)] ${isEven ? "bg-white" : "bg-[#eef6ff]"}`}>
                       <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.name}</td>

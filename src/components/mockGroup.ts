@@ -77,10 +77,12 @@ export const mockStudents: Student[] = [
 
 export const mockCurrentStudent: Student = {
   id: 999,
+  studentId: "65010999",
   user: {
     id: 999,
     firstName: "Your",
     lastName: "Name",
+    email: "your.name@example.com",
     imageUrl: "https://i.pravatar.cc/150?img=12",
   },
 };

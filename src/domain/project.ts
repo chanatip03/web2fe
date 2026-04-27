@@ -2,6 +2,7 @@ import { IStudent } from "./student";
 
 export interface Project {
   id: number;
+  assignment_id?: number | null;
   group_id?: number | null;
   group_name?: string | null;
   submission_type: "file" | "github";

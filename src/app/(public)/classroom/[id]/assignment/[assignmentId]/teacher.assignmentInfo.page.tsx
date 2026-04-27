@@ -31,6 +31,7 @@ export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
   const [openTestcase, setOpenTestcase] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -45,6 +46,7 @@ export default function TeacherAssignmentInfoPage() {
 
   async function loadData() {
     try {
+      setError(null);
       const [assignmentData, projectData] = await Promise.all([
         assignmentService.getAssignmentById(Number(assignMentId)),
         projectService.getProjectsByAssignment(Number(assignMentId)),
@@ -53,6 +55,7 @@ export default function TeacherAssignmentInfoPage() {
       setProjects(projectData);
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to load assignment details");
     } finally {
       setLoading(false);
     }
@@ -84,7 +87,9 @@ export default function TeacherAssignmentInfoPage() {
     return `Project #${project.id}`;
   };
 
-  if (loading || !assignments) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (!assignments) return <div>Assignment not found.</div>;
 
   const hasTestcase = !!assignments.testcase_url;
 
