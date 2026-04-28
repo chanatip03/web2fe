@@ -294,7 +294,10 @@ export default function TeacherAssignmentInfoPage() {
                   </TableCell>
 
                   <TableCell align="right" sx={{ pr: 6 }}>
-                    <Link href={`/preview/${project.id}`}>
+                    <Link
+                      href={`/preview/${project.id}`}
+                      onClick={() => Cookies.set("classroomId", String(id), { expires: 1 })}
+                    >
                       <Button variant="contained" size="small" sx={{ px: 4 }}>
                         Preview
                       </Button>

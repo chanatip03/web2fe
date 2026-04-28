@@ -60,12 +60,10 @@ export default function StudentAssignmentInfoPage() {
           ]);
 
           const myStudentId = currentUser.id;
-          // Find the LATEST project where current student is a member
-          const studentProjects = projects.filter((p: any) =>
+          // Find the single project where current student is a member (guaranteed by upsert)
+          const userProject = projects.find((p: any) =>
             p.students?.some((s: any) => s.id === myStudentId)
           );
-
-          const userProject = studentProjects.sort((a: any, b: any) => b.id - a.id)[0];
 
           if (userProject) {
             console.log("Loading latest user project:", userProject);
@@ -326,6 +324,7 @@ export default function StudentAssignmentInfoPage() {
                             href={swaggerUrl || `/preview/${deployResult.submission_id}`}
                             target="_blank"
                             rel="noreferrer"
+                            onClick={() => Cookies.set("classroomId", String(id), { expires: 1 })}
                             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                           >
                             <span className="text-lg"></span> View API Docs (Swagger) ↗
@@ -336,6 +335,7 @@ export default function StudentAssignmentInfoPage() {
                           href={previewUrl || `${process.env.NEXT_PUBLIC_API_URL}/project/${deployResult.submission_id}/preview/redirect`}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={() => Cookies.set("classroomId", String(id), { expires: 1 })}
                           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                         >
                           <span className="text-lg"></span> Open Live Preview ↗

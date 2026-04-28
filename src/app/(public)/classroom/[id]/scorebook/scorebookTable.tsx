@@ -60,9 +60,12 @@ export default function ScorebookTable({ data }: Props) {
                                     }}
                                 >
                                     <TableCell align="center">
-                                        <h5>{student.studentId}</h5>
+                                        <h5>{student.studentId ?? student.student_id ?? "-"}</h5>
                                     </TableCell>
-                                    <TableCell>{student.user.firstName} {student.user.lastName}</TableCell>
+                                    <TableCell>
+                                        {student.user?.firstName ?? student.user?.first_name ?? ""}{" "}
+                                        {student.user?.lastName ?? student.user?.last_name ?? ""}
+                                    </TableCell>
                                 </TableRow>
                             ))}
 
@@ -118,7 +121,7 @@ export default function ScorebookTable({ data }: Props) {
                                             );
                                         return (
                                             <TableCell key={assignment.id} align="center">
-                                                <h5 className="text-primary03">{found ? found.score : "-"}</h5>
+                                                <h5 className="text-primary03">{found && found.score != null ? found.score : 0}</h5>
                                             </TableCell>
                                         );
 
@@ -152,12 +155,11 @@ export default function ScorebookTable({ data }: Props) {
 
                         <TableBody>
                             {data.student.map((student: any, index: number) => {
-                                const total =
-                                    student.project.reduce(
-                                        (sum: number, p: any) =>
-                                            sum + p.score,
-                                        0
-                                    );
+                                const total = student.project.reduce(
+                                    (sum: number, p: any) =>
+                                        sum + (p.score ?? 0),
+                                    0
+                                );
 
                                 return (
 

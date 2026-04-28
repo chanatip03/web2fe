@@ -54,10 +54,12 @@ export default function StudentScorebookPage() {
             let userProject = null;
             try {
               const projects = await projectService.getProjectsByAssignment(assign.id);
-              // Find the project that includes my student matching ID
-              userProject = projects.find((p: any) => p.students?.some((s: any) => s.id === myStudentId));
+              // Find the project that includes my student ID
+              userProject = projects.find((p: any) =>
+                p.students?.some((s: any) => s.id === myStudentId)
+              );
             } catch {
-              userProject = null; // No projects/errors -> implies missing
+              userProject = null; // No projects / error → implies missing
             }
 
             if (!userProject) {
@@ -68,12 +70,17 @@ export default function StudentScorebookPage() {
               };
             }
 
+            // score != null catches both null and undefined
+            const isGraded = userProject.score != null;
             return {
               id: assign.id,
               title: assign.title,
               score: userProject.score,
               feedback: userProject.feedback,
-              status: userProject.score !== null ? ("graded" as const) : ("waiting" as const),
+              sendDate: userProject.created_date
+                ? formatDate(userProject.created_date)
+                : undefined,
+              status: isGraded ? ("graded" as const) : ("waiting" as const),
             };
           })
         );
