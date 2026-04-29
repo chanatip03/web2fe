@@ -180,7 +180,7 @@ export default function CreateGroupModal({ open, onClose, onSave, assignmentId, 
                     className="flex items-center gap-2 bg-white border border-neutral03 shadow-sm rounded-lg px-2 py-1"
                   >
                     <img
-                      src={m.user.imageUrl || ANONYMOUS_AVATAR_URL}
+                      src={m.user.image_url || ANONYMOUS_AVATAR_URL}
                       className="w-6 h-6 rounded-full"
                     />
 
@@ -228,7 +228,7 @@ export default function CreateGroupModal({ open, onClose, onSave, assignmentId, 
                       }`}
                     >
                       <img
-                        src={s.user.imageUrl || ANONYMOUS_AVATAR_URL}
+                        src={s.user.image_url || ANONYMOUS_AVATAR_URL}
                         className="w-8 h-8 rounded-full"
                       />
 

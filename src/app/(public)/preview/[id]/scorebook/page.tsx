@@ -168,7 +168,7 @@ export default function ScorebookPage() {
                 project.students.map((student) => (
                   <Box key={student.id} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar
-                      src={student.user.imageUrl || ANONYMOUS_AVATAR_URL}
+                      src={student.user.image_url || ANONYMOUS_AVATAR_URL}
                       alt={student.user.first_name}
                       sx={{ width: 40, height: 40 }}
                     />
