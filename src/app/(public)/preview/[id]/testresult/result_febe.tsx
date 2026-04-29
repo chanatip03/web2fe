@@ -1,7 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, OutlinedInput, InputAdornment, Box, CircularProgress, Typography } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Breadcrumbs,
+  Box,
+  CircularProgress,
+  InputAdornment,
+  OutlinedInput,
+  Typography,
+} from "@mui/material";
 import Link from "next/link";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
@@ -24,16 +34,26 @@ function getUniqueComparisons(rows: TestResultPageData["plagiarismData"]) {
   return Array.from(byPair.values());
 }
 
+function getScoreColor(score: number) {
+  if (score >= 80) return "bg-[#da291c]";
+  if (score >= 60) return "bg-[#ffb300]";
+  return "bg-[var(--color-success01)]";
+}
+
 function getStatusBadgeClass(status?: string) {
-  switch (status) {
+  switch ((status || "").toLowerCase()) {
     case "success":
     case "passed":
+    case "pass":
       return "bg-[var(--color-success01)] text-white";
     case "failed":
+    case "fail":
     case "error":
       return "bg-[#da291c] text-white";
     case "running":
     case "pending":
+    case "not run":
+    case "not_run":
       return "bg-[#ffb300] text-white";
     default:
       return "bg-[var(--color-neutral03)] text-[var(--color-black)]";
@@ -96,12 +116,17 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
   const testcaseFailed = getCount(data.testcaseResult?.failed);
   const testcaseTotal = getCount(data.testcaseResult?.total);
   const testcaseRunId = typeof data.testcaseResult?.run_id === "string" ? data.testcaseResult.run_id : null;
+  const testcaseCases = data.testcaseCases;
+  const cyberLanguages = Array.isArray(data.cyberScanData?.languages)
+    ? data.cyberScanData.languages.filter((value): value is string => typeof value === "string")
+    : [];
+  const cyberIssuesFound = getCount(data.cyberScanData?.issues_found) ?? 0;
+  const totalTests = testcaseTotal ?? testcaseCases.length;
+  const passedTests = testcasePassed ?? testcaseCases.filter((item) => item.status === "pass" || item.status === "passed").length;
+  const failedTests = testcaseFailed ?? testcaseCases.filter((item) => item.status === "fail" || item.status === "failed").length;
   const showNoPlagiarismData = projectComparisons.length === 0;
   const showNoSearchMatches = searchQuery.trim().length > 0 && filteredPlagiarism.length === 0 && projectComparisons.length > 0;
-
-  let avgColorClass = "bg-[var(--color-success01)]";
-  if (averageSimilarity >= 80) avgColorClass = "bg-[#da291c]";
-  else if (averageSimilarity >= 60) avgColorClass = "bg-[#ffb300]";
+  const avgColorClass = getScoreColor(averageSimilarity);
 
   return (
     <div className="flex flex-col gap-6">
@@ -131,6 +156,10 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
             borderBottom: "1px solid var(--color-neutral03)",
             px: 3,
             py: 1,
+            ".MuiAccordionSummary-content": {
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
           }}
         >
           <div className="flex items-center gap-3">
@@ -139,20 +168,32 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
               {formatStatus(testcaseStatus)}
             </span>
           </div>
+          <div className="flex items-center gap-3 text-sm">
+            {data.testcaseOutputUrl && (
+              <a href={data.testcaseOutputUrl} target="_blank" rel="noreferrer" className="text-[var(--color-primary03)] underline" onClick={(event) => event.stopPropagation()}>
+                output.xml
+              </a>
+            )}
+            {data.testcaseLogUrl && (
+              <a href={data.testcaseLogUrl} target="_blank" rel="noreferrer" className="text-[var(--color-primary03)] underline" onClick={(event) => event.stopPropagation()}>
+                log.html
+              </a>
+            )}
+          </div>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0 }}>
           <div className="flex flex-wrap gap-3 border-b border-[var(--color-neutral03)] px-6 py-4 bg-[#fafafa]">
             <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
               <div className="text-xs uppercase tracking-wide text-neutral05">Total</div>
-              <div className="text-lg font-semibold text-black">{testcaseTotal ?? "-"}</div>
+              <div className="text-lg font-semibold text-black">{totalTests}</div>
             </div>
             <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
               <div className="text-xs uppercase tracking-wide text-neutral05">Passed</div>
-              <div className="text-lg font-semibold text-[var(--color-success02)]">{testcasePassed ?? "-"}</div>
+              <div className="text-lg font-semibold text-[var(--color-success02)]">{passedTests}</div>
             </div>
             <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
               <div className="text-xs uppercase tracking-wide text-neutral05">Failed</div>
-              <div className="text-lg font-semibold text-[#da291c]">{testcaseFailed ?? "-"}</div>
+              <div className="text-lg font-semibold text-[#da291c]">{failedTests}</div>
             </div>
             {testcaseRunId && (
               <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2 min-w-[220px]">
@@ -161,21 +202,51 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
               </div>
             )}
           </div>
-          {data.testcaseLogUrl ? (
-            <iframe
-              src={data.testcaseLogUrl}
-              title="Robot Framework Log"
-              style={{ width: "100%", height: "500px", border: "none", display: "block" }}
-            />
-          ) : (
+
+          {testcaseCases.length === 0 ? (
             <div className="px-6 py-5 text-neutral05 space-y-2">
-              <div>{String(data.testcaseResult?.message || "No testcase log artifact was generated for this submission.")}</div>
-              {testcaseStatus === "failed" && (
-                <div className="text-sm text-[#da291c]">
-                  The testcase run finished with failures. Open the project artifacts if you need the raw Robot Framework report files.
-                </div>
-              )}
+              <div>{String(data.testcaseResult?.message || "No testcase details were generated for this submission.")}</div>
             </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#fafafa] border-b border-[var(--color-neutral03)]">
+                  <th className="py-3 px-6 font-bold text-[15px] w-[28%]" style={{ color: "var(--color-black)" }}>Test Case</th>
+                  <th className="py-3 px-6 font-bold text-[15px] w-[14%]" style={{ color: "var(--color-black)" }}>Status</th>
+                  <th className="py-3 px-6 font-bold text-[15px] w-[12%]" style={{ color: "var(--color-black)" }}>Duration</th>
+                  <th className="py-3 px-6 font-bold text-[15px]" style={{ color: "var(--color-black)" }}>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {testcaseCases.map((item, index) => {
+                  const isEven = index % 2 === 0;
+                  return (
+                    <tr key={item.id} className={`border-b border-[var(--color-neutral03)] ${isEven ? "bg-white" : "bg-[#eef6ff]"}`}>
+                      <td className="py-3 px-6 align-top">
+                        <div className="font-medium text-[15px] text-black">{item.name}</div>
+                        {(item.line || item.suiteName) && (
+                          <div className="mt-1 text-xs text-neutral05">
+                            {item.suiteName ? `${item.suiteName}` : ""}
+                            {item.line ? `${item.suiteName ? " • " : ""}line ${item.line}` : ""}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-6 align-top">
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(item.status)}`}>
+                          {formatStatus(item.status)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-6 align-top text-[15px] text-black">
+                        {item.durationSeconds !== null ? `${item.durationSeconds.toFixed(2)}s` : "-"}
+                      </td>
+                      <td className="py-3 px-6 align-top text-[14px] text-black whitespace-pre-wrap break-words">
+                        {item.message || "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </AccordionDetails>
       </Accordion>
@@ -198,14 +269,39 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
             borderBottom: "1px solid var(--color-neutral03)",
             px: 3,
             py: 1,
+            ".MuiAccordionSummary-content": {
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
           }}
         >
           <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Cyber Security Test</h4>
+          {data.cyberScanUrl && (
+            <a href={data.cyberScanUrl} target="_blank" rel="noreferrer" className="text-sm text-[var(--color-primary03)] underline" onClick={(event) => event.stopPropagation()}>
+              scan.json
+            </a>
+          )}
         </AccordionSummary>
-        <AccordionDetails sx={{ p: 4, pt: 3, maxHeight: "500px", overflowY: "auto" }}>
-          <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--color-black)" }}>
-            {JSON.stringify(data.cyberScanData ?? { status: "missing", message: "No cybersecurity result recorded yet." }, null, 2)}
-          </pre>
+        <AccordionDetails sx={{ p: 0 }}>
+          <div className="flex flex-wrap gap-3 border-b border-[var(--color-neutral03)] px-6 py-4 bg-[#fafafa]">
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Type</div>
+              <div className="text-lg font-semibold text-black">{typeof data.cyberScanData?.type === "string" ? data.cyberScanData.type : "unknown"}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Issues Found</div>
+              <div className="text-lg font-semibold text-black">{cyberIssuesFound}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2 min-w-[220px]">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Languages</div>
+              <div className="text-sm font-medium text-black">{cyberLanguages.length > 0 ? cyberLanguages.join(", ") : "None detected"}</div>
+            </div>
+          </div>
+          <div className="p-4 pt-3 max-h-[500px] overflow-y-auto">
+            <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--color-black)" }}>
+              {JSON.stringify(data.cyberScanData ?? { status: "missing", message: "No scan.json artifact recorded yet." }, null, 2)}
+            </pre>
+          </div>
         </AccordionDetails>
       </Accordion>
 
@@ -279,9 +375,7 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
               <tbody>
                 {filteredPlagiarism.map((item, index) => {
                   const isEven = index % 2 === 0;
-                  let colorClass = "bg-[var(--color-success01)]";
-                  if (item.score >= 80) colorClass = "bg-[#da291c]";
-                  else if (item.score >= 60) colorClass = "bg-[#ffb300]";
+                  const colorClass = getScoreColor(item.score);
                   return (
                     <tr key={`${item.name}-${index}`} className={`border-b border-[var(--color-neutral03)] ${isEven ? "bg-white" : "bg-[#eef6ff]"}`}>
                       <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.name}</td>

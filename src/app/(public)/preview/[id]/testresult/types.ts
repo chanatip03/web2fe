@@ -1,13 +1,26 @@
 import type { PlagiarismComparison } from "@/domain/assignment";
 
+export type TestcaseCaseResult = {
+  id: string;
+  name: string;
+  status: string;
+  message: string | null;
+  durationSeconds: number | null;
+  line: number | null;
+  suiteName: string | null;
+};
+
 export type TestResultPageData = {
   projectId: number;
   classroomName?: string;
   assignmentTitle: string;
   projectLabel: string;
-  executionMode: string;
+  executionMode: string | null;
   testcaseResult: Record<string, unknown> | null;
-  cyberScanData: Record<string, unknown> | null;
-  plagiarismData: PlagiarismComparison[];
+  testcaseCases: TestcaseCaseResult[];
   testcaseLogUrl: string | null;
+  testcaseOutputUrl: string | null;
+  cyberScanData: Record<string, unknown> | null;
+  cyberScanUrl: string | null;
+  plagiarismData: PlagiarismComparison[];
 };
