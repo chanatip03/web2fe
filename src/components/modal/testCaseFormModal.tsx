@@ -13,6 +13,8 @@ interface Props {
   onClose: () => void;
   testcase?: string;
   assignmentId: string;
+  assignmentTitle?: string;
+  assignmentDescription?: string;
   onSaveSuccess?: () => void;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
@@ -25,7 +27,17 @@ const Schema = z.object({
 
 type FormData = z.infer<typeof Schema>;
 
-const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSuccess, onSuccess, onError }: Props) => {
+const TestCaseFormModal = ({
+  open,
+  onClose,
+  testcase,
+  assignmentId,
+  assignmentTitle,
+  assignmentDescription,
+  onSaveSuccess,
+  onSuccess,
+  onError,
+}: Props) => {
   const [loading, setLoading] = useState(false);
   const isEditMode = !!testcase;
   const [canEdit, setCanEdit] = useState(isEditMode);
@@ -91,7 +103,11 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/testcase/definitions/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt,
+          assignment_title: assignmentTitle,
+          assignment_description: assignmentDescription,
+        }),
         credentials: "include",
       });
       const data = await res.json();

@@ -4,6 +4,7 @@ export interface Project {
   id: number;
   assignment_id?: number | null;
   group_id?: number | null;
+  submission_id?: string | null;
   group_name?: string | null;
   submission_type: "file" | "github";
   submission_uuid?: string | null;
@@ -13,6 +14,7 @@ export interface Project {
   cybersecurity_result?: string | null;
   score?: number | null;
   feedback?: string | null;
+  is_late: boolean;
   created_date?: string | null;
   students: IStudent[];
 }

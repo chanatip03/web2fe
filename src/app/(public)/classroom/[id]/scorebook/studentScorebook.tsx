@@ -2,11 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Breadcrumbs, Box, Typography, Accordion, AccordionSummary, AccordionDetails, CircularProgress, Chip } from "@mui/material";
+import {
+  Breadcrumbs,
+  Box,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  CircularProgress,
+  Chip,
+} from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
-import { assignmentService, projectService, userService } from "@/services/controller";
+import {
+  assignmentService,
+  projectService,
+  userService,
+} from "@/services/controller";
 
 export interface StudentAssignment {
   id: number;
@@ -46,18 +59,24 @@ export default function StudentScorebookPage() {
         const myStudentId = currentUser.id;
 
         // 2. Fetch all assignments in this classroom
-        const classAssignments = await assignmentService.getAssignments(Number(classroomId));
+        const classAssignments = await assignmentService.getAssignments(
+          Number(classroomId),
+        );
 
         // 3. Loop and fetch projects, tracking down the matching one
         const mappedData: StudentAssignment[] = await Promise.all(
-          classAssignments.map(async (assign: any) => {
+          classAssignments.map(async (assign) => {
             let userProject = null;
             try {
-              const projects = await projectService.getProjectsByAssignment(assign.id);
-              // Find the project that includes my student matching ID
-              userProject = projects.find((p: any) => p.students?.some((s: any) => s.id === myStudentId));
+              const projects = await projectService.getProjectsByAssignment(
+                assign.id,
+              );
+              // Find the project that includes my student ID
+              userProject = projects.find((p) =>
+                p.students?.some((s) => s.id === myStudentId),
+              );
             } catch {
-              userProject = null; // No projects/errors -> implies missing
+              userProject = null; // No projects / error → implies missing
             }
 
             if (!userProject) {
@@ -68,14 +87,19 @@ export default function StudentScorebookPage() {
               };
             }
 
+            // score != null catches both null and undefined
+            const isGraded = userProject.score != null;
             return {
               id: assign.id,
               title: assign.title,
               score: userProject.score,
               feedback: userProject.feedback,
-              status: userProject.score !== null ? ("graded" as const) : ("waiting" as const),
+              sendDate: userProject.created_date
+                ? formatDate(userProject.created_date)
+                : undefined,
+              status: isGraded ? ("graded" as const) : ("waiting" as const),
             };
-          })
+          }),
         );
 
         setAssignments(mappedData);
@@ -104,14 +128,21 @@ export default function StudentScorebookPage() {
 
       {/* Loading State */}
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
           <CircularProgress />
         </Box>
       )}
 
       {/* Error State */}
       {!isLoading && error && (
-        <Box sx={{ p: 3, bgcolor: 'var(--color-accent01)', borderRadius: '8px', color: 'var(--color-accent04)' }}>
+        <Box
+          sx={{
+            p: 3,
+            bgcolor: "var(--color-accent01)",
+            borderRadius: "8px",
+            color: "var(--color-accent04)",
+          }}
+        >
           <Typography>{error}</Typography>
         </Box>
       )}
@@ -134,11 +165,28 @@ export default function StudentScorebookPage() {
                       p: 3,
                     }}
                   >
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-neutral04)" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Typography
+                        variant="h3"
+                        sx={{
+                          fontWeight: 700,
+                          mb: 1.5,
+                          color: "var(--color-neutral04)",
+                        }}
+                      >
                         {assignment.title}
                       </Typography>
-                      <Chip label="Missing Submission" size="small" variant="outlined" />
+                      <Chip
+                        label="Missing Submission"
+                        size="small"
+                        variant="outlined"
+                      />
                     </Box>
                   </Box>
                 );
@@ -156,11 +204,20 @@ export default function StudentScorebookPage() {
                       boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                     }}
                   >
-                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5, color: "var(--color-black)" }}>
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1.5,
+                        color: "var(--color-black)",
+                      }}
+                    >
                       {assignment.title}
                     </Typography>
-                    <Typography sx={{ fontWeight: 600, color: "var(--color-neutral05)" }}>
-                      Waiting for Professor's Reviews
+                    <Typography
+                      sx={{ fontWeight: 600, color: "var(--color-neutral05)" }}
+                    >
+                      Waiting for Professor&apos;s Reviews
                     </Typography>
                   </Box>
                 );
@@ -180,7 +237,9 @@ export default function StudentScorebookPage() {
                   }}
                 >
                   <AccordionSummary
-                    expandIcon={<ExpandMoreIcon sx={{ color: "var(--color-black)" }} />}
+                    expandIcon={
+                      <ExpandMoreIcon sx={{ color: "var(--color-black)" }} />
+                    }
                     sx={{
                       p: 3,
                       pb: 1.5,
@@ -190,24 +249,75 @@ export default function StudentScorebookPage() {
                       },
                     }}
                   >
-                    <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: "var(--color-black)" }}>
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        fontWeight: 700,
+                        mb: 1,
+                        color: "var(--color-black)",
+                      }}
+                    >
                       {assignment.title}
                     </Typography>
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                      <Typography sx={{ fontWeight: 700, color: "var(--color-black)" }}>Score :</Typography>
-                      <Typography sx={{ fontWeight: 700, color: "var(--color-primary03)", fontSize: "1.1rem" }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "baseline", gap: 1 }}
+                    >
+                      <Typography
+                        sx={{ fontWeight: 700, color: "var(--color-black)" }}
+                      >
+                        Score :
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontWeight: 700,
+                          color: "var(--color-primary03)",
+                          fontSize: "1.1rem",
+                        }}
+                      >
                         {assignment.score}
                       </Typography>
                     </Box>
                   </AccordionSummary>
-                  <AccordionDetails sx={{ px: 3, pb: 3, pt: 0, display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                      <Typography sx={{ fontWeight: 700, color: "var(--color-black)" }}>Send Date :</Typography>
-                      <Typography sx={{ color: "var(--color-neutral05)" }}>{assignment.sendDate}</Typography>
+                  <AccordionDetails
+                    sx={{
+                      px: 3,
+                      pb: 3,
+                      pt: 0,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{ display: "flex", alignItems: "baseline", gap: 1 }}
+                    >
+                      <Typography
+                        sx={{ fontWeight: 700, color: "var(--color-black)" }}
+                      >
+                        Send Date :
+                      </Typography>
+                      <Typography sx={{ color: "var(--color-neutral05)" }}>
+                        {assignment.sendDate}
+                      </Typography>
                     </Box>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                      <Typography sx={{ fontWeight: 700, color: "var(--color-black)" }}>Feedback:</Typography>
-                      <Typography sx={{ color: "var(--color-neutral05)", lineHeight: 1.6 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.5,
+                      }}
+                    >
+                      <Typography
+                        sx={{ fontWeight: 700, color: "var(--color-black)" }}
+                      >
+                        Feedback:
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: "var(--color-neutral05)",
+                          lineHeight: 1.6,
+                        }}
+                      >
                         {assignment.feedback || "-"}
                       </Typography>
                     </Box>
