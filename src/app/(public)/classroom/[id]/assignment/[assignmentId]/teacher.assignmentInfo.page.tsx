@@ -32,6 +32,7 @@ export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assignmentLoadFailed, setAssignmentLoadFailed] = useState(false);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
   const [openTestcase, setOpenTestcase] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -44,18 +45,33 @@ export default function TeacherAssignmentInfoPage() {
   const id = params.id;
   const assignMentId = params.assignmentId;
 
-  async function loadData() {
-    try {
-      const [assignmentData, projectData] = await Promise.all([
-        assignmentService.getAssignmentById(Number(assignMentId)),
-        projectService.getProjectsByAssignment(Number(assignMentId)),
-      ]);
-      setAssignments(assignmentData);
-      setProjects(projectData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      setAssignmentLoadFailed(false);
+
+      try {
+        const assignmentData = await assignmentService.getAssignmentById(Number(assignMentId));
+        setAssignments(assignmentData);
+
+        try {
+          const projectData = await projectService.getProjectsByAssignment(Number(assignMentId));
+          setProjects(projectData);
+        } catch (err) {
+          console.error(err);
+          setProjects([]);
+          setSnackbar({
+            open: true,
+            message: "Unable to load submitted projects right now.",
+            severity: "error",
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setAssignmentLoadFailed(true);
+      } finally {
+        setLoading(false);
+      }
     }
   }
 
@@ -85,7 +101,8 @@ export default function TeacherAssignmentInfoPage() {
     return `Project #${project.id}`;
   };
 
-  if (loading || !assignments) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
+  if (!assignments) return <div>{assignmentLoadFailed ? "Failed to load assignment." : "Loading..."}</div>;
 
   const hasTestcase = !!assignments.testcase_url;
 
@@ -101,25 +118,27 @@ export default function TeacherAssignmentInfoPage() {
           </Breadcrumbs>
         </div>
 
-        <div className="flex items-center justify-between mb-3">
-          <h1>{assignments.title}</h1>
-          {assignments.project_type?.id !== 3 && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenTestcase(true)}
-            >
-              {hasTestcase ? "Edit TestCase" : "Create TestCase"}
-            </Button>
-          )}
-        </div>
-        <TestCaseFormModal
-          open={openTestcase}
-          onClose={() => setOpenTestcase(false)}
-          testcase={assignments.testcase_url}
-          assignmentId={assignMentId as string}
-          onSaveSuccess={() => loadData()}
-          onSuccess={(message) => {
+      <div className="flex items-center justify-between mb-3">
+        <h1>{assignments.title}</h1>
+        {assignments.project_type?.id !== 3 && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenTestcase(true)}
+          >
+            {hasTestcase ? "Edit TestCase" : "Create TestCase"}
+          </Button>
+        )}
+      </div>
+      <TestCaseFormModal
+        open={openTestcase}
+        onClose={() => setOpenTestcase(false)}
+        testcase={assignments.testcase_url}
+        assignmentId={assignMentId as string}
+        assignmentTitle={assignments.title}
+        assignmentDescription={assignments.description ?? ""}
+        onSaveSuccess={() => window.location.reload()}
+         onSuccess={(message) => {
             setSnackbar({
               open: true,
               message,
