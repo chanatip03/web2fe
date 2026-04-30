@@ -8,7 +8,13 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 
-export const SidebarAssignment = () => {
+export const SidebarAssignment = ({
+  assignmentName,
+  projectName,
+}: {
+  assignmentName: string | undefined;
+  projectName: string | undefined;
+}) => {
   const pathname = usePathname();
   const params = useParams();
   const projectId = params.id as string; // /preview/[id] — id = project/submission id
@@ -48,8 +54,8 @@ export const SidebarAssignment = () => {
     <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 flex flex-col justify-between">
       <div>
         <div className="bg-secondary04 text-white h-[145px] flex flex-col justify-between p-6 pt-8">
-          <h3>Project Preview</h3>
-          <p>{Cookies.get("classroomName") ?? ""}</p>
+          <h3>{assignmentName}</h3>
+          <p>{projectName}</p>
         </div>
 
         <nav className="mt-4">
