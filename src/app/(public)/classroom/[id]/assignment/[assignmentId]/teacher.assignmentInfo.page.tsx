@@ -26,6 +26,7 @@ import { useParams } from "next/navigation";
 import { Assignment } from "@/domain/assignment";
 import { Project } from "@/domain/project";
 import TestCaseFormModal from "@/components/modal/testCaseFormModal";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 
 export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
@@ -158,6 +159,28 @@ export default function TeacherAssignmentInfoPage() {
             <p className="p2">{assignments.description}</p>
           </div>
         </div>
+        <h2 className="font-bold text-lg mb-2">Attachments</h2>
+
+          {assignments.attachments && assignments.attachments.length > 0 ? (
+            <ul className="mb-5 space-y-1">
+              {assignments.attachments.map((attachment) => (
+                <li key={attachment.id} className="hover:text-primary03 transition cursor-pointer">
+                  <a
+                    href={attachment.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <InsertDriveFileIcon />
+                    {attachment.file_url.split('/').pop() || 'Attachment'}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-neutral06 mb-5">No attachments available</p>
+          )}
+      </div>
 
         <Paper sx={{ backgroundColor: "#ffffff" }}>
           <Tabs

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Breadcrumbs, Avatar } from "@mui/material";
+import { Button, Breadcrumbs, Avatar, Snackbar, Alert } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
 import ResetPasswordModal from "@/components/modal/resetPasswordModal";
 import { ANONYMOUS_AVATAR_URL } from "@/constants";
+import CheckIcon from '@mui/icons-material/Check';
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -37,6 +38,11 @@ export default function TeacherProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [openResetPassword, setOpenResetPassword] = useState(false);
   const [currentUserData, setCurrentUserData] = useState<Teacher | null>(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -101,9 +107,19 @@ export default function TeacherProfile() {
       );
 
       setIsEditing(false);
+      setSnackbar({
+        open: true,
+        message: "Profile updated successfully.",
+        severity: "success",
+      });
       router.refresh();
     } catch (error) {
       console.error("Failed to update profile:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to update profile. Please try again later.",
+        severity: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -148,6 +164,7 @@ export default function TeacherProfile() {
   }
 
   return (
+    <>
     <div className="min-h-screen px-6 py-5">
       <div className="mx-auto max-w-[850px]">
         <Breadcrumbs>
@@ -220,7 +237,7 @@ export default function TeacherProfile() {
               control={control}
               name="email"
               label="Email"
-              disabled={!isEditing}
+              disabled
             />
             <RHFTextField
               control={control}
@@ -285,5 +302,18 @@ export default function TeacherProfile() {
         />
       </div>
     </div>
+     <Snackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          variant="standard"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }
