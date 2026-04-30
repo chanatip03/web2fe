@@ -5,6 +5,7 @@ import SubmitPanel from "../../../../../../components/SubmitPanel";
 import DeploymentStatus, {
   SubmitStatus,
 } from "../../../../../../components/DeploymentStatus";
+import CyberScanResultModal from "../../../../../../components/modal/CyberScanResultModal";
 import dayjs from "dayjs";
 import Link from "next/link";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
@@ -16,7 +17,7 @@ import { Breadcrumbs } from "@mui/material";
 import { Snackbar, Alert } from "@mui/material";
 import { Group } from "@/domain/group";
 import { Assignment } from "@/domain/assignment";
-import { assignmentService, groupService } from "@/services/controller";
+import { assignmentService, groupService, projectService, userService } from "@/services/controller";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
 
@@ -28,7 +29,9 @@ export default function StudentAssignmentInfoPage() {
   const [status, setStatus] = useState<SubmitStatus>("editing");
   const [deployResult, setDeployResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [cyberModalOpen, setCyberModalOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [frontendUrl, setFrontendUrl] = useState("");
 
   const params = useParams();
   const id = params.id;
@@ -41,12 +44,44 @@ export default function StudentAssignmentInfoPage() {
           Number(assignMentId),
         );
         setAssignments(data);
-        
+
         try {
           const groupData = await groupService.getMyGroup(Number(assignMentId));
           setGroup(groupData as any);
         } catch (groupErr) {
           console.error("Failed to fetch group", groupErr);
+        }
+
+        // Fetch existing project results
+        try {
+          const [projects, currentUser] = await Promise.all([
+            projectService.getProjectsByAssignment(Number(assignMentId)),
+            userService.getCurrentUser(),
+          ]);
+
+          const myStudentId = currentUser.id;
+          // Find the single project where current student is a member (guaranteed by upsert)
+          const userProject = projects.find((p: any) =>
+            p.students?.some((s: any) => s.id === myStudentId)
+          );
+
+          if (userProject) {
+            console.log("Loading latest user project:", userProject);
+            const tc = userProject.testcase_result ? JSON.parse(userProject.testcase_result) : null;
+            const cyber = userProject.cybersecurity_result ? JSON.parse(userProject.cybersecurity_result) : null;
+
+            setDeployResult({
+              testcase: tc,
+              cyber: cyber,
+              deployment: { status: "success" },
+              submission_id: userProject.id.toString(), // Use numeric project ID for cleaner URLs
+              execution_mode: userProject.env,
+              submission_uuid: userProject.submission_uuid, // Keep UUID for internal reference if needed
+            });
+            setStatus("done");
+          }
+        } catch (projErr) {
+          console.error("Failed to fetch existing project results", projErr);
         }
       } catch (err) {
         console.error(err);
@@ -56,21 +91,31 @@ export default function StudentAssignmentInfoPage() {
     }
 
     loadData();
+    if (typeof window !== "undefined") {
+      setFrontendUrl(window.location.origin);
+    }
   }, [id, assignMentId]);
 
   // Parse actual deploy results
   const deploySuccess = deployResult?.deployment?.status === "success";
-  const submissionId = deployResult?.submission_id as string | undefined;
-  const previewUrl = submissionId ? `/preview/${submissionId}` : null;
-
-  const testcase = { 
-    pass: deployResult?.testcase?.passed || 0, 
-    fail: deployResult?.testcase?.failed || 0, 
-    success: deployResult?.testcase?.status === "success" 
-  };
+  const displayId = deployResult?.project_db_id?.toString() || deployResult?.submission_id;
   
-  const security = { 
-    success: deployResult?.cyber?.status === "success" 
+  // Use the backend redirect API so we don't have to rebuild, but without hardcoding proxy logic in frontend
+  const fallbackUrl = displayId && frontendUrl ? encodeURIComponent(`${frontendUrl}/preview/${displayId}?role=student`) : "";
+  const previewUrl = displayId ? `${process.env.NEXT_PUBLIC_API_URL}/project/${displayId}/preview/redirect?role=student${fallbackUrl ? `&fallback=${fallbackUrl}` : ''}` : null;
+  const swaggerUrl = displayId ? `/preview/${displayId}?type=backend&role=student` : null;
+
+  const testcase = {
+    pass: deployResult?.testcase?.passed ?? 0,
+    fail: deployResult?.testcase?.failed ?? 0,
+    success: !!deployResult?.testcase && (
+      ["success", "fail"].includes(deployResult?.testcase?.status) ||
+      typeof deployResult?.testcase?.passed === 'number'
+    )
+  };
+
+  const security = {
+    success: !!deployResult?.cyber && deployResult?.cyber?.status !== "error"
   };
 
   const hasFail =
@@ -179,21 +224,19 @@ export default function StudentAssignmentInfoPage() {
         {/* Submit file */}
         <div
           className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
-            ${
-              !assignment.is_group || hasGroup
-                ? "border-primary03 bg-white"
-                : "border-neutral03 bg-white"
+            ${!assignment.is_group || hasGroup
+              ? "border-primary03 bg-white"
+              : "border-neutral03 bg-white"
             }
         `}
         >
           {/* HEADER */}
           <div
             className={`px-6 py-3 font-semibold flex items-center justify-between
-                ${
-                  !assignment.is_group || hasGroup
-                    ? "bg-primary03 text-white"
-                    : "bg-neutral02 text-neutral06"
-                }
+                ${!assignment.is_group || hasGroup
+                ? "bg-primary03 text-white"
+                : "bg-neutral02 text-neutral06"
+              }
                 `}
           >
             <span className="font-semibold flex items-center gap-2">
@@ -222,20 +265,19 @@ export default function StudentAssignmentInfoPage() {
         <div className="col-span-12 bg-white rounded-xl shadow-xl border border-neutral03">
           <div
             className={`px-6 py-3 font-semibold rounded-t-xl
-                ${
-                  status === "editing"
-                    ? "bg-neutral02 text-neutral06"
-                    : hasFail
-                      ? "bg-red-600 text-white"
-                      : "bg-green-600 text-white"
-                }
+                ${status === "editing"
+                ? "bg-neutral02 text-neutral06"
+                : hasFail
+                  ? "bg-red-600 text-white"
+                  : "bg-green-600 text-white"
+              }
               `}
           >
             Deployment Results
           </div>
 
           <div className="p-6">
-          {status === "editing" ? (
+            {status === "editing" ? (
               <div className="h-[220px] flex items-center justify-center text-neutral04">
                 The results will appear after you finish uploading the project.
               </div>
@@ -247,6 +289,20 @@ export default function StudentAssignmentInfoPage() {
                   deploySuccess={deploySuccess}
                   testcase={testcase}
                   security={security}
+                  onViewSecurity={() => setCyberModalOpen(true)}
+                />
+
+                <CyberScanResultModal
+                  open={cyberModalOpen}
+                  onClose={() => setCyberModalOpen(false)}
+                  data={deployResult?.cyber ? {
+                    ...deployResult.cyber,
+                    download_url: deployResult.cyber.download_url?.startsWith('http')
+                      ? deployResult.cyber.download_url
+                      : `${process.env.NEXT_PUBLIC_API_URL}${deployResult.cyber.download_url?.startsWith('/api')
+                        ? deployResult.cyber.download_url.substring(4)
+                        : deployResult.cyber.download_url}`
+                  } : null}
                 />
 
                 {/* Preview link — only shown when deploy succeeded */}
@@ -260,27 +316,29 @@ export default function StudentAssignmentInfoPage() {
                     </div>
                     <div className="flex flex-wrap gap-3">
                       {/* Detection logic for backend-only projects */}
-                      {(deployResult.deployment?.deploy_mode === "backend-only" || 
-                        deployResult.execution_mode === "backend-only" || 
+                      {(deployResult.deployment?.deploy_mode === "backend-only" ||
+                        deployResult.execution_mode === "backend-only" ||
                         assignment.project_type?.id === 2) ? (
                         <>
                           <a
-                            href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/api$/, '')}${deployResult.deployment?.api_url || `/api/deployments/${deployResult.submission_id}/swagger`}`}
+                            href={swaggerUrl || `/preview/${deployResult.submission_id}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-indigo-200/50 active:scale-95"
+                            onClick={() => Cookies.set("classroomId", String(id), { expires: 1 })}
+                            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                           >
-                            <span className="text-lg">📜</span> View API Docs (Swagger) ↗
+                            <span className="text-lg"></span> View API Docs (Swagger) ↗
                           </a>
                         </>
                       ) : (
                         <a
-                          href={previewUrl || `/preview/${deployResult.submission_id}`}
+                          href={previewUrl || `${process.env.NEXT_PUBLIC_API_URL}/project/${deployResult.submission_id}/preview/redirect`}
                           target="_blank"
                           rel="noreferrer"
+                          onClick={() => Cookies.set("classroomId", String(id), { expires: 1 })}
                           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                         >
-                          <span className="text-lg">🚀</span> Open Live Preview ↗
+                          <span className="text-lg"></span> Open Live Preview ↗
                         </a>
                       )}
                     </div>

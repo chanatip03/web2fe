@@ -145,7 +145,10 @@ const TeacherAssignmentListPage = () => {
               {/* Name */}
 
               <div className="col-span-5 flex flex-col gap-2">
-                <Link href={`/classroom/${id}/assignment/${item.id}`}>
+                <Link
+                  href={`/classroom/${id}/assignment/${item.id}`}
+                  onClick={() => Cookies.set("assignmentName", item.title)}
+                >
                   <h5 className="font-semibold">{item.title}</h5>
                 </Link>
 
@@ -190,8 +193,9 @@ const TeacherAssignmentListPage = () => {
               {/* Due */}
               <div className="col-span-2 text-center">
                 <p
-                  className={`p2 font-semibold ${checkOverdue(item.due_date) ? "text-red-600" : ""
-                    }`}
+                  className={`p2 font-semibold ${
+                    checkOverdue(item.due_date) ? "text-red-600" : ""
+                  }`}
                 >
                   {new Date(item.due_date).toLocaleString("en-GB", {
                     timeZone: "Asia/Bangkok",
@@ -271,7 +275,6 @@ const TeacherAssignmentListPage = () => {
               setSelectedAssignment(null);
               loadData();
             }}
-
             onSuccess={(message) => {
               setOpenUpdate(false);
               setSelectedAssignment(null);
@@ -283,7 +286,6 @@ const TeacherAssignmentListPage = () => {
                 severity: "success",
               });
             }}
-
             onError={(message) => {
               setSnackbar({
                 open: true,

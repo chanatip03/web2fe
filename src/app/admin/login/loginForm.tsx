@@ -31,10 +31,14 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (data: FormData) => {
-    const response = await authService.loginAdmin(data);
-    console.log(response);
-    if (response) {
-      router.push("/admin");
+    try {
+      const response = await authService.loginAdmin(data);
+      if (response) {
+        await authService.me();
+        window.location.assign("/admin/container");
+      }
+    } catch {
+      setIsError(true);
     }
   };
 
@@ -51,7 +55,7 @@ export default function LoginForm() {
       <div className="w-1/2 bg-secondary02 flex items-center justify-center">
         <div className="relative w-125 h-125">
           <Image
-            src="/WEB2Logo.png"
+            src="/logo.png"
             alt="WEB2 Logo"
             fill
             priority
