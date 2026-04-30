@@ -13,6 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
 import type { TestResultPageData } from "./types";
@@ -168,14 +169,26 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
               {formatStatus(testcaseStatus)}
             </span>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="mr-4 flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
             {data.testcaseOutputUrl && (
-              <a href={data.testcaseOutputUrl} target="_blank" rel="noreferrer" className="text-[var(--color-primary03)] underline" onClick={(event) => event.stopPropagation()}>
+              <a
+                href={data.testcaseOutputUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
                 output.xml
               </a>
             )}
             {data.testcaseLogUrl && (
-              <a href={data.testcaseLogUrl} target="_blank" rel="noreferrer" className="text-[var(--color-primary03)] underline" onClick={(event) => event.stopPropagation()}>
+              <a
+                href={data.testcaseLogUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
                 log.html
               </a>
             )}
@@ -277,9 +290,17 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
         >
           <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Cyber Security Test</h4>
           {data.cyberScanUrl && (
-            <a href={data.cyberScanUrl} target="_blank" rel="noreferrer" className="text-sm text-[var(--color-primary03)] underline" onClick={(event) => event.stopPropagation()}>
-              scan.json
-            </a>
+            <div className="mr-4" onClick={(event) => event.stopPropagation()}>
+              <a
+                href={data.cyberScanUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
+                scan.json
+              </a>
+            </div>
           )}
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0 }}>

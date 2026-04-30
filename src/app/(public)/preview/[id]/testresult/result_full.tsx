@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import type { TestResultPageData } from "./types";
 
@@ -65,9 +66,26 @@ export default function TestResultFull({ data, isLoading, error }: Props) {
             borderBottom: "1px solid var(--color-neutral03)",
             px: 3,
             py: 1,
+            ".MuiAccordionSummary-content": {
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
           }}
         >
           <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Cyber Security Test</h4>
+          {data.cyberScanUrl && (
+            <div className="mr-4" onClick={(event) => event.stopPropagation()}>
+              <a
+                href={data.cyberScanUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
+                scan.json
+              </a>
+            </div>
+          )}
         </AccordionSummary>
         <AccordionDetails sx={{ p: 4, pt: 3, maxHeight: "500px", overflowY: "auto" }}>
           <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--color-black)" }}>
