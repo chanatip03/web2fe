@@ -6,6 +6,42 @@ import { projectService } from "@/services/controller";
 
 const TTL_SECONDS = 10 * 60; // must match backend default
 
+// ─── sessionStorage cache key ────────────────────────────────────────────────
+// Stored shape: { previewUrl: string; startedAt: number /* epoch ms */ }
+interface PreviewCache {
+  previewUrl: string;
+  startedAt: number;
+}
+
+function getCacheKey(id: string | string[]) {
+  return `preview_session_${Array.isArray(id) ? id[0] : id}`;
+}
+
+function saveCache(id: string | string[], previewUrl: string) {
+  try {
+    const value: PreviewCache = { previewUrl, startedAt: Date.now() };
+    sessionStorage.setItem(getCacheKey(id), JSON.stringify(value));
+  } catch {
+    /* sessionStorage unavailable (private mode, etc.) */
+  }
+}
+
+function loadCache(id: string | string[]): { previewUrl: string; remaining: number } | null {
+  try {
+    const raw = sessionStorage.getItem(getCacheKey(id));
+    if (!raw) return null;
+    const { previewUrl, startedAt }: PreviewCache = JSON.parse(raw);
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = TTL_SECONDS - elapsed;
+    if (remaining > 0) return { previewUrl, remaining };
+    // Expired — clean up
+    sessionStorage.removeItem(getCacheKey(id));
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return "00:00:00";
   const h = Math.floor(seconds / 3600);
@@ -18,6 +54,8 @@ export default function ProjectPreviewPage() {
   const { id } = useParams();
   const projectId = Number(Array.isArray(id) ? id[0] : id);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const isBackend = searchParams?.get("type") === "backend";
   const [status, setStatus] = useState<string>("loading");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +73,8 @@ export default function ProjectPreviewPage() {
           clearInterval(countdownRef.current!);
           setStatus("expired");
           setPreviewUrl(null);
+          // Remove stale cache
+          if (id) sessionStorage.removeItem(getCacheKey(id));
           return 0;
         }
         return prev - 1;
@@ -253,7 +293,7 @@ export default function ProjectPreviewPage() {
 
         <iframe
           src={fullUrl}
-          className="flex-1 border-0 w-full"
+          className={`flex-1 border-0 w-full ${isBackend ? 'bg-white' : ''}`}
           allow="clipboard-read; clipboard-write; microphone; camera"
         />
       </div>

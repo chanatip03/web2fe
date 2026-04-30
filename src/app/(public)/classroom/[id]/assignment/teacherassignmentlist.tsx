@@ -24,14 +24,6 @@ import Cookies from "js-cookie";
 const checkOverdue = (date: string | Date) =>
   new Date(date).getTime() < Date.now();
 
-async function onDelete(AssignmentId: number) {
-  const response = await assignmentService.deleteAssignment(AssignmentId);
-
-  if (response) {
-    console.log("deletesuccess");
-  }
-}
-
 const TeacherAssignmentListPage = () => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [openCreate, setOpenCreate] = useState(false);
@@ -58,6 +50,30 @@ const TeacherAssignmentListPage = () => {
       setLoading(false);
     }
   }
+
+  const handleDelete = async (assignmentId: number) => {
+    try {
+      const response = await assignmentService.deleteAssignment(assignmentId);
+
+      if (!response) {
+        throw new Error("Failed to delete assignment");
+      }
+
+      setAssignments((prev) => prev.filter((item) => item.id !== assignmentId));
+      setSnackbar({
+        open: true,
+        message: "Assignment deleted successfully.",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Unable to delete assignment. Please try again.",
+        severity: "error",
+      });
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -129,7 +145,10 @@ const TeacherAssignmentListPage = () => {
               {/* Name */}
 
               <div className="col-span-5 flex flex-col gap-2">
-                <Link href={`/classroom/${id}/assignment/${item.id}`}>
+                <Link
+                  href={`/classroom/${id}/assignment/${item.id}`}
+                  onClick={() => Cookies.set("assignmentName", item.title)}
+                >
                   <h5 className="font-semibold">{item.title}</h5>
                 </Link>
 
@@ -174,8 +193,9 @@ const TeacherAssignmentListPage = () => {
               {/* Due */}
               <div className="col-span-2 text-center">
                 <p
-                  className={`p2 font-semibold ${checkOverdue(item.due_date) ? "text-red-600" : ""
-                    }`}
+                  className={`p2 font-semibold ${
+                    checkOverdue(item.due_date) ? "text-red-600" : ""
+                  }`}
                 >
                   {new Date(item.due_date).toLocaleString("en-GB", {
                     timeZone: "Asia/Bangkok",
@@ -212,7 +232,7 @@ const TeacherAssignmentListPage = () => {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={() => onDelete(item.id)}
+                  onClick={() => handleDelete(item.id)}
                 >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -255,7 +275,6 @@ const TeacherAssignmentListPage = () => {
               setSelectedAssignment(null);
               loadData();
             }}
-
             onSuccess={(message) => {
               setOpenUpdate(false);
               setSelectedAssignment(null);
@@ -267,7 +286,6 @@ const TeacherAssignmentListPage = () => {
                 severity: "success",
               });
             }}
-
             onError={(message) => {
               setSnackbar({
                 open: true,

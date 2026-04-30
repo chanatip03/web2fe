@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/controller";
 import { useAuth } from "@/app/authcontext";
+import { ANONYMOUS_AVATAR_URL } from "@/constants";
 
 export const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -76,7 +77,7 @@ export const Navbar = () => {
       <div className="flex items-center">
         <IconButton onClick={handleOpen} className="flex gap-2 !text-neutral01">
           <Avatar
-            src={user?.user?.image_url || undefined}
+            src={user?.user?.image_url || ANONYMOUS_AVATAR_URL}
             sx={{ width: 32, height: 32 }}
           />
           <h4 className="m-0">{user?.user?.first_name || "Loading..."}</h4>

@@ -4,15 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Breadcrumbs, Avatar } from "@mui/material";
+import { Button, Breadcrumbs, Avatar, Snackbar, Alert } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import LinkIcon from "@mui/icons-material/Link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
 import ResetPasswordModal from "@/components/modal/resetPasswordModal";
+import { ANONYMOUS_AVATAR_URL } from "@/constants";
+import CheckIcon from '@mui/icons-material/Check';
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -23,15 +24,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const mockProfile = {
-  id: 1,
-  first_name: "Tula",
-  last_name: "Patanaboonmee",
-  email: "Tulalnwza007@gmail.com",
-  academy: "KMUTT",
-  imageUrl: "",
-};
 
 import { userService } from "@/services/controller";
 import { Teacher } from "@/domain/teacher";
@@ -46,6 +38,11 @@ export default function TeacherProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [openResetPassword, setOpenResetPassword] = useState(false);
   const [currentUserData, setCurrentUserData] = useState<Teacher | null>(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -71,7 +68,7 @@ export default function TeacherProfile() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        const data = await userService.getCurrentUser() as Teacher;
+        const data = (await userService.getCurrentUser()) as Teacher;
         setCurrentUserData(data);
 
         const profileData = {
@@ -82,8 +79,8 @@ export default function TeacherProfile() {
         };
 
         reset(profileData);
-        setPreviewImage(data.user.imageUrl || "");
-        setInitialPreviewImage(data.user.imageUrl || "");
+        setPreviewImage(data.user.image_url || "");
+        setInitialPreviewImage(data.user.image_url || "");
       } catch (error) {
         console.error(error);
       } finally {
@@ -98,17 +95,31 @@ export default function TeacherProfile() {
     if (!currentUserData) return;
     try {
       setSaving(true);
-      await userService.updateTeacher(currentUserData.user.id, {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        academy: data.academy,
-      }, data.imageUrl as File);
+      await userService.updateTeacher(
+        currentUserData.user.id,
+        {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          academy: data.academy,
+        },
+        data.imageUrl as File,
+      );
 
       setIsEditing(false);
+      setSnackbar({
+        open: true,
+        message: "Profile updated successfully.",
+        severity: "success",
+      });
       router.refresh();
     } catch (error) {
       console.error("Failed to update profile:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to update profile. Please try again later.",
+        severity: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -153,6 +164,7 @@ export default function TeacherProfile() {
   }
 
   return (
+    <>
     <div className="min-h-screen px-6 py-5">
       <div className="mx-auto max-w-[850px]">
         <Breadcrumbs>
@@ -160,10 +172,7 @@ export default function TeacherProfile() {
           <span className="font-medium text-black">Profile</span>
         </Breadcrumbs>
 
-        <form
-          className="pt-4"
-          onSubmit={(e) => e.preventDefault()}
-        >
+        <form className="pt-4" onSubmit={(e) => e.preventDefault()}>
           <div className="relative mb-8 h-[180px]">
             <div className="flex h-full items-center justify-center">
               <div className="relative">
@@ -180,14 +189,12 @@ export default function TeacherProfile() {
                   </div>
                 ) : (
                   <Avatar
+                    src={ANONYMOUS_AVATAR_URL}
                     sx={{
                       width: 148,
                       height: 148,
-                      bgcolor: "#b3b3b3",
                     }}
-                  >
-                    <PersonIcon sx={{ fontSize: 80, color: "#fff" }} />
-                  </Avatar>
+                  />
                 )}
 
                 <button
@@ -230,7 +237,7 @@ export default function TeacherProfile() {
               control={control}
               name="email"
               label="Email"
-              disabled={!isEditing}
+              disabled
             />
             <RHFTextField
               control={control}
@@ -295,5 +302,18 @@ export default function TeacherProfile() {
         />
       </div>
     </div>
+     <Snackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          variant="standard"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }

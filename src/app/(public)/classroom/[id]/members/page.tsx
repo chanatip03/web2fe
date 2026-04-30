@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Snackbar, Alert } from "@mui/material";
 import StudentLandingPage from "./studentLandingPage";
 import { IClassroomMember, Classroom } from "@/domain/classroom";
 import { classroomService, classroomMemberService } from "@/services/controller";
@@ -13,6 +14,15 @@ export default function Page() {
     const [classroom, setClassroom] = useState<Classroom | null>(null);
     const [members, setMembers] = useState<IClassroomMember[]>([]);
     const [loading, setLoading] = useState(true);
+    const [snackbar, setSnackbar] = useState<{
+      open: boolean;
+      message: string;
+      severity: "success" | "error";
+    }>({
+      open: false,
+      message: "",
+      severity: "success",
+    });
 
     const loadData = async () => {
         try {
@@ -41,13 +51,41 @@ export default function Page() {
         try {
             await classroomMemberService.deleteMember(classroomId, studentId);
             setMembers(prev => prev.filter(m => m.student.id !== studentId));
-        } catch (err) {
+            setSnackbar({
+              open: true,
+              message: "Student removed from classroom.",
+              severity: "success",
+            });
+        } catch (err: any) {
             console.error(err);
-            alert("Failed to delete member");
+            setSnackbar({
+              open: true,
+              message:
+                err?.message || "Failed to delete member. Please try again.",
+              severity: "error",
+            });
         }
     };
 
     if (loading || !classroom) return <div>Loading...</div>;
 
-    return <StudentLandingPage classroom={classroom} members={members} onDeleteMember={handleDeleteMember} />;
+    return (
+      <>
+        <StudentLandingPage classroom={classroom} members={members} onDeleteMember={handleDeleteMember} />
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+            variant="standard"
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </>
+    );
 }

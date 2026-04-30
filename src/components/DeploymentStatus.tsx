@@ -13,6 +13,8 @@ interface Props {
   deploySuccess?: boolean;
   testcase?: { pass: number; fail: number; success?: boolean };
   security?: { success?: boolean };
+
+  onViewSecurity?: () => void;
 }
 
 function Icon({
@@ -36,11 +38,13 @@ function Icon({
 export default function DeploymentStatus({
   status,
   projectTypeId,
-  deploySuccess = true,
+  deploySuccess: _deploySuccess = true,
   testcase = { pass: 0, fail: 0, success: true },
   security = { success: true },
+  onViewSecurity,
 }: Props) {
-  const showExtra = projectTypeId === 1 || projectTypeId === 2;
+  const showExtra = projectTypeId === 1 || projectTypeId === 2 || projectTypeId === 3;
+  const deploySuccess = status === "done" && _deploySuccess;
   const hasCriticalError = status === "done" && !deploySuccess;
 
   return (
@@ -72,26 +76,30 @@ export default function DeploymentStatus({
       {showExtra && (
         <>
           {/* TESTCASE */}
-          <div className="flex justify-between items-center">
-            <div>
-              {status !== "done"
-                ? "Waiting for scan testcase"
-                : testcase.success
-                  ? "Result Test Case"
-                  : "Test Case Failed"}
-            </div>
-
-            {status !== "done" ? (
-              <AutorenewIcon className="animate-spin text-blue-500" />
-            ) : testcase.success ? (
-              <div className="flex items-center">
-                <div className="text-green-600">Pass {testcase.pass}</div>
-                <div className="text-red-600 ml-3">Fail {testcase.fail}</div>
+          {(projectTypeId === 1 || projectTypeId === 2) && (
+            <div className="flex justify-between items-center">
+              <div>
+                {status !== "done"
+                  ? "Waiting for scan testcase"
+                  : testcase.success
+                    ? "Result Test Case"
+                    : "Test Case Failed"}
               </div>
-            ) : (
-              <CancelIcon className="text-red-600" />
-            )}
-          </div>
+
+              {status !== "done" ? (
+                <AutorenewIcon className="animate-spin text-blue-500" />
+              ) : testcase.success ? (
+                <div
+                  className="flex items-center"
+                >
+                  <div className="text-green-600">Pass {testcase.pass}</div>
+                  <div className="text-red-600 ml-3">Fail {testcase.fail}</div>
+                </div>
+              ) : (
+                <CancelIcon className="text-red-600" />
+              )}
+            </div>
+          )}
 
           {/* SECURITY */}
           <div className="flex justify-between items-center">
@@ -106,7 +114,12 @@ export default function DeploymentStatus({
             {status !== "done" ? (
               <AutorenewIcon className="animate-spin text-blue-500" />
             ) : security.success ? (
-              <button className="text-primary03 underline">View Result</button>
+              <button
+                className="text-primary03 underline cursor-pointer"
+                onClick={onViewSecurity}
+              >
+                View Result
+              </button>
             ) : (
               <CancelIcon className="text-red-600" />
             )}

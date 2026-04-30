@@ -20,49 +20,17 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { assignmentService } from "@/services/controller";
+import { projectService } from "@/services/controller";
 import Cookies from "js-cookie";
 import { useParams } from "next/navigation";
 import { Assignment } from "@/domain/assignment";
+import { Project } from "@/domain/project";
 import TestCaseFormModal from "@/components/modal/testCaseFormModal";
-
-interface IProject {
-  id: number;
-  groupName: string;
-  sendDate: Date;
-  isLate: boolean;
-  isComplete: boolean;
-  languages: string[];
-}
-
-const mockProjects: IProject[] = [
-  {
-    id: 1,
-    groupName: "G. Zhī Shēng Hào",
-    sendDate: new Date("2025-04-07"),
-    isLate: false,
-    isComplete: true,
-    languages: ["Next.js"],
-  },
-  {
-    id: 2,
-    groupName: "G. PixelPioneers",
-    sendDate: new Date("2025-04-10"),
-    isLate: true,
-    isComplete: true,
-    languages: ["Golang", "React"],
-  },
-  {
-    id: 3,
-    groupName: "G. TechTitans",
-    sendDate: new Date("2025-04-08"),
-    isLate: false,
-    isComplete: false,
-    languages: ["Express.js", "React"],
-  },
-];
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 
 export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
   const [openTestcase, setOpenTestcase] = useState(false);
@@ -76,26 +44,46 @@ export default function TeacherAssignmentInfoPage() {
   const id = params.id;
   const assignMentId = params.assignmentId;
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const data = await assignmentService.getAssignmentById(
-          Number(assignMentId),
-        );
-        setAssignments(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  async function loadData() {
+    try {
+      const [assignmentData, projectData] = await Promise.all([
+        assignmentService.getAssignmentById(Number(assignMentId)),
+        projectService.getProjectsByAssignment(Number(assignMentId)),
+      ]);
+      setAssignments(assignmentData);
+      setProjects(projectData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     loadData();
-  }, [id]);
+  }, [assignMentId]);
 
-  const filteredProjects = mockProjects.filter((project) =>
-    tab === "complete" ? project.isComplete : !project.isComplete,
-  );
+  // In-progress: score AND feedback are both null/undefined
+  // Complete: score OR feedback has a value
+  const filteredProjects = projects.filter((project) => {
+    const isComplete = project.score != null || project.feedback != null;
+    return tab === "complete" ? isComplete : !isComplete;
+  });
+
+  const isLate = (project: Project) => {
+    if (!assignments?.due_date || !project.created_date) return false;
+    return new Date(project.created_date) > new Date(assignments.due_date);
+  };
+
+  const getDisplayName = (project: Project) => {
+    if (project.group_name) return project.group_name;
+    if (project.students && project.students.length > 0) {
+      return project.students
+        .map((s) => `${s.user.first_name} ${s.user.last_name}`)
+        .join(", ");
+    }
+    return `Project #${project.id}`;
+  };
 
   if (loading || !assignments) return <div>Loading...</div>;
 
@@ -103,33 +91,35 @@ export default function TeacherAssignmentInfoPage() {
 
   return (
     <>
-    <div>
-      <div className="mb-6">
-        <Breadcrumbs separator="/">
-          <Link href="/classroom/listclassroom">Home</Link>
-          <span>{Cookies.get("classroomName")}</span>
-          <Link href={`/classroom/${id}/assignment`}>Assignment</Link>
-          <span className="text-black font-medium">{assignments.title}</span>
-        </Breadcrumbs>
-      </div>
+      <div>
+        <div className="mb-6">
+          <Breadcrumbs separator="/">
+            <Link href="/classroom">Home</Link>
+            <span>{Cookies.get("classroomName")}</span>
+            <Link href={`/classroom/${id}/assignment`}>Assignment</Link>
+            <span className="text-black font-medium">{assignments.title}</span>
+          </Breadcrumbs>
+        </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <h1>{assignments.title}</h1>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpenTestcase(true)}
-        >
-          {hasTestcase ? "Edit TestCase" : "Create TestCase"}
-        </Button>
-      </div>
-      <TestCaseFormModal
-        open={openTestcase}
-        onClose={() => setOpenTestcase(false)}
-        testcase={assignments.testcase_url}
-        assignmentId={assignMentId as string}
-        onSaveSuccess={() => window.location.reload()}
-         onSuccess={(message) => {
+        <div className="flex items-center justify-between mb-3">
+          <h1>{assignments.title}</h1>
+          {assignments.project_type?.id !== 3 && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenTestcase(true)}
+            >
+              {hasTestcase ? "Edit TestCase" : "Create TestCase"}
+            </Button>
+          )}
+        </div>
+        <TestCaseFormModal
+          open={openTestcase}
+          onClose={() => setOpenTestcase(false)}
+          testcase={assignments.testcase_url}
+          assignmentId={assignMentId as string}
+          onSaveSuccess={() => loadData()}
+          onSuccess={(message) => {
             setSnackbar({
               open: true,
               message,
@@ -143,172 +133,221 @@ export default function TeacherAssignmentInfoPage() {
               severity: "error",
             });
           }}
-      />
+        />
 
-      <div className="flex gap-2 mb-2">
-        <h5>Due Date</h5>
+        <div className="flex gap-2 mb-2">
+          <h5>Due Date</h5>
 
-        <p className="text-accent03 p2">
-          {new Date(assignments.due_date).toLocaleString("en-GB", {
-            timeZone: "Asia/Bangkok",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
-      </div>
-
-      <div className="mb-6">
-        <h5 className="mb-2">Assignment Detail</h5>
-
-        <div>
-          <p className="p2">{assignments.description}</p>
+          <p
+            className={`p2 ${new Date(assignments.due_date).getTime() < Date.now() ? "text-accent03 font-semibold" : "text-black"}`}
+          >
+            {new Date(assignments.due_date).toLocaleString("en-GB", {
+              timeZone: "Asia/Bangkok",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
         </div>
+
+        <div className="mb-6">
+          <h5 className="mb-2">Assignment Detail</h5>
+
+          <div>
+            <p className="p2">{assignments.description}</p>
+          </div>
+        </div>
+        <h2 className="font-bold text-lg mb-2">Attachments</h2>
+
+          {assignments.attachments && assignments.attachments.length > 0 ? (
+            <ul className="mb-5 space-y-1">
+              {assignments.attachments.map((attachment) => (
+                <li key={attachment.id} className="hover:text-primary03 transition cursor-pointer">
+                  <a
+                    href={attachment.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <InsertDriveFileIcon />
+                    {attachment.file_url.split('/').pop() || 'Attachment'}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-neutral06 mb-5">No attachments available</p>
+          )}
       </div>
 
-      <Paper sx={{ backgroundColor: "#ffffff" }}>
-        <Tabs
-          value={tab}
-          onChange={(e, value) => setTab(value)}
-          variant="fullWidth"
-          sx={{
-            borderRadius: "8px 8px 0 0",
-            borderBottom: "1px solid #C7C7C7",
-            height: "62px",
-            "& .MuiTabs-indicator": {
-              display: "none",
-            },
-          }}
-        >
-          <Tab
-            label="Inprogress"
-            value="inprogress"
+        <Paper sx={{ backgroundColor: "#ffffff" }}>
+          <Tabs
+            value={tab}
+            onChange={(e, value) => setTab(value)}
+            variant="fullWidth"
             sx={{
-              textTransform: "none",
-              borderRadius: "8px 0 0 0",
+              borderRadius: "8px 8px 0 0",
+              borderBottom: "1px solid #C7C7C7",
               height: "62px",
-              fontSize: "18px",
-              fontWeight: "bold",
-
-              "&.Mui-selected": {
-                backgroundColor: "#0D47A1",
-                color: "#ffffff",
+              "& .MuiTabs-indicator": {
+                display: "none",
               },
             }}
-          />
-
-          <Tab
-            label="Complete"
-            value="complete"
-            sx={{
-              textTransform: "none",
-              borderRadius: "0 8px 0 0",
-              height: "62px",
-              fontSize: "18px",
-              fontWeight: "bold",
-
-              "&.Mui-selected": {
-                backgroundColor: "#0D47A1",
-                color: "#ffffff",
-              },
-            }}
-          />
-        </Tabs>
-
-        <Table>
-          <TableHead>
-            <TableRow
+          >
+            <Tab
+              label="Inprogress"
+              value="inprogress"
               sx={{
-                backgroundColor: "#ffffff",
+                textTransform: "none",
+                borderRadius: "8px 0 0 0",
+                height: "62px",
+                fontSize: "18px",
+                fontWeight: "bold",
+
+                "&.Mui-selected": {
+                  backgroundColor: "#0D47A1",
+                  color: "#ffffff",
+                },
               }}
-            >
-              <TableCell align="center" sx={{ width: "25%" }}>
-                Group name
-              </TableCell>
+            />
 
-              <TableCell align="center" sx={{ width: "20%" }}>
-                Send date
-              </TableCell>
+            <Tab
+              label="Complete"
+              value="complete"
+              sx={{
+                textTransform: "none",
+                borderRadius: "0 8px 0 0",
+                height: "62px",
+                fontSize: "18px",
+                fontWeight: "bold",
 
-              <TableCell align="center" sx={{ width: "15%" }}>
-                Status
-              </TableCell>
+                "&.Mui-selected": {
+                  backgroundColor: "#0D47A1",
+                  color: "#ffffff",
+                },
+              }}
+            />
+          </Tabs>
 
-              <TableCell align="center" sx={{ width: "35%" }}>
-                Language
-              </TableCell>
-
-              <TableCell sx={{ width: "15%" }} />
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {filteredProjects.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ height: 300 }}>
-                  <Typography color="text.secondary" fontWeight={600}>
-                    No student submitted
-                  </Typography>
+          <Table>
+            <TableHead>
+              <TableRow
+                sx={{
+                  backgroundColor: "#ffffff",
+                }}
+              >
+                <TableCell align="center" sx={{ width: "25%" }}>
+                  Group name
                 </TableCell>
+
+                <TableCell align="center" sx={{ width: "20%" }}>
+                  Send date
+                </TableCell>
+
+                <TableCell align="center" sx={{ width: "15%" }}>
+                  Status
+                </TableCell>
+
+                <TableCell align="center" sx={{ width: "25%" }}>
+                  Members
+                </TableCell>
+
+                <TableCell sx={{ width: "15%" }} />
               </TableRow>
-            ) : (
-              filteredProjects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  sx={{
-                    "& td:first-of-type": {
-                      px: 6,
-                    },
-                  }}
-                >
-                  <TableCell>
-                    <h5>{project.groupName}</h5>
-                  </TableCell>
+            </TableHead>
 
-                  <TableCell align="center">
-                    {project.sendDate.toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </TableCell>
-
-                  <TableCell align="center">
-                    <div
-                      className={`inline-block px-4 py-2 w-[78px] rounded-md text-white
-                       ${project.isLate ? "bg-[#FFC107]" : "bg-[#3CB40B]"}
-                     `}
-                    >
-                      <h6>{project.isLate ? "Late" : "Ontime"}</h6>
-                    </div>
-                  </TableCell>
-
-                  <TableCell align="left">
-                    {project.languages.map((lang) => (
-                      <Chip
-                        key={lang}
-                        label={lang}
-                        size="small"
-                        sx={{ mr: 1, p: 2 }}
-                      />
-                    ))}
-                  </TableCell>
-
-                  <TableCell align="right" sx={{ pr: 6 }}>
-                    <Button variant="contained" size="small" sx={{ px: 4 }}>
-                      Preview
-                    </Button>
+            <TableBody>
+              {filteredProjects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ height: 300 }}>
+                    <Typography color="text.secondary" fontWeight={600}>
+                      No student submitted
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </Paper>
-    </div>
-     <Snackbar
+              ) : (
+                filteredProjects.map((project) => (
+                  <TableRow
+                    key={project.id}
+                    sx={{
+                      "& td:first-of-type": {
+                        px: 6,
+                      },
+                    }}
+                  >
+                    <TableCell>
+                      <h5>{getDisplayName(project)}</h5>
+                    </TableCell>
+
+                    <TableCell align="center">
+                      {project.created_date
+                        ? new Date(project.created_date).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )
+                        : "-"}
+                    </TableCell>
+
+                    <TableCell align="center">
+                      <div
+                        className={`inline-block px-4 py-2 w-[78px] rounded-md text-white
+                       ${isLate(project) ? "bg-[#FFC107]" : "bg-[#3CB40B]"}
+                     `}
+                      >
+                        <h6>{isLate(project) ? "Late" : "Ontime"}</h6>
+                      </div>
+                    </TableCell>
+
+                    <TableCell align="left">
+                      {project.students && project.students.length > 0 ? (
+                        project.students.map((s) => (
+                          <Chip
+                            key={s.id}
+                            label={`${s.user.first_name} ${s.user.last_name}`}
+                            size="small"
+                            sx={{ mr: 1, mb: 0.5 }}
+                          />
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          —
+                        </Typography>
+                      )}
+                    </TableCell>
+
+                    <TableCell align="right" sx={{ pr: 6 }}>
+                      <Link
+                        href={`/preview/${project.id}`}
+                        onClick={() => {
+                          Cookies.set("classroomId", String(id), {
+                            expires: 1,
+                          });
+                          Cookies.set(
+                            "projectName",
+                            String(getDisplayName(project)),
+                            { expires: 1 },
+                          );
+                        }}
+                      >
+                        <Button variant="contained" size="small" sx={{ px: 4 }}>
+                          Preview
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Paper>
+      </div>
+      <Snackbar
         open={snackbar.open}
         onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >

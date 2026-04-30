@@ -10,6 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { projectService } from "@/services/controller";
 import { Project } from "@/domain/project";
+import { ANONYMOUS_AVATAR_URL } from "@/constants";
 
 const Schema = z.object({
   score: z.string().regex(/^\d+$/, "Score must be a number").min(1, "Score is required"),
@@ -38,15 +39,41 @@ export default function ScorebookPage() {
 
   useEffect(() => {
     if (!id) return;
+    const projectId = Number(id);
+    const CACHE_KEY = `scorebook_project_${projectId}`;
+
     const fetchProject = async () => {
+      // ── Check sessionStorage cache first ────────────────────────────────
+      try {
+        const cached = sessionStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const data: Project = JSON.parse(cached);
+          setProject(data);
+          reset({
+            score: data.score != null ? String(data.score) : "",
+            feedback: data.feedback || "",
+          });
+          setIsLoading(false);
+          return; // ← skip API call
+        }
+      } catch {
+        /* sessionStorage unavailable */
+      }
+
+      // ── Fetch from API ─────────────────────────────────────────────────
       try {
         setIsLoading(true);
-        const data = await projectService.getProjectById(Number(id));
+        const data = await projectService.getProjectById(projectId);
         setProject(data);
         reset({
-          score: data.score !== null ? String(data.score) : "",
+          score: data.score != null ? String(data.score) : "",
           feedback: data.feedback || "",
         });
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        } catch {
+          /* storage quota exceeded */
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load project details");
       } finally {
@@ -59,14 +86,16 @@ export default function ScorebookPage() {
 
   const onSubmitForm = async (data: FormData) => {
     if (!project) return;
+    const CACHE_KEY = `scorebook_project_${project.id}`;
     try {
       setIsSubmitting(true);
       await projectService.updateProjectGrading(project.id, {
         score: Number(data.score),
         feedback: data.feedback || null,
       });
+      // Invalidate cache so next visit fetches updated grading
+      try { sessionStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
       alert("Grading saved successfully!");
-      // Option: redirect or just stay
     } catch (err: any) {
       console.error("Failed to submit:", err);
       alert("Error saving grading: " + (err.message || "Unknown error"));
@@ -139,7 +168,7 @@ export default function ScorebookPage() {
                 project.students.map((student) => (
                   <Box key={student.id} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Avatar
-                      src={student.user.imageUrl || undefined}
+                      src={student.user.image_url || ANONYMOUS_AVATAR_URL}
                       alt={student.user.first_name}
                       sx={{ width: 40, height: 40 }}
                     />

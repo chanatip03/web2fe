@@ -4,6 +4,8 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 
 interface SidebarStudentProps {
   classroomName?: string;
@@ -27,12 +29,18 @@ const sidebarStudentItems = [
   },
 ];
 
-export const SidebarStudent = ({ classroomName }: SidebarStudentProps) => {
+export const SidebarStudent = ({ classroomName: classroomNameProp }: SidebarStudentProps) => {
   const pathname = usePathname();
   const params = useParams();
   const classroomId = params.id;
+
+  // Read cookie on client only to avoid SSR hydration mismatch
+  const [classroomName, setClassroomName] = useState<string>("");
+  useEffect(() => {
+    setClassroomName(classroomNameProp ?? Cookies.get("classroomName") ?? "");
+  }, [classroomNameProp]);
   return (
-    <aside className="w-[260px] h-screen bg-[#ffffff] border-r border-neutral02 ">
+    <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 ">
       <div className="bg-secondary04 text-white h-[145px] flex items-center px-2">
         <h3>{classroomName}</h3>
       </div>
