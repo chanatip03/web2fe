@@ -28,7 +28,7 @@ export class UserService {
     if (data.academy) formData.append("academy", data.academy);
     if (data.password) formData.append("password", data.password);
     if (data.student_id) formData.append("student_id", data.student_id);
-    if (previewImage instanceof File) formData.append("image_url", previewImage);
+    if (previewImage instanceof File) formData.append("image", previewImage);
 
     return this.userRepository.updateStudent(userId, formData);
   }
@@ -41,7 +41,7 @@ export class UserService {
     if (data.email) formData.append("email", data.email);
     if (data.academy) formData.append("academy", data.academy);
     if (data.password) formData.append("password", data.password);
-    if (previewImage instanceof File) formData.append("image_url", previewImage);
+    if (previewImage instanceof File) formData.append("image", previewImage);
 
     return this.userRepository.updateTeacher(userId, formData);
   }

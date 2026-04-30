@@ -263,8 +263,8 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
           </div>
 
           <Box>
-            <h4>Existing Attachments</h4>
-            {existingAttachments.length === 0 && <p className="py-2 text-neutral05">No attachments</p>}
+            <h4>Existing Files</h4>
+            {existingAttachments.length === 0 && <p>No files</p>}
             {existingAttachments.map((file) => (
               <div key={file.id} className="flex justify-between items-center">
                 <span>{file.file_url.split("/").pop()}</span>
@@ -278,56 +278,29 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
             ))}
           </Box>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-2">
-                <h4 className="m-0">New Attachments</h4>
-                <p className="p2 m-0">(optional)</p>
-              </span>
-              <Button variant="outlined" component="label" sx={{ height: 32 }}>
-                <span>Add File</span>
-                <input
-                  type="file"
-                  multiple
-                  hidden
-                  onChange={(e) => {
-                    const newFiles = Array.from(e.target.files || []);
-                    const currentFiles = watch("attachment") || [];
+          <div className="flex items-center gap-3">
+            <Button variant="outlined" component="label">
+              <span>Add File</span>
+              <input
+                type="file"
+                multiple
+                hidden
+                onChange={(e) => {
+                  const newFiles = Array.from(e.target.files || []);
+                  const currentFiles = watch("attachment") || [];
 
-                    setValue("attachment", [...currentFiles, ...newFiles], {
-                      shouldValidate: true,
-                    });
-                  }}
-                />
-              </Button>
-            </div>
+                  setValue("attachment", [...currentFiles, ...newFiles], {
+                    shouldValidate: true,
+                  });
+                }}
+              />
+            </Button>
 
-            {attachments.length > 0 ? (
-              attachments.map((file, index) => (
-                <div
-                  key={`${file.name}-${index}`}
-                  className="flex items-center justify-between gap-3 rounded border border-neutral03 bg-neutral01 px-3 py-2"
-                >
-                  <span className="text-neutral05 break-all">{file.name}</span>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => {
-                      const currentFiles = watch("attachment") || [];
-                      setValue(
-                        "attachment",
-                        currentFiles.filter((_, idx) => idx !== index),
-                        { shouldValidate: true },
-                      );
-                    }}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </div>
-              ))
-            ) : (
-              <p className="text-neutral05 p2">No new file</p>
-            )}
+            <p className="truncate max-w-[400px]">
+              {attachments.length > 0
+                ? attachments.map((f) => f.name).join(", ")
+                : "No new file"}
+            </p>
           </div>
 
           <div className="flex justify-end">

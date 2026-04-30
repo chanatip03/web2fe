@@ -13,13 +13,6 @@ export interface Attachments {
   file_url: string;
 }
 
-export interface Submission {
-  id: number;
-  submitted_at: string | Date;
-  status?: string;
-  is_late?: boolean;
-}
-
 export interface Assignment {
   id: number,
   title: string,
@@ -32,7 +25,6 @@ export interface Assignment {
   project_type: ProjectType,
   language: Language ,
   attachments: Attachments[],
-  submission?: Submission | null,
 }
 
 

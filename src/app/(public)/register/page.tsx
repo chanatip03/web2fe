@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import TeacherRegisterForm from "./TeacherRegisterForm";
 import StudentRegisterForm from "./studentRegisterForm";
 
-function RegisterContent() {
+export default function Page() {
   const searchParams = useSearchParams();
   const role = searchParams.get("role");
 
@@ -14,13 +13,5 @@ function RegisterContent() {
       {role === "teacher" && <TeacherRegisterForm />}
       {role === "student" && <StudentRegisterForm />}
     </div>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <RegisterContent />
-    </Suspense>
   );
 }

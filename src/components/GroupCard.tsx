@@ -1,7 +1,6 @@
 import { Group } from "@/domain/group";
 import GroupsIcon from "@mui/icons-material/Groups";
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
-import { ANONYMOUS_AVATAR_URL } from "@/constants";
 
 interface Props {
   group: Group;
@@ -26,7 +25,7 @@ export default function GroupCard({ group, onEdit }: Props) {
           {group.members.map((m) => (
             <img
               key={m.id}
-              src={m.student.user.image_url || ANONYMOUS_AVATAR_URL}
+              src={m.student.user.imageUrl}
               className="w-10 h-10 rounded-full"
             />
           ))}

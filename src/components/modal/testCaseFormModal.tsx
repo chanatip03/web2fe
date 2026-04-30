@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, IconButton, Button, CircularProgress } from "@mui/material";
+import { Dialog, DialogContent, IconButton, Button } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -133,13 +133,14 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
         throw new Error(errData.detail || "Failed to save testcase");
       }
 
+      onSaveSuccess?.();
+      handleClose();
+
       onSuccess?.(
         isEditMode
           ? "Testcase updated successfully."
           : "Testcase created successfully.",
       );
-      handleClose();
-      onSaveSuccess?.();
     } catch (err) {
       console.error(err);
       onError?.("Failed to save testcase. Please try again later.");
@@ -197,14 +198,7 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
               onClick={handleGenerate}
               disabled={loading}
             >
-              {loading ? (
-                <>
-                  <CircularProgress size={16} color="inherit" className="mr-2" />
-                  Generating...
-                </>
-              ) : (
-                "Generate"
-              )}
+              Generate
             </Button>
           </div>
 
@@ -214,11 +208,6 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
             </div>
 
             <div className="relative">
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
-                  <CircularProgress size={24} />
-                </div>
-              )}
               {!watch("testcase") && !canEdit && (
                 <div className="absolute inset-0 flex items-center justify-center bg-neutral02 text-neutral05 pointer-events-none font-mono">
                   No testcase yet. Please generate from prompt.
@@ -227,7 +216,7 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
 
               <textarea
                 value={watch("testcase")}
-                disabled={!canEdit || loading}
+                disabled={!canEdit}
                 onChange={(e) => handleEdit(e.target.value)}
                 className="w-full h-[320px] p-4 outline-none font-mono text-primary03"
               />
@@ -238,16 +227,9 @@ const TestCaseFormModal = ({ open, onClose, testcase, assignmentId, onSaveSucces
             <Button
               type="submit"
               variant="contained"
-              disabled={!isValid || !canEdit || loading}
+              disabled={!isValid || !canEdit}
             >
-              {loading ? (
-                <>
-                  <CircularProgress size={16} color="inherit" className="mr-2" />
-                  Saving...
-                </>
-              ) : (
-                "Save"
-              )}
+              Save
             </Button>
           </div>
         </form>

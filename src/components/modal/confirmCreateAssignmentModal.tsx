@@ -7,14 +7,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  isLoading?: boolean;
 }
 
 export default function ConfirmNoTestCaseModal({
   open,
   onClose,
   onConfirm,
-  isLoading = false,
 }: Readonly<Props>) {
   return (
     <Dialog
@@ -52,22 +50,12 @@ export default function ConfirmNoTestCaseModal({
           </div>
 
           <div className="flex gap-4">
-            <Button
-              variant="outlined"
-              onClick={onClose}
-              className="!w-1/2"
-              disabled={isLoading}
-            >
+            <Button variant="outlined" onClick={onClose} className="!w-1/2">
               Cancel
             </Button>
 
-            <Button
-              variant="contained"
-              onClick={onConfirm}
-              className="!w-1/2"
-              disabled={isLoading}
-            >
-              {isLoading ? "Saving..." : "Confirm"}
+            <Button variant="contained" onClick={onConfirm} className="!w-1/2">
+              Confirm
             </Button>
           </div>
         </div>

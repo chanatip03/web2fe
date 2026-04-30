@@ -10,7 +10,6 @@ interface Props {
   isGroup: boolean;
   hasGroup?: boolean;
   assignmentId: number;
-  projectTypeId?: number;
   groupId?: number;
   status: "editing" | "submitting" | "deploying" | "done";
   setStatus: (s: Props["status"]) => void;
@@ -22,7 +21,6 @@ export default function SubmitPanel({
   isGroup,
   hasGroup,
   assignmentId,
-  projectTypeId,
   groupId,
   status,
   setStatus,
@@ -155,10 +153,6 @@ export default function SubmitPanel({
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const isSubmissionReady =
-    (type === "file" && uploadedFiles.length > 0) ||
-    (type === "github" && githubUrl.trim() !== "");
-
   async function zipFiles(files: File[]) {
     const zip = new JSZip();
 
@@ -184,12 +178,6 @@ export default function SubmitPanel({
       .filter(Boolean)        // drop empty parts
       .join("")               // rejoin (URL should not have internal spaces)
       .trim();
-
-  const toDeployMode = (typeId?: number) => {
-    if (typeId === 1) return "frontend-only";
-    if (typeId === 2) return "backend-only";
-    return "fullstack";
-  };
 
   const handleSubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -230,9 +218,6 @@ export default function SubmitPanel({
     if (groupId) {
       form.append("group_id", groupId.toString());
     }
-    // Tell backend what kind of project this submission is.
-    // The backend normalizes these values and will prefer this over LLM auto-detect.
-    form.append("projectType", toDeployMode(projectTypeId));
 
     try {
       const res = await fetch(
@@ -327,14 +312,7 @@ export default function SubmitPanel({
             <input
               type="radio"
               checked={type === "github"}
-              onChange={() => {
-                if (uploadedFiles.length > 0) {
-                  // Clear uploaded files first
-                  setUploadedFiles([]);
-                }
-                setType("github");
-              }}
-              disabled={uploadedFiles.length > 0 && type === "file"}
+              onChange={() => setType("github")}
               className="mr-2 size-4"
             />
             Github Repository
@@ -344,14 +322,7 @@ export default function SubmitPanel({
             <input
               type="radio"
               checked={type === "file"}
-              onChange={() => {
-                if (githubUrl.trim() !== "") {
-                  // Clear GitHub URL first
-                  setGithubUrl("");
-                }
-                setType("file");
-              }}
-              disabled={githubUrl.trim() !== "" && type === "github"}
+              onChange={() => setType("file")}
               className="mr-2 size-4"
             />
             Project files
@@ -434,7 +405,7 @@ export default function SubmitPanel({
 
           {/* RIGHT BOX */}
           <textarea
-            placeholder="Input environment variables (if any)"
+            placeholder="Input environment variables"
             value={envText}
             onChange={(e) => setEnvText(e.target.value)}
             className="border rounded-lg h-[200px] p-3 outline-none resize-none border-neutral03"
@@ -446,12 +417,7 @@ export default function SubmitPanel({
           {status === "editing" && (
             <button
               onClick={handleSubmit}
-              disabled={!isSubmissionReady}
-              className={`text-white px-6 py-2 rounded-lg shadow-2xl ${
-                isSubmissionReady
-                  ? "bg-primary03 hover:opacity-90 cursor-pointer"
-                  : "bg-neutral04 cursor-not-allowed"
-              }`}
+              className="bg-primary03 text-white px-6 py-2 rounded-lg shadow-2xl"
             >
               Submit
             </button>

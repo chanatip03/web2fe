@@ -45,7 +45,7 @@ const StudentLandingPage = ({ classroom, members, onDeleteMember }: StudentLandi
     <div>
       <div className="flex flex-col items-start justify-start gap-2 mb-6">
         <Breadcrumbs aria-label="breadcrumb" separator="/">
-          <Link href="/classroom">Home</Link>
+          <Link href="/classroom/listclassroom">Home</Link>
           <span>{classroom.name}</span>
           <span className="text-black">Student</span>
         </Breadcrumbs>

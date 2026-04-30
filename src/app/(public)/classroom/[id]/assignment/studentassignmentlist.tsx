@@ -4,30 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Breadcrumbs, Chip } from "@mui/material";
 import { useParams } from "next/navigation";
-import { assignmentService, projectService, userService } from "@/services/controller";
+import { assignmentService } from "@/services/controller";
 import { Assignment } from "@/domain/assignment";
 import Cookies from "js-cookie";
 
-// 👉 Check status based on submission and due date
+// 👉 mock status ก่อน (เดี๋ยวค่อยต่อ backend จริง)
 const getStatus = (item: Assignment) => {
-  // If no submission, return not_submitted
-  if (!item.submission || !item.submission.submitted_at) {
-    return "not_submitted";
-  }
-  
-  if (item.submission.is_late) {
-    return "late"; // Late submission
-  }
-  
-  // Check if submitted late via fallback dates
-  const submittedAt = new Date(item.submission.submitted_at).getTime();
-  const dueDate = new Date(item.due_date).getTime();
-  
-  if (submittedAt > dueDate) {
-    return "late"; // Late submission
-  }
-  
-  return "submitted"; // On-time submission
+  // TODO: เปลี่ยนเป็น logic จริงจาก submission
+  return "not_submitted"; // submitted | late | not_submitted
 };
 
 const checkOverdue = (date: string | Date) =>
@@ -44,40 +28,7 @@ export default function StudentAssignmentListPage() {
     async function loadData() {
       try {
         const data = await assignmentService.getAssignments(Number(id));
-        
-        // Get current logged-in user to filter projects
-        const currentUser = await userService.getCurrentUser();
-        const myStudentId = currentUser.id;
-
-        // Fetch submission status for each assignment
-        const assignmentsWithSubmissions = await Promise.all(
-          data.map(async (assignment) => {
-            try {
-              const projects = await projectService.getProjectsByAssignment(assignment.id);
-              const userProject = projects.find((p: any) => p.students?.some((s: any) => s.id === myStudentId));
-
-              if (userProject) {
-                // Return a mock submission object holding the state. Since the backend Project DTO
-                // lacks created_date, we default to submitted to clear the 500 errors and CORS.
-                return { 
-                  ...assignment, 
-                  submission: { 
-                    id: userProject.id, 
-                    // Fallback to due date so it's marked as on time if date is missing
-                    submitted_at: (userProject as any).created_at || (userProject as any).created_date || assignment.due_date,
-                    is_late: (userProject as any).is_late === true,
-                  } 
-                };
-              }
-              return assignment;
-            } catch (err) {
-              console.error(`Failed to fetch project for assignment ${assignment.id}:`, err);
-              return assignment;
-            }
-          })
-        );
-        
-        setAssignments(assignmentsWithSubmissions);
+        setAssignments(data);
       } catch (err) {
         console.error(err);
       } finally {
