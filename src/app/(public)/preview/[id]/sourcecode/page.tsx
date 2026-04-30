@@ -145,6 +145,8 @@ export default function SourceCodeViewer() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const CACHE_KEY = `sourcecode_${projectId}`;
+
   useEffect(() => {
     if (!projectId || isNaN(projectId)) {
       setError("Invalid project ID");
@@ -152,11 +154,29 @@ export default function SourceCodeViewer() {
       return;
     }
 
+    // ── Check sessionStorage cache first ──────────────────────────────────
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        setData(JSON.parse(cached) as ProjectSourceCode);
+        setLoading(false);
+        return; // ← skip API call
+      }
+    } catch {
+      /* sessionStorage unavailable */
+    }
+
+    // ── Fetch from API ────────────────────────────────────────────────────
     const repo = new ProjectRepository();
     repo
       .getProjectSourceCode(projectId)
       .then((result) => {
         setData(result);
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(result));
+        } catch {
+          /* storage quota exceeded — ignore */
+        }
       })
       .catch((err: Error) => {
         setError(err.message ?? "Failed to load source code");

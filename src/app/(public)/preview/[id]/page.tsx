@@ -5,6 +5,42 @@ import { useParams, useSearchParams } from "next/navigation";
 
 const TTL_SECONDS = 2 * 60 * 60; // 2 hours — must match backend
 
+// ─── sessionStorage cache key ────────────────────────────────────────────────
+// Stored shape: { previewUrl: string; startedAt: number /* epoch ms */ }
+interface PreviewCache {
+  previewUrl: string;
+  startedAt: number;
+}
+
+function getCacheKey(id: string | string[]) {
+  return `preview_session_${Array.isArray(id) ? id[0] : id}`;
+}
+
+function saveCache(id: string | string[], previewUrl: string) {
+  try {
+    const value: PreviewCache = { previewUrl, startedAt: Date.now() };
+    sessionStorage.setItem(getCacheKey(id), JSON.stringify(value));
+  } catch {
+    /* sessionStorage unavailable (private mode, etc.) */
+  }
+}
+
+function loadCache(id: string | string[]): { previewUrl: string; remaining: number } | null {
+  try {
+    const raw = sessionStorage.getItem(getCacheKey(id));
+    if (!raw) return null;
+    const { previewUrl, startedAt }: PreviewCache = JSON.parse(raw);
+    const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const remaining = TTL_SECONDS - elapsed;
+    if (remaining > 0) return { previewUrl, remaining };
+    // Expired — clean up
+    sessionStorage.removeItem(getCacheKey(id));
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return "00:00:00";
   const h = Math.floor(seconds / 3600);
@@ -34,6 +70,8 @@ export default function ProjectPreviewPage() {
           clearInterval(countdownRef.current!);
           setStatus("expired");
           setPreviewUrl(null);
+          // Remove stale cache
+          if (id) sessionStorage.removeItem(getCacheKey(id));
           return 0;
         }
         return prev - 1;
@@ -44,10 +82,18 @@ export default function ProjectPreviewPage() {
   useEffect(() => {
     if (!id) return;
 
+    // ── 1. Check sessionStorage cache first ───────────────────────────────
+    const cached = loadCache(id);
+    if (cached) {
+      setStatus("ready");
+      setPreviewUrl(cached.previewUrl);
+      startCountdown(cached.remaining);
+      return; // ← skip API call entirely
+    }
+
+    // ── 2. No cache — call the backend ───────────────────────────────────
     const startPreview = async () => {
       try {
-        // Submission preview uses deployment subsystem endpoints:
-        // POST /api/project/{submission_id}/preview/start then poll /status
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/project/${id}/preview/start`,
           { method: "POST", credentials: "include" }
@@ -59,8 +105,10 @@ export default function ProjectPreviewPage() {
         const data = await res.json();
 
         if (data.status === "running") {
+          const url: string = data.preview_url;
           setStatus("ready");
-          setPreviewUrl(data.preview_url);
+          setPreviewUrl(url);
+          saveCache(id, url); // ← persist to sessionStorage
           startCountdown(data.seconds_remaining ?? TTL_SECONDS);
           return;
         }
@@ -81,8 +129,10 @@ export default function ProjectPreviewPage() {
 
             if (sData.status === "running") {
               clearInterval(pollRef.current!);
+              const url: string = sData.preview_url;
               setStatus("ready");
-              setPreviewUrl(sData.preview_url);
+              setPreviewUrl(url);
+              saveCache(id, url); // ← persist to sessionStorage
               startCountdown(sData.seconds_remaining ?? TTL_SECONDS);
             } else if (sData.status === "error") {
               clearInterval(pollRef.current!);
