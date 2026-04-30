@@ -1,98 +1,97 @@
 "use client";
 
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Breadcrumbs,
-  Box,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
+import { useState, useEffect } from "react";
+import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, Box, Typography, CircularProgress } from "@mui/material";
 import Link from "next/link";
-import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import type { TestResultPageData } from "./types";
 
-interface Props {
-  data: TestResultPageData | null;
-  isLoading: boolean;
-  error: string | null;
-}
+export default function TestResult_full() {
+  const [cyberScanData, setCyberScanData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default function TestResultFull({ data, isLoading, error }: Props) {
-  if (isLoading) {
+  // Mock fetching data from backend
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setIsLoading(true);
+        // FIXME: Replace this setTimeout with your actual backend API call 
+        // const response = await fetch('/api/test-results-full');
+        // const data = await response.json();
+        
+        // Simulating network delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        // Simulating the JSON response from your API
+        setCyberScanData({
+          project: "student-webapp",
+          file: "Dockerfile",
+          baseImage: "node:16-alpine",
+          scanTime: "2025-12-03T22:15:00Z",
+          ok: false,
+          summary: { totalIssues: 1 },
+        });
+
+      } catch (error) {
+        console.error("Error fetching test results:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, []);
+
+  if (isLoading || !cyberScanData) {
     return (
-      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "50vh", gap: 2 }}>
-        <CircularProgress sx={{ color: "var(--color-primary03)" }} />
+      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '50vh', gap: 2 }}>
+        <CircularProgress sx={{ color: 'var(--color-primary03)' }} />
         <Typography style={{ color: "var(--color-neutral05)" }}>Loading test results...</Typography>
-      </Box>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-        <Typography style={{ color: "var(--color-accent04)" }}>{error || "Test result data unavailable."}</Typography>
       </Box>
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Breadcrumb */}
       <Breadcrumbs className="my-6 mb-6">
         <Link href="/classroom">Home</Link>
-        <span>{data.classroomName || "Classroom"}</span>
-        <span>{data.assignmentTitle}</span>
-        <span>{data.projectLabel}</span>
+        <span>mockup classroom</span>
+        <Link href="/assignment">Assignment</Link>
+        <span>mockup assignment</span>
+        <span>mockup_group_name</span>
         <span style={{ color: "var(--color-black)", fontWeight: 500 }}>Test Result</span>
       </Breadcrumbs>
 
-      <Accordion
-        defaultExpanded
-        disableGutters
+      {/* Cyber Security Test Result Card */}
+      <Accordion 
+        defaultExpanded 
+        disableGutters 
         elevation={0}
         sx={{
-          border: "1px solid var(--color-neutral03)",
-          borderRadius: "8px !important",
-          "&:before": { display: "none" },
-          overflow: "hidden",
-          boxShadow: "3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)",
+          border: '1px solid var(--color-neutral03)',
+          borderRadius: '8px !important',
+          '&:before': { display: 'none' },
+          overflow: 'hidden',
+          boxShadow: '3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)'
         }}
       >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon sx={{ color: "var(--color-black)" }} />}
+        <AccordionSummary 
+          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--color-black)' }} />}
           sx={{
-            borderBottom: "1px solid var(--color-neutral03)",
+            borderBottom: '1px solid var(--color-neutral03)',
             px: 3,
-            py: 1,
-            ".MuiAccordionSummary-content": {
-              justifyContent: "space-between",
-              alignItems: "center",
-            },
+            py: 1
           }}
         >
           <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Cyber Security Test</h4>
-          {data.cyberScanUrl && (
-            <div className="mr-4" onClick={(event) => event.stopPropagation()}>
-              <a
-                href={data.cyberScanUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
-              >
-                <DownloadIcon sx={{ fontSize: 13 }} />
-                scan.json
-              </a>
-            </div>
-          )}
         </AccordionSummary>
-        <AccordionDetails sx={{ p: 4, pt: 3, maxHeight: "500px", overflowY: "auto" }}>
+        <AccordionDetails sx={{ p: 4, pt: 3, maxHeight: '500px', overflowY: 'auto' }}>
           <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--color-black)" }}>
-            {JSON.stringify(data.cyberScanData ?? { status: "missing", message: "No cybersecurity result recorded yet." }, null, 2)}
+            {JSON.stringify(cyberScanData, null, 2)}
           </pre>
         </AccordionDetails>
       </Accordion>
+
     </div>
   );
 }

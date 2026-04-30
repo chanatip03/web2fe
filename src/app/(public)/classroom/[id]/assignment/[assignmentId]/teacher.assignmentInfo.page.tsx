@@ -32,7 +32,6 @@ export default function TeacherAssignmentInfoPage() {
   const [assignments, setAssignments] = useState<Assignment>();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [assignmentLoadFailed, setAssignmentLoadFailed] = useState(false);
   const [tab, setTab] = useState<"inprogress" | "complete">("inprogress");
   const [openTestcase, setOpenTestcase] = useState(false);
@@ -103,8 +102,7 @@ export default function TeacherAssignmentInfoPage() {
   };
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-  if (!assignments) return <div>Assignment not found.</div>;
+  if (!assignments) return <div>{assignmentLoadFailed ? "Failed to load assignment." : "Loading..."}</div>;
 
   const hasTestcase = !!assignments.testcase_url;
 
