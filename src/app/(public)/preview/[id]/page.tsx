@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { projectService } from "@/services/controller";
 
 const TTL_SECONDS = 10 * 60; // must match backend default
@@ -154,8 +154,8 @@ export default function ProjectPreviewPage() {
     const loadProjectAndStartPreview = async () => {
       try {
         const data = await projectService.getProjectById(projectId);
-        setSubmissionId(data.submission_id ?? null);
-        await startPreview(data.submission_id ?? null);
+        setSubmissionId(data.submission_uuid ?? String(projectId));
+        await startPreview(data.submission_uuid ?? String(projectId));
       } catch (err: unknown) {
         setStatus("error");
         setError(err instanceof Error ? err.message : String(err));

@@ -180,7 +180,6 @@ export default function TeacherAssignmentInfoPage() {
           ) : (
             <p className="text-neutral06 mb-5">No attachments available</p>
           )}
-      </div>
 
         <Paper sx={{ backgroundColor: "#ffffff" }}>
           <Tabs
