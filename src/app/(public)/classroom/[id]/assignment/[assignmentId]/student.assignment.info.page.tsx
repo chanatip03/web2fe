@@ -45,11 +45,15 @@ export default function StudentAssignmentInfoPage() {
         );
         setAssignments(data);
 
-        try {
-          const groupData = await groupService.getMyGroup(Number(assignMentId));
-          setGroup(groupData as any);
-        } catch (groupErr) {
-          console.error("Failed to fetch group", groupErr);
+        if (data.is_group) {
+          try {
+            const groupData = await groupService.getMyGroup(Number(assignMentId));
+            setGroup(groupData as any);
+          } catch (groupErr) {
+            console.error("Failed to fetch group", groupErr);
+          }
+        } else {
+          setGroup(null);
         }
 
         // Fetch existing project results
