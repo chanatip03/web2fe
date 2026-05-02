@@ -21,20 +21,32 @@ interface Props {
   } | null;
 }
 
+function hasInlineScanDetails(data: Props["data"]): boolean {
+  if (!data) return false;
+  return Array.isArray((data as any).issues) || Array.isArray((data as any).languages) || typeof (data as any).type === "string";
+}
+
 export default function CyberScanResultModal({ open, onClose, data }: Props) {
   const [detailData, setDetailData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fetchWarning, setFetchWarning] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!open) return;
+
+    setDetailData(data);
+    setFetchWarning(null);
+
+    if (hasInlineScanDetails(data) || !data?.download_url) {
+      return;
+    }
+
     if (open && data?.download_url) {
       const fetchData = async () => {
         setLoading(true);
-        setError(null);
+        setFetchWarning(null);
         try {
-          const res = await fetch(data.download_url!, {
-            credentials: "include",
-          });
+          const res = await fetch(data.download_url!);
           if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));
             throw new Error(errBody.detail || errBody.message || "Failed to fetch detailed scan results.");
@@ -42,19 +54,18 @@ export default function CyberScanResultModal({ open, onClose, data }: Props) {
           const json = await res.json();
           setDetailData(json);
         } catch (err: any) {
-          setError(err.message);
-          setDetailData(data); // Fallback to manifest data
+          setFetchWarning(err?.message || "Failed to fetch detailed scan results.");
+          setDetailData(data); // Fallback to the saved summary data
         } finally {
           setLoading(false);
         }
       };
-      fetchData();
-    } else {
-      setDetailData(data);
+      void fetchData();
     }
   }, [open, data]);
 
   if (!data) return null;
+  const isScanError = data.status === "error";
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -68,13 +79,20 @@ export default function CyberScanResultModal({ open, onClose, data }: Props) {
             <CircularProgress size={40} sx={{ mb: 2 }} />
             <Typography variant="body2" color="text.secondary">Fetching detailed scan data...</Typography>
           </Box>
-        ) : data.status === "error" || error ? (
+        ) : isScanError ? (
           <Box sx={{ color: "error.main", p: 3 }}>
             <Typography variant="h6" gutterBottom>Scan Failed</Typography>
-            <Typography variant="body2">{error || data.message || "An unexpected error occurred during the scan."}</Typography>
+            <Typography variant="body2">{data.message || "An unexpected error occurred during the scan."}</Typography>
           </Box>
         ) : (
           <Box sx={{ position: "relative" }}>
+            {fetchWarning && (
+              <Box sx={{ borderBottom: "1px solid #e0e0e0", bgcolor: "#fff8e1", px: 3, py: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Unable to load the downloadable `scan.json`, so this view is showing the saved summary instead.
+                </Typography>
+              </Box>
+            )}
             <pre style={{ 
               margin: 0, 
               padding: "20px", 

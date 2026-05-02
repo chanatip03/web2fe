@@ -118,6 +118,9 @@ export default function TeacherAssignmentInfoPage() {
           onClose={() => setOpenTestcase(false)}
           testcase={assignments.testcase_url}
           assignmentId={assignMentId as string}
+          assignmentProjectType={assignments.project_type?.name}
+          assignmentTitle={assignments.title}
+          assignmentDescription={assignments.description}
           onSaveSuccess={() => loadData()}
           onSuccess={(message) => {
             setSnackbar({
