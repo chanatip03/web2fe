@@ -9,6 +9,7 @@ import { RHFTextField } from "@/components/form/RHFTextField";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { authService } from "@/services/controller";
+import ResetPasswordModal from "@/components/modal/resetPasswordModal";
 
 const Schema = z.object({
   email: z.email({ message: "Invalid email format" }),
@@ -22,6 +23,7 @@ export default function Auth() {
   const router = useRouter();
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("Incorrect email or password.");
+  const [openResetPassword, setOpenResetPassword] = useState(false);
 
   const { control, handleSubmit } = useForm<FormData>({
     resolver: zodResolver(Schema),
@@ -95,7 +97,14 @@ export default function Auth() {
             />
 
             <div className="text-right">
-              <Link href="#" underline="hover">
+              <Link
+                href="#"
+                underline="hover"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpenResetPassword(true);
+                }}
+              >
                 <h5 className="text-primary03">Forgot password</h5>
               </Link>
             </div>
@@ -120,6 +129,10 @@ export default function Auth() {
           </div>
         </form>
       </div>
+      <ResetPasswordModal
+        open={openResetPassword}
+        onClose={() => setOpenResetPassword(false)}
+      />
     </div>
   );
 }

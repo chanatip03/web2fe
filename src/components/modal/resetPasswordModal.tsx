@@ -1,67 +1,76 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
   IconButton,
   Button,
   TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "../form/RHFTextField";
+import { authService, userService } from "@/services/controller";
 
-interface Props {
-  open: boolean;
-  email?: string;
-  onClose: () => void;
-  onConfirm?: (data: { otp: string; newPassword: string }) => void;
-  onResend?: () => void;
-}
 
-const Schema = z
+const EmailSchema = z.object({
+  email: z.string().email("Invalid email"),
+});
+
+const OtpSchema = z.object({
+  code0: z.string().length(1),
+  code1: z.string().length(1),
+  code2: z.string().length(1),
+  code3: z.string().length(1),
+  code4: z.string().length(1),
+  code5: z.string().length(1),
+});
+
+const PasswordSchema = z
   .object({
-    code0: z.string().min(1, "").max(1, ""),
-    code1: z.string().min(1, "").max(1, ""),
-    code2: z.string().min(1, "").max(1, ""),
-    code3: z.string().min(1, "").max(1, ""),
-    code4: z.string().min(1, "").max(1, ""),
-    code5: z.string().min(1, "").max(1, ""),
-    newPassword: z
-      .string()
-      .min(8, "Your password must be at least 8 characters"),
-    confirmPassword: z
-      .string()
-      .min(8, "Your password must be at least 8 characters"),
+    newPassword: z.string().min(8),
+    confirmPassword: z.string().min(8),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
+  .refine((d) => d.newPassword === d.confirmPassword, {
     path: ["confirmPassword"],
     message: "Passwords do not match",
   });
 
-type FormData = z.infer<typeof Schema>;
+type EmailForm = z.infer<typeof EmailSchema>;
+type OtpForm = z.infer<typeof OtpSchema>;
+type PasswordForm = z.infer<typeof PasswordSchema>;
 
-const ResetPasswordModal = ({
-  open,
-  email,
-  onClose,
-  onConfirm,
-  onResend,
-}: Props) => {
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+type Step = "email" | "otp" | "password";
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    watch,
-    setValue,
-    formState: { isValid },
-  } = useForm<FormData>({
-    resolver: zodResolver(Schema),
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+
+const ResetPasswordModal = ({ open, onClose }: Props) => {
+  const [step, setStep] = useState<Step>("email");
+  const [email, setEmail] = useState("");
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
+
+
+  const emailForm = useForm<EmailForm>({
+    resolver: zodResolver(EmailSchema),
+    mode: "onChange",
+  });
+
+
+  const otpForm = useForm<OtpForm>({
+    resolver: zodResolver(OtpSchema),
     mode: "onChange",
     defaultValues: {
       code0: "",
@@ -70,24 +79,25 @@ const ResetPasswordModal = ({
       code3: "",
       code4: "",
       code5: "",
-      newPassword: "",
-      confirmPassword: "",
     },
   });
 
-  useEffect(() => {
-    if (open) {
-      reset();
-      setTimeout(() => {
-        inputRefs.current[0]?.focus();
-      }, 100);
-    }
-  }, [open, reset]);
 
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
+  const passwordForm = useForm<PasswordForm>({
+    resolver: zodResolver(PasswordSchema),
+    mode: "onChange",
+  });
+
+  const { setValue, watch } = otpForm;
+
+  useEffect(() => {
+    if (!open) {
+      setStep("email");
+      emailForm.reset();
+      otpForm.reset();
+      passwordForm.reset();
+    }
+  }, [open]);
 
   // จัดการตอนพิมพ์ OTP ทีละช่อง โดยรับเฉพาะตัวเลข เก็บได้แค่ 1 ตัว ถ้ากรอกแล้วให้เลื่อนไปช่องถัดไปอัตโนมัติ
   const handleCodeChange = (
@@ -99,33 +109,50 @@ const ResetPasswordModal = ({
     onChange(cleanValue);
 
     if (cleanValue && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+      focusAndMoveCursorToEnd(index + 1);
     }
   };
 
-  // เลื่อนไปช่องถัดไป ก่อนหน้าของ otp โดยใช้ keyboard 
+const focusAndMoveCursorToEnd = (index: number) => {
+  const el = inputRefs.current[index];
+  if (el) {
+    el.focus();
+
+    const length = el.value.length;
+
+    setTimeout(() => {
+      el.setSelectionRange(length, length);
+    }, 0);
+  }
+};
+
   const handleCodeKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
+    e: React.KeyboardEvent<HTMLElement>,
     index: number,
   ) => {
-    const currentValue = watch(`code${index}` as keyof FormData) as string;
+    const currentValue = watch(`code${index}` as keyof OtpForm) as string;
 
-    if (e.key === "Backspace" && !currentValue && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace") {
+      if (currentValue) {
+        setValue(`code${index}` as keyof OtpForm, "");
+      } else if (index > 0) {
+        focusAndMoveCursorToEnd(index - 1);
+        setValue(`code${index - 1}` as keyof OtpForm, "");
+      }
     }
 
     if (e.key === "ArrowLeft" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+      focusAndMoveCursorToEnd(index - 1);
     }
 
     if (e.key === "ArrowRight" && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+      focusAndMoveCursorToEnd(index + 1);
     }
   };
 
   // รองรับการ paste OTP หลายหลักครั้งเดียว เช่น paste 123456 แล้วกระจายลงช่องอัตโนมัติ
   const handleCodePaste = (
-    e: React.ClipboardEvent<HTMLInputElement>,
+    e: React.ClipboardEvent<HTMLElement>,
     index: number,
   ) => {
     const pastedText = e.clipboardData.getData("text");
@@ -135,8 +162,8 @@ const ResetPasswordModal = ({
 
     e.preventDefault();
 
-    for (let i = 0; i < digits.length && index + i < 6; i += 1) {
-      setValue(`code${index + i}` as keyof FormData, digits[i], {
+    for (let i = 0; i < digits.length && index + i < 6; i++) {
+      setValue(`code${index + i}` as keyof OtpForm, digits[i], {
         shouldValidate: true,
         shouldDirty: true,
       });
@@ -146,153 +173,200 @@ const ResetPasswordModal = ({
     inputRefs.current[nextIndex]?.focus();
   };
 
-  // รวม OTP จาก 6 ช่องให้เป็น string เดียว แล้วส่งออกไป
-  const onSubmit = (data: FormData) => {
-    const otp = `${data.code0}${data.code1}${data.code2}${data.code3}${data.code4}${data.code5}`;
 
-    onConfirm?.({
-      otp,
-      newPassword: data.newPassword,
-    });
+  const handleClose = () => {
+    setStep("email");
+    setEmail("");
+
+    emailForm.reset();
+    otpForm.reset();
+    passwordForm.reset();
+
+    onClose();
+  };
+
+  const handleSendOtp = async (data: EmailForm) => {
+    setEmail(data.email);
+    await authService.requestResetPasswordOTP(data.email);
+    setStep("otp");
+
+    setTimeout(() => inputRefs.current[0]?.focus(), 100);
+  };
+
+  const handleVerifyOtp = async (data: OtpForm) => {
+    const otp =
+      data.code0 +
+      data.code1 +
+      data.code2 +
+      data.code3 +
+      data.code4 +
+      data.code5;
+
+    const response = await authService.verifyOTP({ email, otp });
+    if (response) setStep("password");
+  };
+
+  const handleResetPassword = async (data: PasswordForm) => {
+    try {
+      await userService.resetPassword({
+        email,
+        new_password: data.newPassword,
+      });
+
+      handleClose();
+
+      setSnackbar({
+        open: true,
+        message: "Reset password successfully.",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      
+      setSnackbar({
+        open: true,
+        message: "Failed to reset password.",
+        severity: "error",
+      });
+    }
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={(_, reason) => {
-        if (reason === "backdropClick") return;
-        handleClose();
-      }}
-      slotProps={{
-        paper: {
-          sx: {
-            width: 740,
-            maxWidth: "none",
-            overflow: "hidden",
-          },
-        },
-      }}
-    >
-      <div className="flex items-center justify-between bg-primary03 px-12 py-3 text-white">
-        <h3>Reset Password</h3>
-        <IconButton onClick={handleClose}>
-          <CloseIcon className="text-white" />
-        </IconButton>
-      </div>
+    <>
+      <Dialog
+        open={open}
+        onClose={(_, reason) => {
+          if (reason === "backdropClick") return;
+          handleClose();
+        }}
+        slotProps={{
+          paper: { sx: { width: 550 , height: 330} },
+        }}
+      >
+        <div className="flex items-center justify-between bg-primary03 px-10 py-3 text-white">
+          <h4>
+            {step === "email" && "Reset Password"}
+            {step === "otp" && "Enter verification code"}
+            {step === "password" && "Create a new password"}
+          </h4>
 
-      <DialogContent>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-5 px-6 py-3"
-        >
-          <div>
-            <h4 className="mb-2">Verification Code</h4>
+          <IconButton onClick={handleClose}>
+            <CloseIcon className="text-white" />
+          </IconButton>
+        </div>
 
-            <p className="p2">
-              A 6-digit code has been sent to <span>{email}</span>. Please enter
-              the code below.
-            </p>
-          </div>
+        <DialogContent>
+          {step === "email" && (
+            <form
+              onSubmit={emailForm.handleSubmit(handleSendOtp)}
+              className="flex flex-col gap-4 px-4 py-4"
+            >
+              <p className="p2">
+                Enter your email to receive OTP for resetting password.
+              </p>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {[0, 1, 2, 3, 4, 5].map((index) => (
-                <div key={index} className="flex items-center gap-2">
+              <RHFTextField
+                name="email"
+                control={emailForm.control}
+                label="Email"
+                fullWidth
+              />
+
+              <Button type="submit" variant="contained">
+                Send OTP
+              </Button>
+            </form>
+          )}
+
+          {step === "otp" && (
+            <form
+              onSubmit={otpForm.handleSubmit(handleVerifyOtp)}
+              className="flex flex-col gap-4 px-4 pb-4"
+            >
+              <p className="p2">
+                The verification code has been sent to your email <b>{email}</b>
+              </p>
+
+              <div className="flex gap-4 justify-center">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
                   <Controller
-                    name={`code${index}` as keyof FormData}
-                    control={control}
+                    key={i}
+                    name={`code${i}` as keyof OtpForm}
+                    control={otpForm.control}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        inputRef={(el) => {
-                          inputRefs.current[index] = el;
-                        }}
-                        value={field.value ?? ""}
+                        inputRef={(el) => (inputRefs.current[i] = el)}
                         onChange={(e) =>
-                          handleCodeChange(index, e.target.value, field.onChange)
+                          handleCodeChange(i, e.target.value, field.onChange)
                         }
-                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) =>
-                          handleCodeKeyDown(e, index)
-                        }
-                        onPaste={(e: React.ClipboardEvent<HTMLInputElement>) =>
-                          handleCodePaste(e, index)
-                        }
+                        onKeyDown={(e) => handleCodeKeyDown(e, i)}
+                        onPaste={(e) => handleCodePaste(e, i)}
                         slotProps={{
                           htmlInput: {
                             maxLength: 1,
                             inputMode: "numeric",
-                            pattern: "[0-9]*",
                             style: {
                               textAlign: "center",
-                              padding: "0",
-                              height: "54px",
-                              width: "54px",
-                              fontSize: "18px",
+                              width: 35,
+                              height: 40,
                             },
                           },
-                        }}
-                        sx={{
-                          width: "54px",
-                          height: "54px",
                         }}
                       />
                     )}
                   />
+                ))}
+              </div>
 
-                 {index < 5 && ( <span className="mb-2 h-[2px] w-2 rounded-full bg-neutral04" />)}
-                </div>
-              ))}
-            </div>
+              <Button type="submit" variant="contained">
+                Verify OTP
+              </Button>
+            </form>
+          )}
 
-            <Button type="button" variant="contained" onClick={onResend}>
-              Resend
-            </Button>
-          </div>
-
-          <div className="border-b border-neutral06" />
-
-          <div>
-            <h4 className="mb-2">Create your new password</h4>
-            <p className="p2">
-              Your new password should be at least 8 characters
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <RHFTextField
-              name="newPassword"
-              control={control}
-              label="New password"
-              type="password"
-              fullWidth
-            />
-
-            <RHFTextField
-              name="confirmPassword"
-              control={control}
-              label="Confirm new password"
-              type="password"
-              fullWidth
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outlined"
-              onClick={handleClose}
-              color="error"
+          {step === "password" && (
+            <form
+              onSubmit={passwordForm.handleSubmit(handleResetPassword)}
+              className="flex flex-col gap-2 px-4 py-4"
             >
-              Cancel
-            </Button>
 
-            <Button type="submit" variant="contained" disabled={!isValid}>
-              Confirm
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+              <RHFTextField
+                name="newPassword"
+                control={passwordForm.control}
+                label="New password"
+                type="password"
+                fullWidth
+              />
+
+              <RHFTextField
+                name="confirmPassword"
+                control={passwordForm.control}
+                label="Confirm password"
+                type="password"
+                fullWidth
+              />
+
+              <Button type="submit" variant="contained" className="mt-2" disabled={!passwordForm.formState.isValid}>
+                Reset Password
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Snackbar
+        open={snackbar.open}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          variant="standard"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

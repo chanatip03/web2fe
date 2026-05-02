@@ -11,7 +11,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
-import ResetPasswordModal from "@/components/modal/resetPasswordModal";
+import ChangePasswordModal from "@/components/modal/changePasswordModal";
 import { ANONYMOUS_AVATAR_URL } from "@/constants";
 import CheckIcon from '@mui/icons-material/Check';
 
@@ -36,7 +36,7 @@ export default function TeacherProfile() {
   const [previewImage, setPreviewImage] = useState("");
   const [initialPreviewImage, setInitialPreviewImage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [openResetPassword, setOpenResetPassword] = useState(false);
+  const [openChangePassword, setOpenChangePassword] = useState(false);
   const [currentUserData, setCurrentUserData] = useState<Teacher | null>(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -189,12 +189,14 @@ export default function TeacherProfile() {
                   </div>
                 ) : (
                   <Avatar
-                    src={ANONYMOUS_AVATAR_URL}
                     sx={{
                       width: 148,
                       height: 148,
+                      bgcolor: "#b3b3b3",
                     }}
-                  />
+                  >
+                    <PersonIcon sx={{ fontSize: 80, color: "#fff" }} />
+                  </Avatar>
                 )}
 
                 <button
@@ -253,9 +255,9 @@ export default function TeacherProfile() {
                 <Button
                   type="button"
                   variant="contained"
-                  onClick={() => setOpenResetPassword(true)}
+                  onClick={() => setOpenChangePassword(true)}
                 >
-                  Reset Password
+                  Change Password
                 </Button>
 
                 <Button
@@ -289,16 +291,9 @@ export default function TeacherProfile() {
             )}
           </div>
         </form>
-        <ResetPasswordModal
-          open={openResetPassword}
-          email={currentUserData?.user.email || ""}
-          onClose={() => setOpenResetPassword(false)}
-          onConfirm={(data) => {
-            console.log("reset password:", data);
-          }}
-          onResend={() => {
-            console.log("resend code");
-          }}
+        <ChangePasswordModal
+          open={openChangePassword}
+          onClose={() => setOpenChangePassword(false)}
         />
       </div>
     </div>

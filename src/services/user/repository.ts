@@ -237,4 +237,35 @@ export class UserRepository implements IUserRepository {
     });
     await throwIfNotOk(res, "Failed to reject request");
   }
+
+  async resetPassword(data: {email: string; new_password: string;}): Promise<string> {
+    const res = await fetch(`${BASE_URL}/user/reset-password`, {
+      method: "POST",
+      headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("Reset password failed");
+
+    return res.json();
+  }
+
+  async changePassword(
+    data: {old_password: string; new_password: string;}
+  ): Promise<string> {
+    const res = await fetch(`${BASE_URL}/user/change-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("Change password failed");
+
+    return res.json();
+  }
 }

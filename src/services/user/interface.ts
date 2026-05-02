@@ -1,4 +1,4 @@
-import { User, UpdateStudentRequest, UpdateTeacherRequest } from "@/domain/user";
+import { User, UpdateStudentRequest, UpdateTeacherRequest} from "@/domain/user";
 import { IStudent } from "@/domain/student";
 import { Teacher } from "@/domain/teacher";
 import { AdminStudent, AdminTeacher, Container, AdminTeacherRequest, ContainerDetails } from "@/domain/admin";
@@ -19,4 +19,12 @@ export interface IUserRepository {
   getTeacherRequests(search?: string): Promise<AdminTeacherRequest[]>;
   approveRequest(id: number): Promise<void>;
   rejectRequest(id: number): Promise<void>;
+  resetPassword(data: {
+    email: string;
+    new_password: string;
+  }): Promise<string>;
+  changePassword(data: {
+    old_password: string;
+    new_password: string;
+  }): Promise<string>;
 }

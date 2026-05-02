@@ -11,7 +11,8 @@ export interface IAuthRepository {
     email: string;
     password: string;
   }): Promise<AuthResponse>;
-  requestOTP(data : FormData): Promise<string>;
+  requestRegisterOTP(data : FormData): Promise<string>;
+  requestResetPasswordOTP(data: { email: string }): Promise<string>;
   verifyOTP(data: {
     email:string,
     otp:string

@@ -12,8 +12,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
-import ResetPasswordModal from "@/components/modal/resetPasswordModal";
 import { discordService } from "@/services/controller";
+import ChangePasswordModal from "@/components/modal/changePasswordModal";
 import CheckIcon from '@mui/icons-material/Check';
 
 const schema = z.object({
@@ -38,7 +38,7 @@ export default function StudentProfile() {
   const [previewImage, setPreviewImage] = useState("");
   const [initialPreviewImage, setInitialPreviewImage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [openResetPassword, setOpenResetPassword] = useState(false);
+  const [openChangePassword, setOpenChangePassword] = useState(false);
   const [currentUserData, setCurrentUserData] = useState<IStudent | null>(null);
   const [discordLinked, setDiscordLinked] = useState(false);
   const [snackbar, setSnackbar] = useState({
@@ -272,16 +272,16 @@ export default function StudentProfile() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              {!isEditing ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="contained"
-                    onClick={() => setOpenResetPassword(true)}
-                  >
-                    Reset Password
-                  </Button>
+          <div className="mt-6 flex justify-end gap-2">
+            {!isEditing ? (
+              <>
+                <Button
+                  type="button"
+                  variant="contained"
+                  onClick={() => setOpenChangePassword(true)}
+                >
+                  Change Password
+                </Button>
 
                   <Button
                     type="button"
@@ -355,16 +355,9 @@ export default function StudentProfile() {
               </Button>
             </div>
           </form>
-          <ResetPasswordModal
-            open={openResetPassword}
-            email={currentUserData?.user.email || ""}
-            onClose={() => setOpenResetPassword(false)}
-            onConfirm={(data) => {
-              console.log("reset password:", data);
-            }}
-            onResend={() => {
-              console.log("resend code");
-            }}
+          <ChangePasswordModal
+          open={openChangePassword}
+          onClose={() => setOpenChangePassword(false)}
           />
         </div>
       </div>

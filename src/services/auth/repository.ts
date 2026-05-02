@@ -66,14 +66,30 @@ export class AuthRepository implements IAuthRepository {
     return response;
   }
 
-  async requestOTP(data: FormData): Promise<string> {
-    const res = await fetch(`${BASE_URL}/auth/request-otp`, {
+  async requestRegisterOTP(data: FormData): Promise<string> {
+    const res = await fetch(`${BASE_URL}/auth/request-otp-register`, {
       method: "POST",
       body: data,
     });
 
     if (!res.ok) {
-      throw new Error(`Request otp failed: ${res.status}`);
+      throw new Error(`Request register otp failed: ${res.status}`);
+    }
+
+    return res.json();
+  }
+
+    async requestResetPasswordOTP(data: { email: string }): Promise<string> {
+    const res = await fetch(`${BASE_URL}/auth/request-otp-reset-password`, {
+      method: "POST",
+      headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Request reset password otp failed: ${res.status}`);
     }
 
     return res.json();
