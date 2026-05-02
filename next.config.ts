@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://<VPS-IP>:8000/api/:path*",
+        destination: "http://72.61.120.249:8000/api/:path*",
       },
     ];
   },
