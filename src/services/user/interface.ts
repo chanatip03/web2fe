@@ -1,4 +1,4 @@
-import { User, UpdateStudentRequest, UpdateTeacherRequest } from "@/domain/user";
+import { User, UpdateStudentRequest, UpdateTeacherRequest} from "@/domain/user";
 import { IStudent } from "@/domain/student";
 import { Teacher } from "@/domain/teacher";
 
@@ -8,4 +8,12 @@ export interface IUserRepository {
   updateStudent(userId: number, data: FormData): Promise<IStudent>;
   updateTeacher(userId: number, data: FormData): Promise<Teacher>;
   deleteUser(userId: number): Promise<void>;
+  resetPassword(data: {
+    email: string;
+    new_password: string;
+  }): Promise<string>;
+  changePassword(data: {
+    old_password: string;
+    new_password: string;
+  }): Promise<string>;
 }

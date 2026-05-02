@@ -41,4 +41,12 @@ export class UserService {
   async deleteUser(userId: number) {
     return this.userRepository.deleteUser(userId);
   }
+
+  async resetPassword(data: {email: string; new_password: string;}) {
+    return this.userRepository.resetPassword(data);
+  }
+
+  async changePassword(data: {old_password: string; new_password: string;}) {
+    return this.userRepository.changePassword(data);
+  }
 }
