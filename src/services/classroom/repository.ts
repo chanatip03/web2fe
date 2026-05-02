@@ -5,7 +5,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class ClassroomRepository implements IClassroomRepository {
     async getclassrooms(): Promise<Classroom[]> {
-        const res = await fetch(`${BASE_URL}/classroom/`, {
+        const res = await fetch(`${BASE_URL}/classroom`, {
             method: "GET",
             credentials: "include",
         });
@@ -21,7 +21,7 @@ export class ClassroomRepository implements IClassroomRepository {
     }
     
     async createClassroom(data: CreateClassRoomRequest): Promise<Classroom> {
-        const res = await fetch(`${BASE_URL}/classroom/`, {
+        const res = await fetch(`${BASE_URL}/classroom`, {
             method: "POST",
              headers: {"Content-Type": "application/json",},
             credentials: "include",
