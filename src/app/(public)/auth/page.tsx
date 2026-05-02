@@ -22,6 +22,7 @@ export const dynamic = "force-dynamic";
 export default function Auth() {
   const router = useRouter();
   const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Incorrect email or password.");
   const [openResetPassword, setOpenResetPassword] = useState(false);
 
   const { control, handleSubmit } = useForm<FormData>({
@@ -33,10 +34,18 @@ export default function Auth() {
   });
 
   const onSubmit = async (data: FormData) => {
-    const response = await authService.login(data);
-    console.log(response);
-    if (response) {
-      router.push("/classroom");
+    try {
+      const response = await authService.login(data);
+      if (response) {
+        router.push("/classroom");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Incorrect email or password.";
+      setErrorMessage(message);
+      setIsError(true);
     }
   };
 
@@ -48,7 +57,9 @@ export default function Auth() {
         autoHideDuration={4000}
         onClose={() => setIsError(false)}
       >
-        <Alert severity="error">Incorrect email or password.</Alert>
+        <Alert severity="error" onClose={() => setIsError(false)}>
+          {errorMessage}
+        </Alert>
       </Snackbar>
       <div className="w-1/2 bg-secondary02 flex items-center justify-center">
         <div className="relative w-125 h-125">

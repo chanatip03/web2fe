@@ -1,227 +1,367 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Breadcrumbs, Accordion, AccordionSummary, AccordionDetails, OutlinedInput, InputAdornment, Box, CircularProgress, Typography } from "@mui/material";
+import { useMemo, useState } from "react";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Breadcrumbs,
+  Box,
+  CircularProgress,
+  InputAdornment,
+  OutlinedInput,
+  Typography,
+} from "@mui/material";
 import Link from "next/link";
+import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
+import type { TestResultPageData } from "./types";
 
-export default function TestResult_fe_be() {
+interface Props {
+  data: TestResultPageData | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+function getUniqueComparisons(rows: TestResultPageData["plagiarismData"]) {
+  const byPair = new Map<string, TestResultPageData["plagiarismData"][number]>();
+  for (const row of rows) {
+    const key = [row.student1, row.student2].sort().join("::");
+    if (!byPair.has(key)) {
+      byPair.set(key, row);
+    }
+  }
+  return Array.from(byPair.values());
+}
+
+function getScoreColor(score: number) {
+  if (score >= 80) return "bg-[#da291c]";
+  if (score >= 60) return "bg-[#ffb300]";
+  return "bg-[var(--color-success01)]";
+}
+
+function getStatusBadgeClass(status?: string) {
+  switch ((status || "").toLowerCase()) {
+    case "success":
+    case "passed":
+    case "pass":
+      return "bg-[var(--color-success01)] text-white";
+    case "failed":
+    case "fail":
+    case "error":
+      return "bg-[#da291c] text-white";
+    case "running":
+    case "pending":
+    case "not run":
+    case "not_run":
+      return "bg-[#ffb300] text-white";
+    default:
+      return "bg-[var(--color-neutral03)] text-[var(--color-black)]";
+  }
+}
+
+function formatStatus(status?: string) {
+  if (!status) return "Unknown";
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/[_-]/g, " ");
+}
+
+function getCount(value: unknown) {
+  return typeof value === "number" ? value : null;
+}
+
+export default function TestResultFeBe({ data, isLoading, error }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
-  
-  // States for backend data
-  const [cyberScanData, setCyberScanData] = useState<any>(null);
-  const [plagiarismData, setPlagiarismData] = useState<any>(null);
-  const [logHtmlUrl, setLogHtmlUrl] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock fetching data from backend
-  useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        setIsLoading(true);
-        // FIXME: Replace this setTimeout with your actual backend API call 
-        // const response = await fetch('/api/test-results');
-        // const data = await response.json();
-        
-        // Simulating network delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        
-        // Simulating the JSON response from your API
-        setCyberScanData({
-          project: "student-webapp",
-          file: "Dockerfile",
-          baseImage: "node:16-alpine",
-          scanTime: "2025-12-03T22:15:00Z",
-          ok: false,
-          summary: { totalIssues: 1 },
-        });
+  const projectComparisons = useMemo(() => {
+    if (!data) return [];
 
-        setPlagiarismData({
-          status: "success",
-          total_comparisons: 6,
-          data: [
-            { student1: "G1.js", student2: "Group3.js", avg_similarity: 74.07 },
-            { student1: "G1.js", student2: "test.js", avg_similarity: 50.31 },
-            { student1: "Group3.js", student2: "G1.js", avg_similarity: 74.07 },
-            { student1: "Group3.js", student2: "test.js", avg_similarity: 80 },
-            { student1: "test.js", student2: "G1.js", avg_similarity: 50.31 },
-            { student1: "test.js", student2: "Group3.js", avg_similarity: 80 },
-          ],
-        });
+    return getUniqueComparisons(data.plagiarismData)
+      .filter((item) => item.student1 === data.projectLabel || item.student2 === data.projectLabel)
+      .map((item) => ({
+        name: item.student1 === data.projectLabel ? item.student2 : item.student1,
+        score: item.avg_similarity,
+      }));
+  }, [data]);
 
-        // Simulating HTML URL (or raw string if backend sends `srcDoc={rawString}`)
-        // If backend sends a URL, leave as is. If it sends raw HTML string, use `srcDoc` in the iframe below instead of `src`
-        setLogHtmlUrl("/log.html");
+  const filteredPlagiarism = useMemo(() => {
+    return projectComparisons.filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [projectComparisons, searchQuery]);
 
-      } catch (error) {
-        console.error("Error fetching test results:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const averageSimilarity = useMemo(() => {
+    if (projectComparisons.length === 0) return 0;
+    return projectComparisons.reduce((acc, curr) => acc + curr.score, 0) / projectComparisons.length;
+  }, [projectComparisons]);
 
-    fetchResults();
-  }, []);
-
-  if (isLoading || !plagiarismData || !cyberScanData) {
+  if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '50vh', gap: 2 }}>
-        <CircularProgress sx={{ color: 'var(--color-primary03)' }} />
+      <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", height: "50vh", gap: 2 }}>
+        <CircularProgress sx={{ color: "var(--color-primary03)" }} />
         <Typography style={{ color: "var(--color-neutral05)" }}>Loading test results...</Typography>
       </Box>
     );
   }
 
-  const currentProjectFile = "G1.js";
-  const studentMap: Record<string, { id: string; name: string }> = {
-    "Group3.js": { id: "66090500402", name: "นายปุ๊ ระเบิดขวด" },
-    "test.js": { id: "66090500403", name: "นายแดง ใบเล่" },
-  };
+  if (error || !data) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
+        <Typography style={{ color: "var(--color-accent04)" }}>{error || "Test result data unavailable."}</Typography>
+      </Box>
+    );
+  }
 
-  const projectComparisons = Array.from(
-    new Map(
-      plagiarismData.data
-        .filter((item: any) => item.student1 === currentProjectFile || item.student2 === currentProjectFile)
-        .map((item: any) => {
-          const otherFile = item.student1 === currentProjectFile ? item.student2 : item.student1;
-          const studentInfo = studentMap[otherFile] || { id: "Unknown", name: otherFile };
-          return [
-            studentInfo.id,
-            {
-              id: studentInfo.id,
-              name: studentInfo.name,
-              score: item.avg_similarity,
-            }
-          ];
-        })
-    ).values()
-  ) as any[];
-
-  const filteredPlagiarism = projectComparisons.filter(
-    (item) =>
-      item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const uniqueComparisonsMap = new Map();
-  plagiarismData.data.forEach((item: any) => {
-    // Sort filenames alphabetically to create a unique key for any A<->B comparison pair
-    const key = [item.student1, item.student2].sort().join("-");
-    if (!uniqueComparisonsMap.has(key)) {
-      uniqueComparisonsMap.set(key, item);
-    }
-  });
-  
-  const uniqueComparisons = Array.from(uniqueComparisonsMap.values()) as any[];
-
-  const averageSimilarity = uniqueComparisons.length > 0
-    ? uniqueComparisons.reduce((acc: any, curr: any) => acc + curr.avg_similarity, 0) / uniqueComparisons.length
-    : 0;
-  
-  let avgColorClass = "bg-[var(--color-success01)]";
-  if (averageSimilarity >= 80) avgColorClass = "bg-[#da291c]"; // Red warning
-  else if (averageSimilarity >= 60) avgColorClass = "bg-[#ffb300]"; // Yellow/Orange warning
+  const testcaseStatus = String(data.testcaseResult?.status || "unknown");
+  const testcasePassed = getCount(data.testcaseResult?.passed);
+  const testcaseFailed = getCount(data.testcaseResult?.failed);
+  const testcaseTotal = getCount(data.testcaseResult?.total);
+  const testcaseRunId = typeof data.testcaseResult?.run_id === "string" ? data.testcaseResult.run_id : null;
+  const testcaseCases = data.testcaseCases;
+  const cyberLanguages = Array.isArray(data.cyberScanData?.languages)
+    ? data.cyberScanData.languages.filter((value): value is string => typeof value === "string")
+    : [];
+  const cyberIssuesFound = getCount(data.cyberScanData?.issues_found) ?? 0;
+  const isCyberSummaryFallback = data.cyberScanSource === "summary";
+  const totalTests = testcaseTotal ?? testcaseCases.length;
+  const passedTests = testcasePassed ?? testcaseCases.filter((item) => item.status === "pass" || item.status === "passed").length;
+  const failedTests = testcaseFailed ?? testcaseCases.filter((item) => item.status === "fail" || item.status === "failed").length;
+  const showNoPlagiarismData = projectComparisons.length === 0;
+  const showNoSearchMatches = searchQuery.trim().length > 0 && filteredPlagiarism.length === 0 && projectComparisons.length > 0;
+  const avgColorClass = getScoreColor(averageSimilarity);
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Breadcrumb */}
       <Breadcrumbs className="my-6 mb-6">
         <Link href="/classroom">Home</Link>
-        <span>mockup classroom</span>
-        <Link href="/assignment">Assignment</Link>
-        <span>mockup assignment</span>
-        <span>mockup_group_name</span>
+        <span>{data.classroomName || "Classroom"}</span>
+        <span>{data.assignmentTitle}</span>
+        <span>{data.projectLabel}</span>
         <span style={{ color: "var(--color-black)", fontWeight: 500 }}>Test Result</span>
       </Breadcrumbs>
 
-      {/* Result Test Case Card */}
-      <Accordion 
-        defaultExpanded 
-        disableGutters 
+      <Accordion
+        defaultExpanded
+        disableGutters
         elevation={0}
         sx={{
-          border: '1px solid var(--color-neutral03)',
-          borderRadius: '8px !important',
-          '&:before': { display: 'none' },
-          overflow: 'hidden',
-          boxShadow: '3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)'
+          border: "1px solid var(--color-neutral03)",
+          borderRadius: "8px !important",
+          "&:before": { display: "none" },
+          overflow: "hidden",
+          boxShadow: "3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)",
         }}
       >
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--color-black)' }} />}
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: "var(--color-black)" }} />}
           sx={{
-            borderBottom: '1px solid var(--color-neutral03)',
+            borderBottom: "1px solid var(--color-neutral03)",
             px: 3,
-            py: 1
+            py: 1,
+            ".MuiAccordionSummary-content": {
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
           }}
         >
           <div className="flex items-center gap-3">
             <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Test Case</h4>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(testcaseStatus)}`}>
+              {formatStatus(testcaseStatus)}
+            </span>
+          </div>
+          <div className="mr-4 flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+            {data.testcaseOutputUrl && (
+              <a
+                href={data.testcaseOutputUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
+                output.xml
+              </a>
+            )}
+            {data.testcaseLogUrl && (
+              <a
+                href={data.testcaseLogUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
+                Download log
+              </a>
+            )}
           </div>
         </AccordionSummary>
-        <AccordionDetails sx={{ p: 0}}>
-          <iframe 
-            src={logHtmlUrl} 
-            title="Robot Framework Log"
-            style={{ width: '100%', height: '500px', border: 'none', display: 'block' }} 
-          />
+        <AccordionDetails sx={{ p: 0 }}>
+          <div className="flex flex-wrap gap-3 border-b border-[var(--color-neutral03)] px-6 py-4 bg-[#fafafa]">
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Total</div>
+              <div className="text-lg font-semibold text-black">{totalTests}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Passed</div>
+              <div className="text-lg font-semibold text-[var(--color-success02)]">{passedTests}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Failed</div>
+              <div className="text-lg font-semibold text-[#da291c]">{failedTests}</div>
+            </div>
+            {testcaseRunId && (
+              <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2 min-w-[220px]">
+                <div className="text-xs uppercase tracking-wide text-neutral05">Run ID</div>
+                <div className="truncate text-sm font-medium text-black">{testcaseRunId}</div>
+              </div>
+            )}
+          </div>
+
+          {testcaseCases.length === 0 ? (
+            <div className="px-6 py-5 text-neutral05 space-y-2">
+              <div>{String(data.testcaseResult?.message || "No testcase details were generated for this submission.")}</div>
+            </div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#fafafa] border-b border-[var(--color-neutral03)]">
+                  <th className="py-3 px-6 font-bold text-[15px] w-[28%]" style={{ color: "var(--color-black)" }}>Test Case</th>
+                  <th className="py-3 px-6 font-bold text-[15px] w-[14%]" style={{ color: "var(--color-black)" }}>Status</th>
+                  <th className="py-3 px-6 font-bold text-[15px] w-[12%]" style={{ color: "var(--color-black)" }}>Duration</th>
+                  <th className="py-3 px-6 font-bold text-[15px]" style={{ color: "var(--color-black)" }}>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {testcaseCases.map((item, index) => {
+                  const isEven = index % 2 === 0;
+                  return (
+                    <tr key={item.id} className={`border-b border-[var(--color-neutral03)] ${isEven ? "bg-white" : "bg-[#eef6ff]"}`}>
+                      <td className="py-3 px-6 align-top">
+                        <div className="font-medium text-[15px] text-black">{item.name}</div>
+                        {(item.line || item.suiteName) && (
+                          <div className="mt-1 text-xs text-neutral05">
+                            {item.suiteName ? `${item.suiteName}` : ""}
+                            {item.line ? `${item.suiteName ? " - " : ""}line ${item.line}` : ""}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-6 align-top">
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(item.status)}`}>
+                          {formatStatus(item.status)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-6 align-top text-[15px] text-black">
+                        {item.durationSeconds !== null ? `${item.durationSeconds.toFixed(2)}s` : "-"}
+                      </td>
+                      <td className="py-3 px-6 align-top text-[14px] text-black whitespace-pre-wrap break-words">
+                        {item.message || "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </AccordionDetails>
       </Accordion>
 
-      {/* Cyber Security Test Result Card */}
-      <Accordion 
-        defaultExpanded 
-        disableGutters 
+      <Accordion
+        defaultExpanded
+        disableGutters
         elevation={0}
         sx={{
-          border: '1px solid var(--color-neutral03)',
-          borderRadius: '8px !important',
-          '&:before': { display: 'none' },
-          overflow: 'hidden',
-          boxShadow: '3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)'
+          border: "1px solid var(--color-neutral03)",
+          borderRadius: "8px !important",
+          "&:before": { display: "none" },
+          overflow: "hidden",
+          boxShadow: "3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)",
         }}
       >
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--color-black)' }} />}
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: "var(--color-black)" }} />}
           sx={{
-            borderBottom: '1px solid var(--color-neutral03)',
-            px: 3,
-            py: 1
-          }}
-        >
-          <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Cyber Security Test</h4>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 4, pt: 3, maxHeight: '500px', overflowY: 'auto' }}>
-          <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap" style={{ color: "var(--color-black)" }}>
-            {JSON.stringify(cyberScanData, null, 2)}
-          </pre>
-        </AccordionDetails>
-      </Accordion>
-
-      {/* Plagiarism Test Result Card */}
-      <Accordion 
-        defaultExpanded 
-        disableGutters 
-        elevation={0}
-        sx={{
-          border: '1px solid var(--color-neutral03)',
-          borderRadius: '8px !important',
-          '&:before': { display: 'none' },
-          overflow: 'hidden',
-          boxShadow: '3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)'
-        }}
-      >
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon sx={{ color: 'var(--color-black)' }} />}
-          sx={{
-            borderBottom: '1px solid var(--color-neutral03)',
+            borderBottom: "1px solid var(--color-neutral03)",
             px: 3,
             py: 1,
-            '.MuiAccordionSummary-content': {
-               justifyContent: 'space-between',
-               alignItems: 'center',
-            }
+            ".MuiAccordionSummary-content": {
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <h4 style={{ color: "var(--color-black)", margin: 0 }}>Result Cyber Security Test</h4>
+            <span className="rounded-full bg-[var(--color-neutral03)] px-3 py-1 text-xs font-semibold text-[var(--color-black)]">
+              Source: {data.cyberScanSource}
+            </span>
+          </div>
+          {data.cyberScanUrl && (
+            <div className="mr-4" onClick={(event) => event.stopPropagation()}>
+              <a
+                href={data.cyberScanUrl}
+                target="_blank"
+                rel="noreferrer"
+                download
+                className="inline-flex items-center gap-1 rounded-full border border-[var(--color-primary03)] bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary03)] no-underline transition-colors hover:bg-[var(--color-primary03)] hover:text-white"
+              >
+                <DownloadIcon sx={{ fontSize: 13 }} />
+                Download scan.json
+              </a>
+            </div>
+          )}
+        </AccordionSummary>
+        <AccordionDetails sx={{ p: 0 }}>
+          {isCyberSummaryFallback && (
+            <div className="border-b border-[var(--color-neutral03)] bg-[#fff8e1] px-6 py-3 text-sm text-black">
+              scan.json could not be loaded from the artifact endpoint, so this section is showing the saved database summary.
+            </div>
+          )}
+          <div className="flex flex-wrap gap-3 border-b border-[var(--color-neutral03)] px-6 py-4 bg-[#fafafa]">
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Type</div>
+              <div className="text-lg font-semibold text-black">{typeof data.cyberScanData?.type === "string" ? data.cyberScanData.type : "unknown"}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Issues Found</div>
+              <div className="text-lg font-semibold text-black">{cyberIssuesFound}</div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral03)] bg-white px-4 py-2 min-w-[220px]">
+              <div className="text-xs uppercase tracking-wide text-neutral05">Languages</div>
+              <div className="text-sm font-medium text-black">{cyberLanguages.length > 0 ? cyberLanguages.join(", ") : "None detected"}</div>
+            </div>
+          </div>
+          <div className="p-4 pt-3 max-h-[500px] overflow-y-auto">
+            <pre className="font-mono text-[14px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: "var(--color-black)" }}>
+              {JSON.stringify(data.cyberScanData ?? { status: "missing", message: "No scan.json artifact recorded yet." }, null, 2)}
+            </pre>
+          </div>
+        </AccordionDetails>
+      </Accordion>
+
+      <Accordion
+        defaultExpanded
+        disableGutters
+        elevation={0}
+        sx={{
+          border: "1px solid var(--color-neutral03)",
+          borderRadius: "8px !important",
+          "&:before": { display: "none" },
+          overflow: "hidden",
+          boxShadow: "3px 3px 5px 1px rgb(0 0 0 / 0.1), 0 5px 5px -1px rgb(0 0 0 / 0.1)",
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon sx={{ color: "var(--color-black)" }} />}
+          sx={{
+            borderBottom: "1px solid var(--color-neutral03)",
+            px: 3,
+            py: 1,
+            ".MuiAccordionSummary-content": {
+              justifyContent: "space-between",
+              alignItems: "center",
+            },
           }}
         >
           <div className="flex items-center gap-4">
@@ -231,59 +371,64 @@ export default function TestResult_fe_be() {
               <span className="font-bold text-[15px]">{averageSimilarity.toFixed(2)}%</span>
             </div>
           </div>
-          <div className="mx-8" onClick={(e) => e.stopPropagation()}>
+          <div className="mx-8" onClick={(event) => event.stopPropagation()}>
             <OutlinedInput
               size="small"
-              placeholder="Search Student"
+              placeholder="Search name"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               startAdornment={
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'var(--color-neutral04)' }} />
+                  <SearchIcon sx={{ color: "var(--color-neutral04)" }} />
                 </InputAdornment>
               }
-              sx={{ 
-                width: 200, 
-                backgroundColor: 'white',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'var(--color-neutral03)',
-                }
+              sx={{
+                width: 220,
+                backgroundColor: "white",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "var(--color-neutral03)",
+                },
               }}
             />
           </div>
         </AccordionSummary>
         <AccordionDetails sx={{ p: 0 }}>
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#fafafa] border-b border-[var(--color-neutral03)]">
-                <th className="py-3 px-6 font-bold text-[15px] w-1/3" style={{ color: "var(--color-black)" }}>Student ID</th>
-                <th className="py-3 px-6 font-bold text-[15px] w-1/3" style={{ color: "var(--color-black)" }}>Student name</th>
-                <th className="py-3 px-6 font-bold text-[15px] w-1/3 text-right" style={{ color: "var(--color-black)" }}>Similar Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPlagiarism.map((item, index) => {
-                const isEven = index % 2 === 0;
-                let colorClass = "bg-[var(--color-success01)]";
-                if (item.score >= 80) colorClass = "bg-[#da291c]"; // Red warning
-                else if (item.score >= 60) colorClass = "bg-[#ffb300]"; // Yellow/Orange warning
-                return (
-                  <tr key={index} className={`border-b border-[var(--color-neutral03)] ${isEven ? 'bg-white' : 'bg-[#eef6ff]'}`}>
-                    <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.id}</td>
-                    <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.name}</td>
-                    <td className="py-3 px-6 flex justify-end">
-                      <div className={`${colorClass} text-white font-bold px-3 py-1 rounded w-16 text-center text-[14px]`}>
-                        {Number(item.score).toFixed(2)}%
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          {showNoPlagiarismData ? (
+            <div className="px-6 py-5 text-neutral05">
+              No assignment-level plagiarism comparisons are available yet. This section is populated only after plagiarism processing completes successfully for at least two submissions.
+            </div>
+          ) : showNoSearchMatches ? (
+            <div className="px-6 py-5 text-neutral05">No compared student matches your search.</div>
+          ) : (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#fafafa] border-b border-[var(--color-neutral03)]">
+                  <th className="py-3 px-6 font-bold text-[15px] w-2/3" style={{ color: "var(--color-black)" }}>Compared With</th>
+                  <th className="py-3 px-6 font-bold text-[15px] w-1/3 text-right" style={{ color: "var(--color-black)" }}>Similar Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPlagiarism.map((item, index) => {
+                  const isEven = index % 2 === 0;
+                  const colorClass = getScoreColor(item.score);
+                  return (
+                    <tr key={`${item.name}-${index}`} className={`border-b border-[var(--color-neutral03)] ${isEven ? "bg-white" : "bg-[#eef6ff]"}`}>
+                      <td className="py-3 px-6 text-[15px]" style={{ color: "var(--color-black)" }}>{item.name}</td>
+                      <td className="py-3 px-6">
+                        <div className="flex justify-end">
+                          <div className={`${colorClass} text-white font-bold px-3 py-1 rounded w-16 text-center text-[14px]`}>
+                            {Number(item.score).toFixed(2)}%
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </AccordionDetails>
       </Accordion>
-
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default function GroupCard({ group, onEdit }: Props) {
           {group.members.map((m) => (
             <img
               key={m.id}
-              src={m.student.user.imageUrl || ANONYMOUS_AVATAR_URL}
+              src={m.student.user.image_url || ANONYMOUS_AVATAR_URL}
               className="w-10 h-10 rounded-full"
             />
           ))}

@@ -58,7 +58,7 @@ const StudentTable = ({ members, onDelete }: StudentTableComponentsProps) => {
                         >
                             <TableCell align="center">
                                 <Avatar
-                                    src={student.user?.imageUrl || ANONYMOUS_AVATAR_URL}
+                                    src={student.user?.image_url || ANONYMOUS_AVATAR_URL}
                                     alt={`${student.user.first_name} ${student.user.last_name}`}
                                     sx={{ width: 46, height: 46, mx: "auto" }}
                                 />

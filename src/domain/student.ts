@@ -5,4 +5,5 @@ export interface IStudent {
   studentId?: string;
   student_id: string;
   user: User;
+  discord_user_id?: string;
 }
