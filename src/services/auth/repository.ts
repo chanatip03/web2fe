@@ -4,6 +4,19 @@ import { AuthResponse, LoginRequest, MeResponse } from "@/domain/auth";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
+async function getErrorDetail(res: Response, fallback: string): Promise<string> {
+  try {
+    const payload = await res.json();
+    if (typeof payload?.detail === "string" && payload.detail.trim()) {
+      return payload.detail;
+    }
+  } catch {
+    // Ignore JSON parsing errors and use the fallback message instead.
+  }
+
+  return fallback;
+}
+
 export class AuthRepository implements IAuthRepository {
   async me(): Promise<MeResponse> {
     const res = await fetch(`${BASE_URL}/auth/me`, {
@@ -27,7 +40,7 @@ export class AuthRepository implements IAuthRepository {
     });
 
     if (!res.ok) {
-      throw new Error(`LoginAdmin failed: ${res.status}`);
+      throw new Error(await getErrorDetail(res, `LoginAdmin failed: ${res.status}`));
     }
 
     return res.json();
@@ -44,7 +57,7 @@ export class AuthRepository implements IAuthRepository {
     });
 
     if (!res.ok) {
-      throw new Error(`Login failed: ${res.status}`);
+      throw new Error(await getErrorDetail(res, `Login failed: ${res.status}`));
     }
 
     const response = await res.json();
