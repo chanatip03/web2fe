@@ -252,8 +252,19 @@ export default function SubmitPanel({
       const submissionId = data.submission_id;
 
       let currentStatus = "submitting";
+      const POLL_TIMEOUT_MS = 10 * 60 * 1000; // 10 min safety cap
+      const pollStarted = Date.now();
 
       const poll = setInterval(async () => {
+        // Safety timeout — stop polling even if backend never gives a terminal state
+        if (Date.now() - pollStarted > POLL_TIMEOUT_MS) {
+          clearInterval(poll);
+          setStatus("done");
+          if (onPipelineError)
+            onPipelineError({ message: "Polling timed out after 10 minutes." });
+          return;
+        }
+
         const sRes = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/submission/${submissionId}`,
           {
@@ -277,19 +288,22 @@ export default function SubmitPanel({
         }
 
         if (sData.pipeline_status === "running") {
-          // update visual states if deployment is running vs testcase
-          if (sData.steps?.deployment?.status === "running") {
-            if (currentStatus !== "deploying") {
-              currentStatus = "deploying";
-              setStatus("deploying");
-            }
+          // Show "deploying" once any main step has started or deployment is done
+          // (covers the r2_upload phase where deployment=success but pipeline still running)
+          const deploymentActive =
+            sData.steps?.deployment?.status === "running" ||
+            sData.steps?.deployment?.status === "success" ||
+            sData.steps?.deployment?.status === "error";
+
+          if (deploymentActive && currentStatus !== "deploying") {
+            currentStatus = "deploying";
+            setStatus("deploying");
           }
         } else if (
           sData.pipeline_status === "success" ||
           sData.pipeline_status === "partial_success"
         ) {
           clearInterval(poll);
-
           if (onPipelineSuccess) onPipelineSuccess(sData);
           setStatus("done");
         } else if (sData.pipeline_status === "error") {
@@ -298,6 +312,7 @@ export default function SubmitPanel({
           setStatus("done");
         }
       }, 3000);
+
     } catch (err) {
       console.error(err);
       setStatus("done");

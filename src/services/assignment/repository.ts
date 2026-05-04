@@ -34,7 +34,7 @@ export class AssignmentRepository implements IAssignmentRepository {
     }
 
     async getAssignmentById(assignmentId: number): Promise<Assignment> {
-        const res = await fetch(`${BASE_URL}/assignment/${assignmentId}`, {
+        const res = await fetch(`${BASE_URL}/assignment/detail/${assignmentId}`, {
             method: "GET",
             credentials: "include",
         });
