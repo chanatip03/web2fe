@@ -472,11 +472,10 @@ export default function ContainerPage() {
                   <Typography sx={{ color: "#212121" }}>
                     <strong style={{ color: "var(--color-primary03)" }}>Preview URL:</strong>{" "}
                     {(() => {
-                      // Prefer direct container URL built from extraPorts;
-                      // fall back to normalizing the stored previewUrl.
-                      const directUrl = getDirectUrl(details.extraPorts);
+                      // Prefer the backend's previewUrl since it now includes entry points (e.g. /landing.html)
                       const normalizedUrl = normalizePreviewUrl(details.previewUrl);
-                      const displayUrl = directUrl ?? normalizedUrl;
+                      const directUrl = getDirectUrl(details.extraPorts);
+                      const displayUrl = normalizedUrl || directUrl;
                       return displayUrl ? (
                         <MuiLink
                           href={displayUrl}
