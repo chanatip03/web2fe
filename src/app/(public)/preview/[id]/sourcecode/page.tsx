@@ -121,17 +121,26 @@ function FileExplorer({ rootNode }: { rootNode: FileNode }) {
 
 function PreviewCode() {
   return (
-    <section className="flex flex-1 w-screen min-h-0 overflow-hidden bg-white">
-      <SandpackLayout className="w-full h-full">
-        <div style={{ height: "100%", width: "100%" }}>
+    <section className="flex-1 w-full h-full min-w-0 overflow-hidden bg-white">
+      <div 
+        className="h-full w-full overflow-auto 
+        [&_.sp-layout]:!rounded-none 
+        [&_.sp-layout]:!border-none 
+        [&_.sp-layout]:!h-full
+        [&_.sp-wrapper]:!h-full 
+        [&_.sp-code-viewer]:!h-full 
+        [&_.sp-cm]:!h-full 
+        [&_.cm-scroller]:!p-0"
+      >
+        <SandpackLayout className="w-full h-full !rounded-none !border-none">
           <SandpackCodeViewer
             showTabs={false}
             showLineNumbers
-            wrapContent
+            wrapContent={false}
             initMode="immediate"
           />
-        </div>
-      </SandpackLayout>
+        </SandpackLayout>
+      </div>
     </section>
   );
 }
@@ -219,7 +228,7 @@ export default function SourceCodeViewer() {
   const activeFile = `/${firstFile.path}`;
 
   return (
-    <div className="flex w-full h-[100dvh] overflow-hidden bg-neutral01">
+    <div className="flex w-full h-[75vh] min-h-[600px] rounded-xl border border-neutral03 shadow-md overflow-hidden bg-neutral01">
       <SandpackProvider
         template="static"
         files={files as SandpackFiles}
