@@ -26,7 +26,7 @@ export class AssignmentRepository implements IAssignmentRepository {
     }
 
     async getAssignments(classroomId:number): Promise<Assignment[]> {
-        const res = await fetch(`${BASE_URL}/assignment/${classroomId}`, {
+        const res = await fetch(`${BASE_URL}/assignment/classroom/${classroomId}`, {
             method: "GET",
             credentials: "include",
         });

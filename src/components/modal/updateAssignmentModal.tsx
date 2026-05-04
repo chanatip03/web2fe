@@ -297,6 +297,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
                     setValue("attachment", [...currentFiles, ...newFiles], {
                       shouldValidate: true,
                     });
+                    e.target.value = "";
                   }}
                 />
               </Button>

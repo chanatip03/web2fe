@@ -45,7 +45,7 @@ export class AssignmentService {
         if (value === undefined || value === null) return;
 
         if (Array.isArray(value)) {
-            value.forEach((v) => formData.append(key, String(v)));
+            formData.append(key, value.join(","));
         } else {
             formData.append(key, String(value));
         }

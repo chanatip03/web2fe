@@ -286,7 +286,10 @@ const CreateAssignmentModal = ({
                 <input
                   type="file"
                   hidden
-                  onChange={(e) => setValue("testCase", e.target.files?.[0])}
+                  onChange={(e) => {
+                    setValue("testCase", e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
                 />
               </Button>
             </div>
@@ -328,6 +331,7 @@ const CreateAssignmentModal = ({
                     setValue("attachment", [...currentFiles, ...newFiles], {
                       shouldValidate: true,
                     });
+                    e.target.value = "";
                   }}
                 />
               </Button>
