@@ -36,7 +36,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AdminLayout from "@/components/AdminLayout";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import PageHeader from "@/components/PageHeader";
-import type { Container, ContainerDetails } from "@/domain/admin";
+import type { Container, ContainerDetails, ContainerPort } from "@/domain/admin";
 import { userService } from "@/services/controller";
 
 const ROWS_PER_PAGE = 5;
@@ -70,6 +70,58 @@ function getErrorMessage(error: unknown, fallback: string): string {
     return error.message;
   }
   return fallback;
+}
+
+/**
+ * Replace `localhost` in a URL with the actual server hostname.
+ * Also resolves relative `/preview/...` paths to absolute URLs.
+ */
+function normalizePreviewUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+
+  // Relative path → prepend current origin (points to the backend server)
+  if (url.startsWith("/")) {
+    // Use NEXT_PUBLIC_API_URL origin if available, otherwise window origin
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+    try {
+      const apiOrigin = apiBase ? new URL(apiBase).origin : window.location.origin;
+      return `${apiOrigin}${url}`;
+    } catch {
+      return `${window.location.origin}${url}`;
+    }
+  }
+
+  // Replace localhost / 127.0.0.1 with the real server hostname
+  if (/localhost|127\.0\.0\.1/.test(url)) {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+    let serverHost = window.location.hostname;
+    try {
+      if (apiBase) serverHost = new URL(apiBase).hostname;
+    } catch { /* keep window.location.hostname */ }
+    return url.replace(/localhost|127\.0\.0\.1/g, serverHost);
+  }
+
+  return url;
+}
+
+/**
+ * Build a direct `http://host:port` URL from extraPorts.
+ * Prefers the port whose serviceName matches "frontend" / "app" / "web".
+ */
+function getDirectUrl(extraPorts: ContainerPort[]): string | null {
+  if (!extraPorts || extraPorts.length === 0) return null;
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+  let serverHost = window.location.hostname;
+  try {
+    if (apiBase) serverHost = new URL(apiBase).hostname;
+  } catch { /* keep window.location.hostname */ }
+
+  const preferred = extraPorts.find((p) =>
+    ["frontend", "app", "web"].includes((p.serviceName ?? "").toLowerCase()),
+  ) ?? extraPorts[0];
+
+  return preferred?.hostPort ? `http://${serverHost}:${preferred.hostPort}` : null;
 }
 
 function getStatusChipColor(status: string): "success" | "default" | "error" | "warning" {
@@ -220,8 +272,9 @@ export default function ContainerPage() {
   };
 
   const handleOpenPreview = () => {
-    if (!details?.previewUrl) return;
-    window.open(details.previewUrl, "_blank", "noopener,noreferrer");
+    const url = getDirectUrl(details?.extraPorts ?? []) ?? normalizePreviewUrl(details?.previewUrl);
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const totalPages = Math.ceil(containers.length / ROWS_PER_PAGE);
@@ -286,67 +339,67 @@ export default function ContainerPage() {
                   : canStartContainer(normalizedStatus);
 
                 return (
-                <TableRow
-                  key={container.id}
-                  hover
-                  sx={{
-                    backgroundColor: index % 2 === 1 ? "#f5f8fc" : "#ffffff",
-                    transition: "background-color 0.15s",
-                  }}
-                >
-                  <TableCell sx={{ fontWeight: 600 }}>{container.assignmentName}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
-                      <Typography sx={{ fontWeight: 600, color: "#212121" }}>{formatStudentId(container.studentId)}</Typography>
-                      <Typography variant="caption" color="var(--color-neutral04)">
-                        Deployment ID: {container.id}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">{formatMemory(container.memoryUsageMB)}</TableCell>
-                  <TableCell align="center">{container.teacherName}</TableCell>
-                  <TableCell align="center">
-                    <Chip
-                      label={container.status}
-                      size="small"
-                      color={getStatusChipColor(container.status)}
-                      variant={container.status === "running" ? "filled" : "outlined"}
-                      sx={{ textTransform: "capitalize", fontWeight: 600 }}
-                    />
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="View details">
-                      <IconButton
+                  <TableRow
+                    key={container.id}
+                    hover
+                    sx={{
+                      backgroundColor: index % 2 === 1 ? "#f5f8fc" : "#ffffff",
+                      transition: "background-color 0.15s",
+                    }}
+                  >
+                    <TableCell sx={{ fontWeight: 600 }}>{container.assignmentName}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+                        <Typography sx={{ fontWeight: 600, color: "#212121" }}>{formatStudentId(container.studentId)}</Typography>
+                        <Typography variant="caption" color="var(--color-neutral04)">
+                          Deployment ID: {container.id}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell align="center">{formatMemory(container.memoryUsageMB)}</TableCell>
+                    <TableCell align="center">{container.teacherName}</TableCell>
+                    <TableCell align="center">
+                      <Chip
+                        label={container.status}
                         size="small"
-                        onClick={() => void fetchContainerDetails(container)}
-                        sx={{ color: "var(--color-primary03)" }}
-                      >
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={isRunning ? "Stop container" : "Start container"}>
-                      <span>
+                        color={getStatusChipColor(container.status)}
+                        variant={container.status === "running" ? "filled" : "outlined"}
+                        sx={{ textTransform: "capitalize", fontWeight: 600 }}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="View details">
                         <IconButton
                           size="small"
-                          onClick={() => void handleToggleContainer(container)}
-                          disabled={!canToggle || actionTargetId === container.id}
-                          sx={{
-                            color: isRunning ? "var(--color-accent03)" : "var(--color-success01)",
-                            "&:hover": {
-                              backgroundColor: isRunning ? "var(--color-accent01)" : "#d7f0cc",
-                            },
-                          }}
+                          onClick={() => void fetchContainerDetails(container)}
+                          sx={{ color: "var(--color-primary03)" }}
                         >
-                          {actionTargetId === container.id
-                            ? <CircularProgress size={16} sx={{ color: "inherit" }} />
-                            : isRunning
-                              ? <StopCircleOutlinedIcon fontSize="small" />
-                              : <PlayCircleOutlineIcon fontSize="small" />}
+                          <VisibilityOutlinedIcon fontSize="small" />
                         </IconButton>
-                      </span>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
+                      </Tooltip>
+                      <Tooltip title={isRunning ? "Stop container" : "Start container"}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={() => void handleToggleContainer(container)}
+                            disabled={!canToggle || actionTargetId === container.id}
+                            sx={{
+                              color: isRunning ? "var(--color-accent03)" : "var(--color-success01)",
+                              "&:hover": {
+                                backgroundColor: isRunning ? "var(--color-accent01)" : "#d7f0cc",
+                              },
+                            }}
+                          >
+                            {actionTargetId === container.id
+                              ? <CircularProgress size={16} sx={{ color: "inherit" }} />
+                              : isRunning
+                                ? <StopCircleOutlinedIcon fontSize="small" />
+                                : <PlayCircleOutlineIcon fontSize="small" />}
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
@@ -416,21 +469,31 @@ export default function ContainerPage() {
                   <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Image Tag:</strong> {details.imageTag || "—"}</Typography>
                   <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Updated:</strong> {formatDateTime(details.updatedAt)}</Typography>
                   <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Memory:</strong> {formatMemory(detailsTarget?.memoryUsageMB)} MB</Typography>
-                  <Typography sx={{ color: "#212121" }}><strong style={{ color: "var(--color-primary03)" }}>Preview URL:</strong> {details.previewUrl ? (
-                    <MuiLink
-                      href={details.previewUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      underline="hover"
-                      sx={{
-                        color: "var(--color-secondary04)",
-                        fontWeight: 600,
-                        wordBreak: "break-all",
-                      }}
-                    >
-                      {details.previewUrl}
-                    </MuiLink>
-                  ) : " —"}</Typography>
+                  <Typography sx={{ color: "#212121" }}>
+                    <strong style={{ color: "var(--color-primary03)" }}>Preview URL:</strong>{" "}
+                    {(() => {
+                      // Prefer direct container URL built from extraPorts;
+                      // fall back to normalizing the stored previewUrl.
+                      const directUrl = getDirectUrl(details.extraPorts);
+                      const normalizedUrl = normalizePreviewUrl(details.previewUrl);
+                      const displayUrl = directUrl ?? normalizedUrl;
+                      return displayUrl ? (
+                        <MuiLink
+                          href={displayUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          underline="hover"
+                          sx={{
+                            color: "var(--color-secondary04)",
+                            fontWeight: 600,
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          {displayUrl}
+                        </MuiLink>
+                      ) : " —";
+                    })()}
+                  </Typography>
                 </Stack>
 
                 {details.extraPorts.length > 0 && (
@@ -519,7 +582,10 @@ export default function ContainerPage() {
           <Button
             startIcon={<OpenInNewOutlinedIcon />}
             onClick={handleOpenPreview}
-            disabled={!details?.previewUrl || detailStatus !== "running"}
+            disabled={
+              (!details?.previewUrl && (details?.extraPorts ?? []).length === 0) ||
+              detailStatus !== "running"
+            }
           >
             Open Preview
           </Button>
