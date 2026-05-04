@@ -14,17 +14,7 @@ import { IUserRepository } from "./interface";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
-function getPreviewProxyUrl(projectId?: string | null): string | null {
-  if (!projectId || !BASE_URL) return null;
 
-  try {
-    const apiUrl = new URL(BASE_URL);
-    return `${apiUrl.origin}/preview/${projectId}/`;
-  } catch {
-    const baseWithoutApi = BASE_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
-    return baseWithoutApi ? `${baseWithoutApi}/preview/${projectId}/` : null;
-  }
-}
 
 type DeploymentStatusResponse = {
   deploymentId: string;
@@ -169,12 +159,11 @@ export class UserRepository implements IUserRepository {
     const runtimeLogs = await logsResponse.json() as ContainerLogEntry[];
     const buildLogsData = await buildLogsResponse.json() as BuildLogsResponse;
     const runtimeState = (statusData.containerState || statusData.status || "").toLowerCase();
-    const proxyPreviewUrl = getPreviewProxyUrl(statusData.projectId);
 
     return {
       status: statusData.status,
       currentStep: statusData.currentStep ?? null,
-      previewUrl: proxyPreviewUrl ?? statusData.previewUrl ?? null,
+      previewUrl: statusData.previewUrl ?? null,
       errorMessage: statusData.errorMessage ?? null,
       updatedAt: statusData.updatedAt ?? null,
       containerId: statusData.containerId ?? null,
