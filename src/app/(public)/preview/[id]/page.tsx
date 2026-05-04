@@ -259,43 +259,50 @@ export default function ProjectPreviewPage() {
     const isWarning = secondsLeft < 10 * 60; // < 10 min → red
 
     return (
-      <div className="w-full h-screen flex flex-col overflow-hidden bg-gray-950">
-        <div className="h-11 bg-gray-900 border-b border-white/10 flex items-center px-4 gap-3 shrink-0">
-          <div className="flex gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span className="w-3 h-3 rounded-full bg-yellow-500" />
-            <span className="w-3 h-3 rounded-full bg-green-500" />
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-950 text-white p-6">
+        <div className="max-w-md w-full bg-gray-900 border border-white/10 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+          <div className="relative w-20 h-20 mx-auto">
+            <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+            <div className="relative flex items-center justify-center w-full h-full bg-green-500/10 border border-green-500/30 rounded-full text-4xl">
+              🚀
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-white">Container Ready</h1>
+            <p className="text-sm text-gray-400">
+              Your preview container is running. Click the button below to open your web application in a new tab.
+            </p>
           </div>
 
-          <div className="flex-1 rounded-md bg-gray-800 px-3 py-1 text-xs text-gray-300 font-mono truncate select-all">
-            {fullUrl}
-          </div>
-
-          <div
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-mono font-semibold ${
-              isWarning ? "bg-red-900/60 text-red-300" : "bg-gray-800 text-gray-300"
-            }`}
-            title="Container auto-removes when the preview TTL expires"
-          >
-            <span>⏱</span>
-            <span>{formatCountdown(secondsLeft)}</span>
+          <div className="bg-black/50 rounded-xl p-4 border border-white/5 text-left space-y-3">
+            <div className="flex items-center justify-between text-xs font-mono text-gray-400">
+              <span>Preview URL</span>
+              <div
+                className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold tracking-wider uppercase ${
+                  isWarning ? "bg-red-500/20 text-red-400" : "bg-indigo-500/20 text-indigo-400"
+                }`}
+                title="Container auto-removes when the preview TTL expires"
+              >
+                <span>⏱</span>
+                <span>{formatCountdown(secondsLeft)}</span>
+              </div>
+            </div>
+            <div className="text-sm font-mono text-indigo-300 break-all select-all bg-white/5 p-3 rounded-lg border border-white/5">
+              {fullUrl}
+            </div>
           </div>
 
           <a
             href={fullUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-indigo-300 hover:text-indigo-200 hover:underline font-medium transition whitespace-nowrap"
+            className="flex w-full items-center justify-center gap-2 px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition shadow-lg shadow-indigo-900/20"
           >
-            Open ↗
+            <span>Open Preview in New Tab</span>
+            <span className="text-xl leading-none">↗</span>
           </a>
         </div>
-
-        <iframe
-          src={fullUrl}
-          className={`flex-1 border-0 w-full ${isBackend ? 'bg-white' : ''}`}
-          allow="clipboard-read; clipboard-write; microphone; camera"
-        />
       </div>
     );
   }

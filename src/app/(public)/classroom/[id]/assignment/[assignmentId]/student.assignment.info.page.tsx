@@ -41,6 +41,9 @@ export default function StudentAssignmentInfoPage() {
   }>({ open: false, message: "", severity: "success" });
   const [frontendUrl, setFrontendUrl] = useState("");
 
+  const [previewState, setPreviewState] = useState<"idle" | "starting" | "deploying" | "error">("idle");
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
   const params = useParams();
   const id = params.id;
   const assignMentId = params.assignmentId;
@@ -119,17 +122,89 @@ export default function StudentAssignmentInfoPage() {
   const displayId =
     deployResult?.project_db_id?.toString() || deployResult?.submission_id;
 
-  // Use the backend redirect API so we don't have to rebuild, but without hardcoding proxy logic in frontend
-  const fallbackUrl =
-    displayId && frontendUrl
-      ? encodeURIComponent(`${frontendUrl}/preview/${displayId}?role=student`)
-      : "";
-  const previewUrl = displayId
-    ? `${process.env.NEXT_PUBLIC_API_URL}/project/${displayId}/preview/redirect?role=student${fallbackUrl ? `&fallback=${fallbackUrl}` : ""}`
-    : null;
-  const swaggerUrl = displayId
-    ? `/preview/${displayId}?type=backend&role=student`
-    : null;
+  const handlePreviewClick = async (isBackendMode: boolean) => {
+    if (!displayId) return;
+
+    // Open a new tab immediately to avoid popup blocker
+    const newWindow = window.open("", "_blank");
+    if (newWindow) {
+      newWindow.document.write(`
+        <html>
+          <body style='background:#030712;color:white;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;margin:0;'>
+            <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.1);border-top-color:#818cf8;border-radius:50%;animation:spin 1s linear infinite;"></div>
+            <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+            <h2>Starting Container Environment...</h2>
+            <p style="color:#9ca3af;">Please wait while your project is being deployed.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    setPreviewState("starting");
+    setPreviewError(null);
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const baseUrl = apiUrl.replace("/api", "");
+
+      const res = await fetch(
+        `${apiUrl}/project/${displayId}/preview/start`,
+        { method: "POST", credentials: "include" }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to start container");
+      }
+
+      const data = await res.json();
+
+      if (data.status === "running") {
+        setPreviewState("idle");
+        if (newWindow) {
+          let targetUrl = data.preview_url.startsWith("http") ? data.preview_url : `${baseUrl}${data.preview_url}`;
+          if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
+          newWindow.location.href = targetUrl;
+        }
+        return;
+      }
+
+      setPreviewState("deploying");
+      const poll = setInterval(async () => {
+        try {
+          const sRes = await fetch(
+            `${apiUrl}/project/${displayId}/preview/status`,
+            { credentials: "include" }
+          );
+          if (!sRes.ok) return;
+          const sData = await sRes.json();
+          if (sData.status === "running") {
+            clearInterval(poll);
+            setPreviewState("idle");
+            if (newWindow) {
+              let targetUrl = sData.preview_url.startsWith("http") ? sData.preview_url : `${baseUrl}${sData.preview_url}`;
+              if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
+              newWindow.location.href = targetUrl;
+            }
+          } else if (sData.status === "error") {
+            clearInterval(poll);
+            setPreviewState("error");
+            setPreviewError(sData.error);
+            if (newWindow) {
+              newWindow.document.write(`<html><body style='background:#030712;color:#ef4444;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>Failed to start container</h2><pre style="background:#450a0a;padding:16px;border-radius:8px;">${sData.error}</pre></body></html>`);
+            }
+          }
+        } catch {
+          // Ignore network hiccups
+        }
+      }, 3000);
+    } catch (err: any) {
+      setPreviewState("error");
+      setPreviewError(err.message);
+      if (newWindow) {
+        newWindow.document.write(`<html><body style='background:#030712;color:#ef4444;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>Error</h2><p>${err.message}</p></body></html>`);
+      }
+    }
+  };
 
   const testcase = {
     pass: deployResult?.testcase?.passed ?? 0,
@@ -262,21 +337,19 @@ export default function StudentAssignmentInfoPage() {
         {/* Submit file */}
         <div
           className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
-            ${
-              !assignment.is_group || hasGroup
-                ? "border-primary03 bg-white"
-                : "border-neutral03 bg-white"
+            ${!assignment.is_group || hasGroup
+              ? "border-primary03 bg-white"
+              : "border-neutral03 bg-white"
             }
         `}
         >
           {/* HEADER */}
           <div
             className={`px-6 py-3 font-semibold flex items-center justify-between
-                ${
-                  !assignment.is_group || hasGroup
-                    ? "bg-primary03 text-white"
-                    : "bg-neutral02 text-neutral06"
-                }
+                ${!assignment.is_group || hasGroup
+                ? "bg-primary03 text-white"
+                : "bg-neutral02 text-neutral06"
+              }
                 `}
           >
             <span className="font-semibold flex items-center gap-2">
@@ -305,13 +378,12 @@ export default function StudentAssignmentInfoPage() {
         <div className="col-span-12 bg-white rounded-xl shadow-xl border border-neutral03">
           <div
             className={`px-6 py-3 font-semibold rounded-t-xl
-                ${
-                  status === "editing"
-                    ? "bg-neutral02 text-neutral06"
-                    : hasFail
-                      ? "bg-red-600 text-white"
-                      : "bg-green-600 text-white"
-                }
+                ${status === "editing"
+                ? "bg-neutral02 text-neutral06"
+                : hasFail
+                  ? "bg-red-600 text-white"
+                  : "bg-green-600 text-white"
+              }
               `}
           >
             Deployment Results
@@ -339,20 +411,19 @@ export default function StudentAssignmentInfoPage() {
                   data={
                     deployResult?.cyber
                       ? {
-                          ...deployResult.cyber,
-                          download_url:
-                            deployResult.cyber.download_url?.startsWith("http")
-                              ? deployResult.cyber.download_url
-                              : `${process.env.NEXT_PUBLIC_API_URL}${
-                                  deployResult.cyber.download_url?.startsWith(
-                                    "/api",
-                                  )
-                                    ? deployResult.cyber.download_url.substring(
-                                        4,
-                                      )
-                                    : deployResult.cyber.download_url
-                                }`,
-                        }
+                        ...deployResult.cyber,
+                        download_url:
+                          deployResult.cyber.download_url?.startsWith("http")
+                            ? deployResult.cyber.download_url
+                            : `${process.env.NEXT_PUBLIC_API_URL}${deployResult.cyber.download_url?.startsWith(
+                              "/api",
+                            )
+                              ? deployResult.cyber.download_url.substring(
+                                4,
+                              )
+                              : deployResult.cyber.download_url
+                            }`,
+                      }
                       : null
                   }
                 />
@@ -367,49 +438,44 @@ export default function StudentAssignmentInfoPage() {
                       <p className="text-xs text-neutral05 mt-0.5">
                         Container runs for 2 hours then auto-removes.
                       </p>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      {/* Detection logic for backend-only projects */}
-                      {deployResult.deployment?.deploy_mode ===
-                        "backend-only" ||
-                      deployResult.execution_mode === "backend-only" ||
-                      assignment.project_type?.id === 2 ? (
-                        <>
-                          <a
-                            href={
-                              swaggerUrl ||
-                              `/preview/${deployResult.submission_id}`
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={() =>
-                              Cookies.set("classroomId", String(id), {
-                                expires: 1,
-                              })
-                            }
-                            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
+                    </div>                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-wrap gap-3">
+                        {/* Detection logic for backend-only projects */}
+                        {deployResult.deployment?.deploy_mode ===
+                          "backend-only" ||
+                          deployResult.execution_mode === "backend-only" ||
+                          assignment.project_type?.id === 2 ? (
+                          <>
+                            <button
+                              onClick={() => {
+                                Cookies.set("classroomId", String(id), { expires: 1 });
+                                handlePreviewClick(true);
+                              }}
+                              disabled={previewState !== "idle" && previewState !== "error"}
+                              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
+                            >
+                              {previewState === "starting" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
+                              {previewState === "deploying" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
+                              {previewState === "idle" || previewState === "error" ? "View API Docs (Swagger) ↗" : previewState === "starting" ? "Starting..." : "Deploying..."}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              Cookies.set("classroomId", String(id), { expires: 1 });
+                              handlePreviewClick(false);
+                            }}
+                            disabled={previewState !== "idle" && previewState !== "error"}
+                            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                           >
-                            <span className="text-lg"></span> View API Docs
-                            (Swagger) ↗
-                          </a>
-                        </>
-                      ) : (
-                        <a
-                          href={
-                            previewUrl ||
-                            `${process.env.NEXT_PUBLIC_API_URL}/project/${deployResult.submission_id}/preview/redirect`
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={() =>
-                            Cookies.set("classroomId", String(id), {
-                              expires: 1,
-                            })
-                          }
-                          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
-                        >
-                          <span className="text-lg"></span> Open Live Preview ↗
-                        </a>
+                            {previewState === "starting" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
+                            {previewState === "deploying" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
+                            {previewState === "idle" || previewState === "error" ? "Open Live Preview ↗" : previewState === "starting" ? "Starting..." : "Deploying..."}
+                          </button>
+                        )}
+                      </div>
+                      {previewState === "error" && (
+                        <p className="text-xs text-red-500 font-medium">Failed: {previewError}</p>
                       )}
                     </div>
                   </div>
@@ -434,6 +500,6 @@ export default function StudentAssignmentInfoPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </div>
+    </div >
   );
 }
