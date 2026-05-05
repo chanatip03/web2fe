@@ -125,21 +125,6 @@ export default function StudentAssignmentInfoPage() {
   const handlePreviewClick = async (isBackendMode: boolean) => {
     if (!displayId) return;
 
-    // Open a new tab immediately to avoid popup blocker
-    const newWindow = window.open("", "_blank");
-    if (newWindow) {
-      newWindow.document.write(`
-        <html>
-          <body style='background:#030712;color:white;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;margin:0;'>
-            <div style="width:48px;height:48px;border:4px solid rgba(255,255,255,0.1);border-top-color:#818cf8;border-radius:50%;animation:spin 1s linear infinite;"></div>
-            <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-            <h2>Starting Container Environment...</h2>
-            <p style="color:#9ca3af;">Please wait while your project is being deployed.</p>
-          </body>
-        </html>
-      `);
-    }
-
     setPreviewState("starting");
     setPreviewError(null);
 
@@ -160,11 +145,9 @@ export default function StudentAssignmentInfoPage() {
 
       if (data.status === "running") {
         setPreviewState("idle");
-        if (newWindow) {
-          let targetUrl = data.preview_url.startsWith("http") ? data.preview_url : `${baseUrl}${data.preview_url}`;
-          if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
-          newWindow.location.href = targetUrl;
-        }
+        let targetUrl = data.preview_url.startsWith("http") ? data.preview_url : `${baseUrl}${data.preview_url}`;
+        if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
+        window.open(targetUrl, "_blank");
         return;
       }
 
@@ -180,18 +163,13 @@ export default function StudentAssignmentInfoPage() {
           if (sData.status === "running") {
             clearInterval(poll);
             setPreviewState("idle");
-            if (newWindow) {
-              let targetUrl = sData.preview_url.startsWith("http") ? sData.preview_url : `${baseUrl}${sData.preview_url}`;
-              if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
-              newWindow.location.href = targetUrl;
-            }
+            let targetUrl = sData.preview_url.startsWith("http") ? sData.preview_url : `${baseUrl}${sData.preview_url}`;
+            if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
+            window.open(targetUrl, "_blank");
           } else if (sData.status === "error") {
             clearInterval(poll);
             setPreviewState("error");
             setPreviewError(sData.error);
-            if (newWindow) {
-              newWindow.document.write(`<html><body style='background:#030712;color:#ef4444;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>Failed to start container</h2><pre style="background:#450a0a;padding:16px;border-radius:8px;">${sData.error}</pre></body></html>`);
-            }
           }
         } catch {
           // Ignore network hiccups
@@ -200,9 +178,6 @@ export default function StudentAssignmentInfoPage() {
     } catch (err: any) {
       setPreviewState("error");
       setPreviewError(err.message);
-      if (newWindow) {
-        newWindow.document.write(`<html><body style='background:#030712;color:#ef4444;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>Error</h2><p>${err.message}</p></body></html>`);
-      }
     }
   };
 
