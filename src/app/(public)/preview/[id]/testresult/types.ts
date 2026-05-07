@@ -8,6 +8,12 @@ export type TestcaseCaseResult = {
   suiteName: string | null;
 };
 
+export type PlagiarismRow = {
+  student1: string;
+  student2: string;
+  avg_similarity: number;
+};
+
 export type TestResultPageData = {
   projectId: number;
   classroomName?: string;
@@ -22,5 +28,5 @@ export type TestResultPageData = {
   cyberScanData: Record<string, unknown> | null;
   cyberScanUrl: string | null;
   cyberScanSource: "scan.json" | "summary" | "missing";
-  plagiarismData: string[] | null;
+  plagiarismData: PlagiarismRow[];
 };

@@ -16,7 +16,7 @@ import Link from "next/link";
 import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SearchIcon from "@mui/icons-material/Search";
-import type { TestResultPageData } from "./types";
+import type { TestResultPageData, PlagiarismRow } from "./types";
 
 interface Props {
   data: TestResultPageData | null;
@@ -24,21 +24,18 @@ interface Props {
   error: string | null;
 }
 
-function getUniqueComparisons(rows: TestResultPageData["plagiarismData"]) {
-  const byPair = new Map<
-    string,
-    TestResultPageData["plagiarismData"][number]
-  >();
+function getUniqueComparisons(rows: PlagiarismRow[] | null) {
+  const byPair = new Map<string, PlagiarismRow>();
 
-  for (const row of rows) {
+  for (const row of rows ?? []) {
     const s1 = (row.student1 || "").trim().toLowerCase();
+
     const s2 = (row.student2 || "").trim().toLowerCase();
 
-    // normalize key กันสลับตำแหน่ง + กัน case/space
     const key = [s1, s2].sort().join("::");
 
-    // ถ้ามีแล้วให้เลือกค่าที่ score สูงสุด (กัน overwrite แบบมั่ว)
     const existing = byPair.get(key);
+
     if (!existing || row.avg_similarity > existing.avg_similarity) {
       byPair.set(key, row);
     }
@@ -87,7 +84,9 @@ export default function TestResultFeBe({ data, isLoading, error }: Props) {
 
   const allPairs = useMemo(() => {
     if (!data) return [];
-    return getUniqueComparisons(data.plagiarismData);
+    return getUniqueComparisons(data.plagiarismData).sort(
+      (a, b) => b.avg_similarity - a.avg_similarity,
+    );
   }, [data]);
 
   const filteredPlagiarism = useMemo(() => {

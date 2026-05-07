@@ -4,24 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { assignmentService, projectService } from "@/services/controller";
-import type { Assignment, PlagiarismComparison } from "@/domain/assignment";
+import type { Assignment } from "@/domain/assignment";
 import type { Project } from "@/domain/project";
 import TestResultFull from "./result_full";
 import TestResultFeBe from "./result_fe_be";
-import type { TestResultPageData, TestcaseCaseResult } from "./types";
+import type { TestResultPageData, TestcaseCaseResult, PlagiarismRow } from "./types";
 
-function parseJsonArray(value?: unknown): Record<string, unknown>[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
+
 
 function parseJsonObject(
   value?: string | null,
@@ -291,7 +280,12 @@ export default function Page() {
           projectId,
           classroomName: Cookies.get("classroomName") || undefined,
           assignmentTitle: assignment.title,
-          projectLabel: Cookies.get("projectName") || getProjectLabel(project),
+          projectLabel: (() => {
+            const cookieName = Cookies.get("projectName");
+            return cookieName && cookieName !== "null" && cookieName !== "undefined"
+              ? cookieName
+              : getProjectLabel(project);
+          })(),
           executionMode: project.env,
           isFullstack: isFullstackAssignment(assignment),
           testcaseResult,
@@ -301,7 +295,9 @@ export default function Page() {
           cyberScanData: cybersecurityResult,
           cyberScanUrl,
           cyberScanSource,
-          plagiarismData: assignment.plagiarism_result ?? [],
+          plagiarismData: (Array.isArray(assignment.plagiarism_result)
+            ? (assignment.plagiarism_result as unknown as PlagiarismRow[])
+            : []),
         });
       } catch (loadError) {
         const message =
