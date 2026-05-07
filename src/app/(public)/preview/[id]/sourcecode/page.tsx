@@ -124,15 +124,14 @@ function PreviewCode() {
     <section className="flex-1 h-full overflow-hidden bg-white flex flex-col">
       <div className="flex-1 overflow-auto">
         <SandpackLayout className="h-full w-screen rounded-none border-none">
-          <SandpackCodeViewer
-            showTabs={false}
-            showLineNumbers
-            wrapContent={false}
-            initMode="immediate"
-            style={{
-              height: "100%",
-            }}
-          />
+          <div className="h-full">
+            <SandpackCodeViewer
+              showTabs={false}
+              showLineNumbers
+              wrapContent={false}
+              initMode="immediate"
+            />
+          </div>
         </SandpackLayout>
       </div>
     </section>
