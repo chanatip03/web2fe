@@ -1,5 +1,3 @@
-import type { PlagiarismComparison } from "@/domain/assignment";
-
 export type TestcaseCaseResult = {
   id: string;
   name: string;
@@ -24,5 +22,5 @@ export type TestResultPageData = {
   cyberScanData: Record<string, unknown> | null;
   cyberScanUrl: string | null;
   cyberScanSource: "scan.json" | "summary" | "missing";
-  plagiarismData: PlagiarismComparison[];
+  plagiarismData: string[] | null;
 };

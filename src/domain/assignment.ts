@@ -20,12 +20,6 @@ export interface Submission {
   is_late?: boolean;
 }
 
-export interface PlagiarismComparison {
-  student1: string;
-  student2: string;
-  avg_similarity: number;
-}
-
 export interface Assignment {
   id: number,
   title: string,
@@ -36,9 +30,9 @@ export interface Assignment {
   is_public: boolean,
   testcase_url: string,
   project_type: ProjectType,
-  language: Language ,
+  language: Language,
   attachments: Attachments[],
-  plagiarism_result?: PlagiarismComparison[] | null,
+  plagiarism_result?: string[] | null,
   submission?: Submission | null,
 }
 

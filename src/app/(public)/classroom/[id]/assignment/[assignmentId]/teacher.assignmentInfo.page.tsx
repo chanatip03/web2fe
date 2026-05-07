@@ -289,13 +289,13 @@ export default function TeacherAssignmentInfoPage() {
                     <TableCell align="center">
                       {project.created_date
                         ? new Date(project.created_date).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            },
-                          )
+                          "en-GB",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )
                         : "-"}
                     </TableCell>
 

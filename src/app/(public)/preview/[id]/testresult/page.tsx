@@ -10,6 +10,19 @@ import TestResultFull from "./result_full";
 import TestResultFeBe from "./result_fe_be";
 import type { TestResultPageData, TestcaseCaseResult } from "./types";
 
+function parseJsonArray(value?: unknown): Record<string, unknown>[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function parseJsonObject(
   value?: string | null,
 ): Record<string, unknown> | null {
@@ -253,6 +266,8 @@ export default function Page() {
           project.assignment_id,
         );
 
+        console.log(assignment);
+
         const testcaseResult = parseJsonObject(project.testcase_result);
         const cybersecurityResult = parseJsonObject(
           project.cybersecurity_result,
@@ -286,9 +301,7 @@ export default function Page() {
           cyberScanData: cybersecurityResult,
           cyberScanUrl,
           cyberScanSource,
-          plagiarismData: Array.isArray(assignment.plagiarism_result)
-            ? (assignment.plagiarism_result as PlagiarismComparison[])
-            : [],
+          plagiarismData: assignment.plagiarism_result ?? [],
         });
       } catch (loadError) {
         const message =
