@@ -28,7 +28,7 @@ function getAllFiles(node: FileNode): FileNode[] {
 }
 
 function getIndentStyle(level: number): React.CSSProperties {
-  return { paddingLeft: `${level * 16 + 12}px` };
+  return { paddingLeft: `${level * 12 + 12}px` };
 }
 
 // ─── tree node ──────────────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
         onClick={() => sandpack.setActiveFile(fullPath)}
         style={getIndentStyle(level)}
         className={[
-          "flex w-full items-center gap-2 rounded-lg py-[5px] pr-3 text-sm transition-colors",
+          "flex w-full items-center gap-2 rounded-lg py-[5px] pr-3 text-sm transition-colors text-left",
           isActive
             ? "bg-primary01 text-primary03 font-semibold"
             : "text-black hover:bg-neutral02",
@@ -54,7 +54,7 @@ function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
       >
         <InsertDriveFileIcon
           fontSize="small"
-          className="text-gray-400 shrink-0"
+          className="text-gray-400 shrink-0 scale-90"
         />
         <span className="truncate">{node.name}</span>
       </button>
@@ -68,7 +68,7 @@ function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
       <button
         onClick={() => setOpen((v) => !v)}
         style={getIndentStyle(level)}
-        className="flex w-full items-center gap-1 rounded-lg py-[5px] pr-3 text-sm font-semibold transition-colors hover:bg-neutral02"
+        className="flex w-full items-center gap-1 rounded-lg py-[5px] pr-3 text-sm font-semibold transition-colors hover:bg-neutral02 text-left"
       >
         {open ? (
           <KeyboardArrowDownIcon
@@ -84,16 +84,19 @@ function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
         {open ? (
           <FolderOpenIcon
             fontSize="small"
-            className="text-warning01 shrink-0"
+            className="text-warning01 shrink-0 scale-90"
           />
         ) : (
-          <FolderIcon fontSize="small" className="text-warning01 shrink-0" />
+          <FolderIcon
+            fontSize="small"
+            className="text-warning01 shrink-0 scale-90"
+          />
         )}
         <span className="truncate">{node.name}</span>
       </button>
 
       {open && children.length > 0 && (
-        <div>
+        <div className="flex flex-col">
           {children.map((child) => (
             <TreeNode key={child.path} node={child} level={level + 1} />
           ))}
@@ -107,7 +110,7 @@ function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
 
 function FileExplorer({ rootNode }: { rootNode: FileNode }) {
   return (
-    <aside className="w-[260px] h-full shrink-0 overflow-y-auto bg-neutral01">
+    <aside className="w-[260px] h-full shrink-0 overflow-y-auto border-r border-neutral02 bg-neutral01">
       <div className="p-2 space-y-0.5">
         {(rootNode.children ?? []).map((child) => (
           <TreeNode key={child.path} node={child} level={0} />
@@ -121,17 +124,32 @@ function FileExplorer({ rootNode }: { rootNode: FileNode }) {
 
 function PreviewCode() {
   return (
-    <section className="flex-1 h-full overflow-hidden bg-white flex flex-col">
-      <div className="flex-1 overflow-auto">
-        <SandpackLayout className="h-full w-screen rounded-none border-none">
-          <div className="h-full">
-            <SandpackCodeViewer
-              showTabs={false}
-              showLineNumbers
-              wrapContent={false}
-              initMode="immediate"
-            />
-          </div>
+    <section className="flex-1 h-screen w-screen bg-white overflow-hidden">
+      <div
+        className="
+          h-full w-full
+          [&_.sp-layout]:!h-full
+          [&_.sp-layout]:!overflow-hidden
+          [&_.sp-wrapper]:!h-full
+          [&_.sp-wrapper]:!overflow-hidden
+          [&_.sp-stack]:!h-full
+          [&_.sp-code-viewer]:!h-full
+          [&_.sp-code-viewer]:!overflow-auto
+          [&_.sp-cm]:!h-full
+          [&_.cm-editor]:!h-full
+          [&_.cm-editor]:!overflow-auto
+          [&_.cm-scroller]:!overflow-auto
+          [&_.cm-scroller]:!whitespace-pre
+          [&_.cm-content]:!min-w-max
+        "
+      >
+        <SandpackLayout>
+          <SandpackCodeViewer
+            showTabs={false}
+            showLineNumbers
+            wrapContent={false}
+            initMode="immediate"
+          />
         </SandpackLayout>
       </div>
     </section>
@@ -157,19 +175,17 @@ export default function SourceCodeViewer() {
       return;
     }
 
-    // ── Check sessionStorage cache first ──────────────────────────────────
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         setData(JSON.parse(cached) as ProjectSourceCode);
         setLoading(false);
-        return; // ← skip API call
+        return;
       }
     } catch {
-      /* sessionStorage unavailable */
+      /* ignore */
     }
 
-    // ── Fetch from API ────────────────────────────────────────────────────
     const repo = new ProjectRepository();
     repo
       .getProjectSourceCode(projectId)
@@ -178,18 +194,18 @@ export default function SourceCodeViewer() {
         try {
           sessionStorage.setItem(CACHE_KEY, JSON.stringify(result));
         } catch {
-          /* storage quota exceeded — ignore */
+          /* ignore */
         }
       })
       .catch((err: Error) => {
         setError(err.message ?? "Failed to load source code");
       })
       .finally(() => setLoading(false));
-  }, [projectId]);
+  }, [projectId, CACHE_KEY]);
 
   if (loading) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-md text-neutral05 bg-white">
+      <div className="flex h-screen w-full items-center justify-center text-neutral05 bg-white">
         Loading source code…
       </div>
     );
@@ -197,22 +213,19 @@ export default function SourceCodeViewer() {
 
   if (error || !data) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-white">
-        <p className="text-sm text-red-500 font-medium">
-          {error ?? "Source code unavailable"}
-        </p>
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-2 bg-white text-red-500">
+        {error ?? "Source code unavailable"}
       </div>
     );
   }
 
   const { projectTree, files } = data;
-
   const allFiles = getAllFiles(projectTree);
   const firstFile = allFiles[0];
 
   if (!firstFile || Object.keys(files).length === 0) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-neutral05 bg-white">
+      <div className="flex h-screen w-full items-center justify-center text-neutral05 bg-white">
         No source files found.
       </div>
     );
@@ -221,10 +234,7 @@ export default function SourceCodeViewer() {
   const activeFile = `/${firstFile.path}`;
 
   return (
-    <div
-      className="flex w-full overflow-hidden bg-white"
-      style={{ height: "100dvh" }}
-    >
+    <div className="flex w-full h-screen overflow-hidden bg-white">
       <SandpackProvider
         template="static"
         files={files as SandpackFiles}
@@ -233,10 +243,7 @@ export default function SourceCodeViewer() {
           visibleFiles: [activeFile],
         }}
       >
-        <div
-          className="flex w-full overflow-hidden"
-          style={{ height: "100dvh" }}
-        >
+        <div className="flex w-full h-full overflow-hidden">
           <FileExplorer rootNode={projectTree} />
           <PreviewCode />
         </div>
