@@ -16,6 +16,7 @@ interface Props {
   setStatus: (s: Props["status"]) => void;
   onPipelineSuccess?: (data: any) => void;
   onPipelineError?: (data: any) => void;
+  onSubmitStart: () => void;
 }
 
 export default function SubmitPanel({
@@ -28,6 +29,7 @@ export default function SubmitPanel({
   setStatus,
   onPipelineSuccess,
   onPipelineError,
+  onSubmitStart,
 }: Readonly<Props>) {
   const [type, setType] = useState<"file" | "github">("github");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -180,9 +182,9 @@ export default function SubmitPanel({
   // Strip all whitespace / newlines the user may have copy-pasted with the URL
   const sanitizeUrl = (raw: string) =>
     raw
-      .split(/\s+/)           // split on any whitespace (spaces, \n, \r, tabs)
-      .filter(Boolean)        // drop empty parts
-      .join("")               // rejoin (URL should not have internal spaces)
+      .split(/\s+/) // split on any whitespace (spaces, \n, \r, tabs)
+      .filter(Boolean) // drop empty parts
+      .join("") // rejoin (URL should not have internal spaces)
       .trim();
 
   const toDeployMode = (typeId?: number) => {
@@ -216,7 +218,9 @@ export default function SubmitPanel({
 
       // Basic GitHub URL validation before hitting the server
       if (!cleanUrl.startsWith("https://") && !cleanUrl.startsWith("http://")) {
-        alert(`❌ Invalid repository URL.\nPlease paste a valid GitHub URL (e.g. https://github.com/user/repo.git)`);
+        alert(
+          `❌ Invalid repository URL.\nPlease paste a valid GitHub URL (e.g. https://github.com/user/repo.git)`,
+        );
         setStatus("editing");
         return;
       }
@@ -252,6 +256,7 @@ export default function SubmitPanel({
       const submissionId = data.submission_id;
 
       let currentStatus = "submitting";
+      onSubmitStart();
       const POLL_TIMEOUT_MS = 10 * 60 * 1000; // 10 min safety cap
       const pollStarted = Date.now();
 
@@ -274,7 +279,8 @@ export default function SubmitPanel({
         if (!sRes.ok) {
           clearInterval(poll);
           setStatus("done");
-          if (onPipelineError) onPipelineError({ message: "Server error during polling." });
+          if (onPipelineError)
+            onPipelineError({ message: "Server error during polling." });
           return;
         }
         const sData = await sRes.json();
@@ -312,7 +318,6 @@ export default function SubmitPanel({
           setStatus("done");
         }
       }, 3000);
-
     } catch (err) {
       console.error(err);
       setStatus("done");

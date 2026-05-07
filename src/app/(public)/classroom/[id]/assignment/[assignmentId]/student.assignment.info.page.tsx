@@ -13,7 +13,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import CreateGroupModal from "../../../../../../components/modal/CreateGroupModal";
 import GroupCard from "../../../../../../components/GroupCard";
-import { Breadcrumbs, Snackbar, Alert } from "@mui/material";
+import { Breadcrumbs, Snackbar, Alert, Modal } from "@mui/material";
 import { Group } from "@/domain/group";
 import { Assignment } from "@/domain/assignment";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/services/controller";
 import { useParams } from "next/navigation";
 import Cookies from "js-cookie";
+import ErrorOutlinedIcon from "@mui/icons-material/ErrorOutlined";
 
 export default function StudentAssignmentInfoPage() {
   const [assignment, setAssignments] = useState<Assignment>();
@@ -41,8 +42,12 @@ export default function StudentAssignmentInfoPage() {
   }>({ open: false, message: "", severity: "success" });
   const [frontendUrl, setFrontendUrl] = useState("");
 
-  const [previewState, setPreviewState] = useState<"idle" | "starting" | "deploying" | "error">("idle");
+  const [previewState, setPreviewState] = useState<
+    "idle" | "starting" | "deploying" | "error"
+  >("idle");
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [cautionModalOpen, setCautionModalOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   const params = useParams();
   const id = params.id;
@@ -132,10 +137,10 @@ export default function StudentAssignmentInfoPage() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
       const baseUrl = apiUrl.replace("/api", "");
 
-      const res = await fetch(
-        `${apiUrl}/project/${displayId}/preview/start`,
-        { method: "POST", credentials: "include" }
-      );
+      const res = await fetch(`${apiUrl}/project/${displayId}/preview/start`, {
+        method: "POST",
+        credentials: "include",
+      });
 
       if (!res.ok) {
         throw new Error("Failed to start container");
@@ -145,8 +150,11 @@ export default function StudentAssignmentInfoPage() {
 
       if (data.status === "running") {
         setPreviewState("idle");
-        let targetUrl = data.preview_url.startsWith("http") ? data.preview_url : `${baseUrl}${data.preview_url}`;
-        if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
+        let targetUrl = data.preview_url.startsWith("http")
+          ? data.preview_url
+          : `${baseUrl}${data.preview_url}`;
+        if (isBackendMode)
+          targetUrl = `/preview/${displayId}?type=backend&role=student`;
         window.open(targetUrl, "_blank");
         return;
       }
@@ -156,15 +164,18 @@ export default function StudentAssignmentInfoPage() {
         try {
           const sRes = await fetch(
             `${apiUrl}/project/${displayId}/preview/status`,
-            { credentials: "include" }
+            { credentials: "include" },
           );
           if (!sRes.ok) return;
           const sData = await sRes.json();
           if (sData.status === "running") {
             clearInterval(poll);
             setPreviewState("idle");
-            let targetUrl = sData.preview_url.startsWith("http") ? sData.preview_url : `${baseUrl}${sData.preview_url}`;
-            if (isBackendMode) targetUrl = `/preview/${displayId}?type=backend&role=student`;
+            let targetUrl = sData.preview_url.startsWith("http")
+              ? sData.preview_url
+              : `${baseUrl}${sData.preview_url}`;
+            if (isBackendMode)
+              targetUrl = `/preview/${displayId}?type=backend&role=student`;
             window.open(targetUrl, "_blank");
           } else if (sData.status === "error") {
             clearInterval(poll);
@@ -180,6 +191,25 @@ export default function StudentAssignmentInfoPage() {
       setPreviewError(err.message);
     }
   };
+
+  useEffect(() => {
+    if (!cautionModalOpen) return;
+
+    setCountdown(10);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCautionModalOpen(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer); // 👈 สำคัญมาก
+  }, [cautionModalOpen]);
 
   const testcase = {
     pass: deployResult?.testcase?.passed ?? 0,
@@ -312,19 +342,21 @@ export default function StudentAssignmentInfoPage() {
         {/* Submit file */}
         <div
           className={`col-span-12 rounded-xl shadow-xl border mb-3 overflow-hidden
-            ${!assignment.is_group || hasGroup
-              ? "border-primary03 bg-white"
-              : "border-neutral03 bg-white"
+            ${
+              !assignment.is_group || hasGroup
+                ? "border-primary03 bg-white"
+                : "border-neutral03 bg-white"
             }
         `}
         >
           {/* HEADER */}
           <div
             className={`px-6 py-3 font-semibold flex items-center justify-between
-                ${!assignment.is_group || hasGroup
-                ? "bg-primary03 text-white"
-                : "bg-neutral02 text-neutral06"
-              }
+                ${
+                  !assignment.is_group || hasGroup
+                    ? "bg-primary03 text-white"
+                    : "bg-neutral02 text-neutral06"
+                }
                 `}
           >
             <span className="font-semibold flex items-center gap-2">
@@ -345,6 +377,7 @@ export default function StudentAssignmentInfoPage() {
               setStatus={setStatus}
               onPipelineSuccess={setDeployResult}
               onPipelineError={setDeployResult}
+              onSubmitStart={() => setCautionModalOpen(true)}
             />
           </div>
         </div>
@@ -353,12 +386,13 @@ export default function StudentAssignmentInfoPage() {
         <div className="col-span-12 bg-white rounded-xl shadow-xl border border-neutral03">
           <div
             className={`px-6 py-3 font-semibold rounded-t-xl
-                ${status === "editing"
-                ? "bg-neutral02 text-neutral06"
-                : hasFail
-                  ? "bg-red-600 text-white"
-                  : "bg-green-600 text-white"
-              }
+                ${
+                  status === "editing"
+                    ? "bg-neutral02 text-neutral06"
+                    : hasFail
+                      ? "bg-red-600 text-white"
+                      : "bg-green-600 text-white"
+                }
               `}
           >
             Deployment Results
@@ -386,19 +420,20 @@ export default function StudentAssignmentInfoPage() {
                   data={
                     deployResult?.cyber
                       ? {
-                        ...deployResult.cyber,
-                        download_url:
-                          deployResult.cyber.download_url?.startsWith("http")
-                            ? deployResult.cyber.download_url
-                            : `${process.env.NEXT_PUBLIC_API_URL}${deployResult.cyber.download_url?.startsWith(
-                              "/api",
-                            )
-                              ? deployResult.cyber.download_url.substring(
-                                4,
-                              )
-                              : deployResult.cyber.download_url
-                            }`,
-                      }
+                          ...deployResult.cyber,
+                          download_url:
+                            deployResult.cyber.download_url?.startsWith("http")
+                              ? deployResult.cyber.download_url
+                              : `${process.env.NEXT_PUBLIC_API_URL}${
+                                  deployResult.cyber.download_url?.startsWith(
+                                    "/api",
+                                  )
+                                    ? deployResult.cyber.download_url.substring(
+                                        4,
+                                      )
+                                    : deployResult.cyber.download_url
+                                }`,
+                        }
                       : null
                   }
                 />
@@ -413,44 +448,74 @@ export default function StudentAssignmentInfoPage() {
                       <p className="text-xs text-neutral05 mt-0.5">
                         Container runs for 2 hours then auto-removes.
                       </p>
-                    </div>                    <div className="flex flex-col items-end gap-2">
+                    </div>{" "}
+                    <div className="flex flex-col items-end gap-2">
                       <div className="flex flex-wrap gap-3">
                         {/* Detection logic for backend-only projects */}
                         {deployResult.deployment?.deploy_mode ===
                           "backend-only" ||
-                          deployResult.execution_mode === "backend-only" ||
-                          assignment.project_type?.id === 2 ? (
+                        deployResult.execution_mode === "backend-only" ||
+                        assignment.project_type?.id === 2 ? (
                           <>
                             <button
                               onClick={() => {
-                                Cookies.set("classroomId", String(id), { expires: 1 });
+                                Cookies.set("classroomId", String(id), {
+                                  expires: 1,
+                                });
                                 handlePreviewClick(true);
                               }}
-                              disabled={previewState !== "idle" && previewState !== "error"}
+                              disabled={
+                                previewState !== "idle" &&
+                                previewState !== "error"
+                              }
                               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                             >
-                              {previewState === "starting" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
-                              {previewState === "deploying" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
-                              {previewState === "idle" || previewState === "error" ? "View API Docs (Swagger) ↗" : previewState === "starting" ? "Starting..." : "Deploying..."}
+                              {previewState === "starting" && (
+                                <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />
+                              )}
+                              {previewState === "deploying" && (
+                                <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />
+                              )}
+                              {previewState === "idle" ||
+                              previewState === "error"
+                                ? "View API Docs (Swagger) ↗"
+                                : previewState === "starting"
+                                  ? "Starting..."
+                                  : "Deploying..."}
                             </button>
                           </>
                         ) : (
                           <button
                             onClick={() => {
-                              Cookies.set("classroomId", String(id), { expires: 1 });
+                              Cookies.set("classroomId", String(id), {
+                                expires: 1,
+                              });
                               handlePreviewClick(false);
                             }}
-                            disabled={previewState !== "idle" && previewState !== "error"}
+                            disabled={
+                              previewState !== "idle" &&
+                              previewState !== "error"
+                            }
                             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-lg hover:shadow-emerald-200/50 active:scale-95"
                           >
-                            {previewState === "starting" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
-                            {previewState === "deploying" && <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />}
-                            {previewState === "idle" || previewState === "error" ? "Open Live Preview ↗" : previewState === "starting" ? "Starting..." : "Deploying..."}
+                            {previewState === "starting" && (
+                              <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />
+                            )}
+                            {previewState === "deploying" && (
+                              <span className="animate-spin inline-block w-4 h-4 border-2 border-white/20 border-t-white rounded-full" />
+                            )}
+                            {previewState === "idle" || previewState === "error"
+                              ? "Open Live Preview ↗"
+                              : previewState === "starting"
+                                ? "Starting..."
+                                : "Deploying..."}
                           </button>
                         )}
                       </div>
                       {previewState === "error" && (
-                        <p className="text-xs text-red-500 font-medium">Failed: {previewError}</p>
+                        <p className="text-xs text-red-500 font-medium">
+                          Failed: {previewError}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -460,6 +525,33 @@ export default function StudentAssignmentInfoPage() {
           </div>
         </div>
       </div>
+
+      <Modal
+        open={cautionModalOpen}
+        aria-labelledby="submission-modal"
+        className="flex items-center justify-center"
+      >
+        <div className="bg-black/50 w-full h-full flex items-center justify-center">
+          {/* CARD */}
+          <div className="w-[420px] bg-white rounded-2xl shadow-2xl p-6 text-center transform transition-all duration-300 scale-100">
+            <div className="flex justify-center mb-4">
+              <ErrorOutlinedIcon sx={{ fontSize: 60, color: "#f59e0b" }} />
+            </div>
+
+            <h3 className="text-lg font-bold mb-2">Submission in Progress</h3>
+
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Your submission is being processed. Please do not close or refresh
+              this page. The process may take approximately <b>2–15 minutes</b>{" "}
+              depending on project size.
+            </p>
+
+            <div className="mt-5 text-sm font-semibold text-gray-800">
+              Closing in {countdown} seconds...
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <Snackbar
         open={snackbar.open}
@@ -475,6 +567,6 @@ export default function StudentAssignmentInfoPage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </div >
+    </div>
   );
 }

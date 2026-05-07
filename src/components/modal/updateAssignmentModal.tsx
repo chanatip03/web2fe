@@ -35,13 +35,13 @@ interface Props {
   onError?: (message: string) => void;
 }
 
-const mockProjectTypes: ProjectType[] = [
+const ProjectTypes: ProjectType[] = [
   { id: 1, name: "Frontend" },
   { id: 2, name: "Backend" },
-  { id: 3, name: "Fullstack" },
+  { id: 3, name: "Projects" },
 ];
 
-const mockLanguages: Language[] = [
+const Languages: Language[] = [
   { id: 1, name: "Java" },
   { id: 2, name: "Python" },
   { id: 3, name: "C" },
@@ -73,7 +73,13 @@ const Schema = z.object({
 
 type FormData = z.infer<typeof Schema>;
 
-const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }: Props) => {
+const UpdateAssignmentModal = ({
+  open,
+  onClose,
+  assignment,
+  onSuccess,
+  onError,
+}: Props) => {
   const [existingAttachments, setExistingAttachments] = useState<Attachments[]>(
     [],
   );
@@ -210,6 +216,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
             control={control}
             label="Assignment name"
             fullWidth
+            placeholder="Enter assignment name"
           />
 
           <RHFTextField
@@ -219,6 +226,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
             multiline
             rows={4}
             fullWidth
+            placeholder="Enter assignment detail (will be used to generate test cases)"
           />
 
           <div className="grid grid-cols-3 gap-4">
@@ -228,7 +236,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
             </RHFSelect>
 
             <RHFSelect name="projectTypeId" control={control} label="Project">
-              {mockProjectTypes.map((item) => (
+              {ProjectTypes.map((item) => (
                 <MenuItem key={item.id} value={item.id}>
                   {item.name}
                 </MenuItem>
@@ -241,7 +249,7 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
               label="Language"
               disabled={!enableLanguage}
             >
-              {mockLanguages.map((item) => (
+              {Languages.map((item) => (
                 <MenuItem key={item.id} value={item.id}>
                   {item.name}
                 </MenuItem>
@@ -264,7 +272,9 @@ const UpdateAssignmentModal = ({ open, onClose, assignment, onSuccess, onError }
 
           <Box>
             <h4>Existing Attachments</h4>
-            {existingAttachments.length === 0 && <p className="py-2 text-neutral05">No attachments</p>}
+            {existingAttachments.length === 0 && (
+              <p className="py-2 text-neutral05">No attachments</p>
+            )}
             {existingAttachments.map((file) => (
               <div key={file.id} className="flex justify-between items-center">
                 <span>{file.file_url.split("/").pop()}</span>

@@ -46,9 +46,11 @@ export const SidebarAssignment = ({
 
   // "Back to assignment" — classroom ID isn't in the URL here, use cookie fallback
   const classroomId = Cookies.get("classroomId");
-  const backHref = classroomId
-    ? `/classroom/${classroomId}/assignment`
-    : "/classroom";
+  const assignmentId = Cookies.get("assignmentId");
+  const backHref =
+    classroomId && assignmentId
+      ? `/classroom/${classroomId}/assignment/${assignmentId}`
+      : "/classroom";
 
   return (
     <aside className="w-[260px] bg-[#ffffff] border-r border-neutral02 flex flex-col justify-between">

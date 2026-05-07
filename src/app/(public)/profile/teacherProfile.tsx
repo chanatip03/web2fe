@@ -13,7 +13,7 @@ import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
 import ChangePasswordModal from "@/components/modal/changePasswordModal";
 import { ANONYMOUS_AVATAR_URL } from "@/constants";
-import CheckIcon from '@mui/icons-material/Check';
+import CheckIcon from "@mui/icons-material/Check";
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -25,8 +25,9 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-import { userService } from "@/services/controller";
+import { authService, userService } from "@/services/controller";
 import { Teacher } from "@/domain/teacher";
+import { useAuth } from "@/app/authcontext";
 
 export default function TeacherProfile() {
   const router = useRouter();
@@ -43,6 +44,7 @@ export default function TeacherProfile() {
     message: "",
     severity: "success" as "success" | "error",
   });
+  const { setUser } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -112,6 +114,7 @@ export default function TeacherProfile() {
         message: "Profile updated successfully.",
         severity: "success",
       });
+      setUser(await authService.me());
       router.refresh();
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -165,139 +168,139 @@ export default function TeacherProfile() {
 
   return (
     <>
-    <div className="min-h-screen px-6 py-5">
-      <div className="mx-auto max-w-[850px]">
-        <Breadcrumbs>
-          <Link href="/classroom">Home</Link>
-          <span className="font-medium text-black">Profile</span>
-        </Breadcrumbs>
+      <div className="min-h-screen px-6 py-5">
+        <div className="mx-auto max-w-[850px]">
+          <Breadcrumbs>
+            <Link href="/classroom">Home</Link>
+            <span className="font-medium text-black">Profile</span>
+          </Breadcrumbs>
 
-        <form className="pt-4" onSubmit={(e) => e.preventDefault()}>
-          <div className="relative mb-8 h-[180px]">
-            <div className="flex h-full items-center justify-center">
-              <div className="relative">
-                {previewImage ? (
-                  <div className="h-[148px] w-[148px] overflow-hidden rounded-full bg-neutral-400">
-                    <Image
-                      src={previewImage}
-                      alt="Profile"
-                      width={140}
-                      height={140}
-                      className="h-full w-full object-cover"
-                      unoptimized
-                    />
-                  </div>
-                ) : (
-                  <Avatar
-                    sx={{
-                      width: 148,
-                      height: 148,
-                      bgcolor: "#b3b3b3",
+          <form className="pt-4" onSubmit={(e) => e.preventDefault()}>
+            <div className="relative mb-8 h-[180px]">
+              <div className="flex h-full items-center justify-center">
+                <div className="relative">
+                  {previewImage ? (
+                    <div className="h-[148px] w-[148px] overflow-hidden rounded-full bg-neutral-400">
+                      <Image
+                        src={previewImage}
+                        alt="Profile"
+                        width={140}
+                        height={140}
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <Avatar
+                      sx={{
+                        width: 148,
+                        height: 148,
+                        bgcolor: "#b3b3b3",
+                      }}
+                    >
+                      <PersonIcon sx={{ fontSize: 80, color: "#fff" }} />
+                    </Avatar>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isEditing) {
+                        fileInputRef.current?.click();
+                      }
                     }}
+                    className="absolute bottom-1 right-1 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#1f78d1] text-white shadow"
                   >
-                    <PersonIcon sx={{ fontSize: 80, color: "#fff" }} />
-                  </Avatar>
-                )}
+                    <PhotoCameraIcon style={{ fontSize: 18 }} />
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isEditing) {
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  className="absolute bottom-1 right-1 flex h-[38px] w-[38px] items-center justify-center rounded-full bg-[#1f78d1] text-white shadow"
-                >
-                  <PhotoCameraIcon style={{ fontSize: 18 }} />
-                </button>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleChooseImage}
-                />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleChooseImage}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-4">
-            <RHFTextField
-              control={control}
-              name="first_name"
-              label="First Name"
-              disabled={!isEditing}
-            />
-            <RHFTextField
-              control={control}
-              name="last_name"
-              label="Last Name"
-              disabled={!isEditing}
-            />
-            <RHFTextField
-              control={control}
-              name="email"
-              label="Email"
-              disabled
-            />
-            <RHFTextField
-              control={control}
-              name="academy"
-              label="Academy"
-              disabled={!isEditing}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4">
+              <RHFTextField
+                control={control}
+                name="first_name"
+                label="First Name"
+                disabled={!isEditing}
+              />
+              <RHFTextField
+                control={control}
+                name="last_name"
+                label="Last Name"
+                disabled={!isEditing}
+              />
+              <RHFTextField
+                control={control}
+                name="email"
+                label="Email"
+                disabled
+              />
+              <RHFTextField
+                control={control}
+                name="academy"
+                label="Academy"
+                disabled={!isEditing}
+              />
+            </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            {!isEditing ? (
-              <>
-                <Button
-                  type="button"
-                  variant="contained"
-                  onClick={() => setOpenChangePassword(true)}
-                >
-                  Change Password
-                </Button>
+            <div className="mt-6 flex justify-end gap-2">
+              {!isEditing ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    onClick={() => setOpenChangePassword(true)}
+                  >
+                    Change Password
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="outlined"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Profile
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outlined"
-                  color="error"
-                  onClick={handleResetEdit}
-                >
-                  Reset
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Profile
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    color="error"
+                    onClick={handleResetEdit}
+                  >
+                    Reset
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="contained"
-                  disabled={!isValid || saving}
-                  onClick={handleSubmit(onSubmit)}
-                >
-                  Save
-                </Button>
-              </>
-            )}
-          </div>
-        </form>
-        <ChangePasswordModal
-          open={openChangePassword}
-          onClose={() => setOpenChangePassword(false)}
-        />
+                  <Button
+                    type="button"
+                    variant="contained"
+                    disabled={!isValid || saving}
+                    onClick={handleSubmit(onSubmit)}
+                  >
+                    Save
+                  </Button>
+                </>
+              )}
+            </div>
+          </form>
+          <ChangePasswordModal
+            open={openChangePassword}
+            onClose={() => setOpenChangePassword(false)}
+          />
+        </div>
       </div>
-    </div>
-     <Snackbar
+      <Snackbar
         open={snackbar.open}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >

@@ -1,22 +1,38 @@
-import { ReactNode } from "react";
-import { Controller, FieldValues, Path, Control, RegisterOptions } from "react-hook-form";
+"use client";
+
+import { ReactNode, useState } from "react";
+import {
+  Controller,
+  FieldValues,
+  Path,
+  Control,
+  RegisterOptions,
+} from "react-hook-form";
+
 import {
   TextField,
   InputAdornment,
   TextFieldProps,
+  IconButton,
 } from "@mui/material";
 
-interface RHFInputProps<T extends FieldValues>
-  extends Omit<TextFieldProps, "name" | "slotProps"> {
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+
+interface RHFInputProps<T extends FieldValues> extends Omit<
+  TextFieldProps,
+  "name" | "slotProps"
+> {
   name: Path<T>;
   control: Control<T>;
   label?: string;
   required?: boolean;
-  startIcon?: ReactNode; 
+  startIcon?: ReactNode;
   endIcon?: ReactNode;
   slotProps?: TextFieldProps["slotProps"];
   rules?: RegisterOptions<T>;
 }
+
 export function RHFTextField<T extends FieldValues>({
   name,
   control,
@@ -28,41 +44,57 @@ export function RHFTextField<T extends FieldValues>({
   rules,
   ...props
 }: Readonly<RHFInputProps<T>>) {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isPasswordField = String(name).toLowerCase().includes("password");
+
   return (
     <Controller
       name={name}
       control={control}
       rules={rules}
       render={({ field, fieldState }) => (
-          <TextField
-            {...props}
-            {...field}
-            label={label}
-            value={field.value ?? ""}
-            size="small"
-            required={required}
-            error={!!fieldState.error}
-            helperText={fieldState.error?.message}
-            fullWidth
-            slotProps={{
-              ...slotProps,
-              input: {
-                ...slotProps?.input,
-                ...(startIcon && {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      {startIcon}
-                    </InputAdornment>
-                  ),
-                }),
-                ...(endIcon && {
-                  endAdornment: (
-                    <InputAdornment position="end">{endIcon}</InputAdornment>
-                  ),
-                }),
-              },
-            }}
-          />
+        <TextField
+          {...props}
+          {...field}
+          type={
+            isPasswordField ? (showPassword ? "text" : "password") : props.type
+          }
+          label={label}
+          value={field.value ?? ""}
+          size="small"
+          required={required}
+          error={!!fieldState.error}
+          helperText={fieldState.error?.message}
+          fullWidth
+          slotProps={{
+            ...slotProps,
+            input: {
+              ...slotProps?.input,
+
+              ...(startIcon && {
+                startAdornment: (
+                  <InputAdornment position="start">{startIcon}</InputAdornment>
+                ),
+              }),
+
+              endAdornment: (
+                <InputAdornment position="end">
+                  {isPasswordField ? (
+                    <IconButton
+                      edge="end"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? <Visibility /> : <VisibilityOff />}
+                    </IconButton>
+                  ) : (
+                    endIcon
+                  )}
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
       )}
     />
   );

@@ -75,9 +75,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
     try {
       await onSubmit(payload);
       handleClose();
-    } catch {
-
-    }
+    } catch {}
   };
 
   return (
@@ -120,6 +118,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
                 label="Classroom Name"
                 size="small"
                 fullWidth
+                placeholder="Enter classroom name"
               />
             </div>
             <div className="flex-1">
@@ -129,6 +128,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
                 label="Semester"
                 size="small"
                 fullWidth
+                placeholder="Enter semester/year eg. 2/2566 or 2/2025"
               />
             </div>
           </div>
@@ -140,6 +140,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
             multiline
             rows={4}
             fullWidth
+            placeholder="Enter classroom description"
           />
 
           <div className="flex flex-col gap-2">
@@ -163,6 +164,7 @@ const CreateClassroomModal = ({ open, onClose, onSubmit }: Props) => {
                     label={`Learning Outcome ${index + 1}`}
                     size="small"
                     fullWidth
+                    placeholder={`Enter learning outcome ${index + 1}`}
                   />
 
                   <IconButton

@@ -30,13 +30,13 @@ interface Props {
   onError?: (message: string) => void;
 }
 
-const mockProjectTypes: ProjectType[] = [
+const ProjectTypes: ProjectType[] = [
   { id: 1, name: "Frontend" },
   { id: 2, name: "Backend" },
   { id: 3, name: "Project" },
 ];
 
-const mockLanguages: Language[] = [
+const Languages: Language[] = [
   { id: 1, name: "Java" },
   { id: 2, name: "Python" },
   { id: 3, name: "C" },
@@ -140,6 +140,8 @@ const CreateAssignmentModal = ({
     await handleCreate(data);
   };
 
+  const testCase = watch("testCase");
+
   const handleCreate = async (data: FormData) => {
     setIsSubmitting(true);
     try {
@@ -167,8 +169,7 @@ const CreateAssignmentModal = ({
     } catch (err: any) {
       console.error(err);
       const message =
-        err?.message ||
-        "Failed to create assignment. Please try again later.";
+        err?.message || "Failed to create assignment. Please try again later.";
       onError?.(message);
     } finally {
       setIsSubmitting(false);
@@ -212,6 +213,7 @@ const CreateAssignmentModal = ({
             control={control}
             label="Assignment name"
             fullWidth
+            placeholder="Enter assignment name"
           />
 
           <RHFTextField
@@ -221,6 +223,7 @@ const CreateAssignmentModal = ({
             multiline
             rows={4}
             fullWidth
+            placeholder="Enter assignment detail (will be used to generate test cases)"
           />
 
           <div className="grid grid-cols-3 gap-4 mb-4">
@@ -239,7 +242,7 @@ const CreateAssignmentModal = ({
               control={control}
               label="Project type"
             >
-              {mockProjectTypes.map((item) => (
+              {ProjectTypes.map((item) => (
                 <MenuItem key={item.id} value={item.id}>
                   {item.name}
                 </MenuItem>
@@ -252,7 +255,7 @@ const CreateAssignmentModal = ({
               label="Language"
               disabled={!enableLanguage}
             >
-              {mockLanguages.map((item) => (
+              {Languages.map((item) => (
                 <MenuItem key={item.id} value={item.id}>
                   {item.name}
                 </MenuItem>
@@ -281,11 +284,15 @@ const CreateAssignmentModal = ({
                 <h4 className="m-0">Test case</h4>
                 <p className="p2 m-0">(optional)</p>
               </span>
+              <span className="text-neutral05 p2 m-0">
+                Only supports on robot framework.
+              </span>
               <Button variant="outlined" component="label" sx={{ height: 32 }}>
                 <span>Add File</span>
                 <input
                   type="file"
                   hidden
+                  accept=".robot,.txt"
                   onChange={(e) => {
                     setValue("testCase", e.target.files?.[0]);
                     e.target.value = "";
@@ -294,10 +301,10 @@ const CreateAssignmentModal = ({
               </Button>
             </div>
 
-            {watch("testCase") ? (
+            {testCase ? (
               <div className="flex items-center justify-between gap-3 rounded border border-neutral03 bg-neutral01 px-3 py-2">
                 <span className="text-neutral05 break-all">
-                  {watch("testCase")?.name}
+                  {testCase?.name}
                 </span>
                 <IconButton
                   size="small"
@@ -373,7 +380,11 @@ const CreateAssignmentModal = ({
             >
               {isSubmitting ? (
                 <>
-                  <CircularProgress size={20} color="inherit" className="mr-2" />
+                  <CircularProgress
+                    size={20}
+                    color="inherit"
+                    className="mr-2"
+                  />
                   Saving...
                 </>
               ) : (

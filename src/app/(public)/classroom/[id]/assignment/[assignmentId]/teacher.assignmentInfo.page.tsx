@@ -164,25 +164,28 @@ export default function TeacherAssignmentInfoPage() {
         </div>
         <h2 className="font-bold text-lg mb-2">Attachments</h2>
 
-          {assignments.attachments && assignments.attachments.length > 0 ? (
-            <ul className="mb-5 space-y-1">
-              {assignments.attachments.map((attachment) => (
-                <li key={attachment.id} className="hover:text-primary03 transition cursor-pointer">
-                  <a
-                    href={attachment.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2"
-                  >
-                    <InsertDriveFileIcon />
-                    {attachment.file_url.split('/').pop() || 'Attachment'}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-neutral06 mb-5">No attachments available</p>
-          )}
+        {assignments.attachments && assignments.attachments.length > 0 ? (
+          <ul className="mb-5 space-y-1">
+            {assignments.attachments.map((attachment) => (
+              <li
+                key={attachment.id}
+                className="hover:text-primary03 transition cursor-pointer"
+              >
+                <a
+                  href={attachment.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2"
+                >
+                  <InsertDriveFileIcon />
+                  {attachment.file_url.split("/").pop() || "Attachment"}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-neutral06 mb-5">No attachments available</p>
+        )}
 
         <Paper sx={{ backgroundColor: "#ffffff" }}>
           <Tabs
@@ -332,9 +335,12 @@ export default function TeacherAssignmentInfoPage() {
                           });
                           Cookies.set(
                             "projectName",
-                            String(getDisplayName(project)),
+                            String(project.group_name),
                             { expires: 1 },
                           );
+                          Cookies.set("assignmentId", String(assignments.id), {
+                            expires: 1,
+                          });
                         }}
                       >
                         <Button variant="contained" size="small" sx={{ px: 4 }}>

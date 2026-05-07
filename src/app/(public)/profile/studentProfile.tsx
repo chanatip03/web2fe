@@ -14,7 +14,7 @@ import { RHFTextField } from "@/components/form/RHFTextField";
 import PersonIcon from "@mui/icons-material/Person";
 import { discordService } from "@/services/controller";
 import ChangePasswordModal from "@/components/modal/changePasswordModal";
-import CheckIcon from '@mui/icons-material/Check';
+import CheckIcon from "@mui/icons-material/Check";
 
 const schema = z.object({
   first_name: z.string().min(1, "Please enter first name"),
@@ -122,6 +122,7 @@ export default function StudentProfile() {
         message: "Profile updated successfully.",
         severity: "success",
       });
+
       router.refresh();
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -272,16 +273,16 @@ export default function StudentProfile() {
               </div>
             </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            {!isEditing ? (
-              <>
-                <Button
-                  type="button"
-                  variant="contained"
-                  onClick={() => setOpenChangePassword(true)}
-                >
-                  Change Password
-                </Button>
+            <div className="mt-6 flex justify-end gap-2">
+              {!isEditing ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="contained"
+                    onClick={() => setOpenChangePassword(true)}
+                  >
+                    Change Password
+                  </Button>
 
                   <Button
                     type="button"
@@ -315,7 +316,9 @@ export default function StudentProfile() {
             </div>
 
             <div className="mt-8">
-              <h5 className="mb-4">Link your account to receive notifications</h5>
+              <h5 className="mb-4">
+                Link your account to receive notifications
+              </h5>
 
               <Button
                 type="button"
@@ -350,14 +353,18 @@ export default function StudentProfile() {
                     alt="Discord"
                     className="h-[20px] w-[20px]"
                   />
-                  <h5>{discordLinked ? "Linked with Discord" : "Link with Discord"}</h5>
+                  <h5>
+                    {discordLinked
+                      ? "Linked with Discord"
+                      : "Link with Discord"}
+                  </h5>
                 </span>
               </Button>
             </div>
           </form>
           <ChangePasswordModal
-          open={openChangePassword}
-          onClose={() => setOpenChangePassword(false)}
+            open={openChangePassword}
+            onClose={() => setOpenChangePassword(false)}
           />
         </div>
       </div>

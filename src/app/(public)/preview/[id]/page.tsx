@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { projectService } from "@/services/controller";
 
-const TTL_SECONDS = 10 * 60; // must match backend default
+const TTL_SECONDS = 10 * 60;
 
 // ─── sessionStorage cache key ────────────────────────────────────────────────
-// Stored shape: { previewUrl: string; startedAt: number /* epoch ms */ }
+
 interface PreviewCache {
   previewUrl: string;
   startedAt: number;
@@ -19,23 +19,38 @@ function getCacheKey(id: string | string[]) {
 
 function saveCache(id: string | string[], previewUrl: string) {
   try {
-    const value: PreviewCache = { previewUrl, startedAt: Date.now() };
+    const value: PreviewCache = {
+      previewUrl,
+      startedAt: Date.now(),
+    };
+
     sessionStorage.setItem(getCacheKey(id), JSON.stringify(value));
-  } catch {
-    /* sessionStorage unavailable (private mode, etc.) */
-  }
+  } catch {}
 }
 
-function loadCache(id: string | string[]): { previewUrl: string; remaining: number } | null {
+function loadCache(
+  id: string | string[],
+): { previewUrl: string; remaining: number } | null {
   try {
     const raw = sessionStorage.getItem(getCacheKey(id));
+
     if (!raw) return null;
+
     const { previewUrl, startedAt }: PreviewCache = JSON.parse(raw);
+
     const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+
     const remaining = TTL_SECONDS - elapsed;
-    if (remaining > 0) return { previewUrl, remaining };
-    // Expired — clean up
+
+    if (remaining > 0) {
+      return {
+        previewUrl,
+        remaining,
+      };
+    }
+
     sessionStorage.removeItem(getCacheKey(id));
+
     return null;
   } catch {
     return null;
@@ -44,43 +59,68 @@ function loadCache(id: string | string[]): { previewUrl: string; remaining: numb
 
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return "00:00:00";
+
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
+
   return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
 }
 
 export default function ProjectPreviewPage() {
   const { id } = useParams();
+
   const projectId = Number(Array.isArray(id) ? id[0] : id);
+
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+
   const searchParams = useSearchParams();
+
   const isBackend = searchParams?.get("type") === "backend";
+
   const [status, setStatus] = useState<string>("loading");
+
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
+
   const [secondsLeft, setSecondsLeft] = useState<number>(TTL_SECONDS);
+
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Countdown ticker — starts once the container is running
+  // ─── countdown ────────────────────────────────────────────────────────────
+
   const startCountdown = (remaining: number) => {
-    if (countdownRef.current) clearInterval(countdownRef.current);
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current);
+    }
+
     setSecondsLeft(remaining);
+
     countdownRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(countdownRef.current!);
+
           setStatus("expired");
+
           setPreviewUrl(null);
-          // Remove stale cache
-          if (id) sessionStorage.removeItem(getCacheKey(id));
+
+          if (id) {
+            sessionStorage.removeItem(getCacheKey(id));
+          }
+
           return 0;
         }
+
         return prev - 1;
       });
     }, 1000);
   };
+
+  // ─── preview start ────────────────────────────────────────────────────────
 
   const startPreview = async (submissionId?: string | null) => {
     if (!submissionId) {
@@ -94,10 +134,15 @@ export default function ProjectPreviewPage() {
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/project/${submissionId}/preview/start`,
-        { method: "POST", credentials: "include" }
+        {
+          method: "POST",
+          credentials: "include",
+        },
       );
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+
         throw new Error(data.detail || "Failed to start preview");
       }
 
@@ -105,20 +150,28 @@ export default function ProjectPreviewPage() {
 
       if (data.status === "running") {
         setStatus("ready");
+
         setPreviewUrl(data.preview_url);
+
         startCountdown(data.seconds_remaining ?? TTL_SECONDS);
+
         return;
       }
 
       setStatus("deploying");
+
       pollRef.current = setInterval(async () => {
         try {
           const sRes = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/project/${submissionId}/preview/status`,
-            { credentials: "include" }
+            {
+              credentials: "include",
+            },
           );
+
           if (!sRes.ok) {
             const payload = await sRes.json().catch(() => ({}));
+
             throw new Error(payload.detail || "Failed to fetch preview status");
           }
 
@@ -126,38 +179,51 @@ export default function ProjectPreviewPage() {
 
           if (sData.status === "running") {
             clearInterval(pollRef.current!);
+
             setStatus("ready");
+
             setPreviewUrl(sData.preview_url);
+
             startCountdown(sData.seconds_remaining ?? TTL_SECONDS);
           } else if (sData.status === "error") {
             clearInterval(pollRef.current!);
+
             setStatus("error");
+
             setError(sData.error ?? "Container failed to start");
           }
         } catch {
-          // network hiccup — keep polling
+          // ignore network hiccup
         }
       }, 3000);
     } catch (err: unknown) {
       setStatus("error");
+
       setError(err instanceof Error ? err.message : String(err));
     }
   };
 
+  // ─── init ────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!Number.isFinite(projectId)) {
       setStatus("error");
+
       setError("Invalid project id");
+
       return;
     }
 
     const loadProjectAndStartPreview = async () => {
       try {
         const data = await projectService.getProjectById(projectId);
+
         setSubmissionId(data.submission_uuid ?? String(projectId));
+
         await startPreview(data.submission_uuid ?? String(projectId));
       } catch (err: unknown) {
         setStatus("error");
+
         setError(err instanceof Error ? err.message : String(err));
       }
     };
@@ -165,16 +231,24 @@ export default function ProjectPreviewPage() {
     void loadProjectAndStartPreview();
 
     return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      if (countdownRef.current) clearInterval(countdownRef.current);
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
     };
   }, [projectId]);
 
+  // ─── loading ─────────────────────────────────────────────────────────────
+
   if (status === "loading" || status === "deploying") {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white flex-col gap-6 p-6">
+      <div className="flex-1 h-full overflow-hidden flex items-center justify-center bg-gray-950 text-white flex-col gap-6 p-6">
         <div className="relative h-16 w-16">
           <div className="absolute inset-0 rounded-full border-4 border-white/10" />
+
           <div className="absolute inset-0 rounded-full border-4 border-t-indigo-400 animate-spin" />
         </div>
 
@@ -184,6 +258,7 @@ export default function ProjectPreviewPage() {
               ? "Initialising Container Environment…"
               : "Pulling & Launching Docker Container…"}
           </p>
+
           <p className="text-sm text-gray-400">
             This usually takes 30–60 seconds. Please wait.
           </p>
@@ -198,6 +273,7 @@ export default function ProjectPreviewPage() {
           ].map((step) => (
             <div key={step} className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+
               {step}
             </div>
           ))}
@@ -206,16 +282,21 @@ export default function ProjectPreviewPage() {
     );
   }
 
+  // ─── error ───────────────────────────────────────────────────────────────
+
   if (status === "error") {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white p-6">
+      <div className="flex h-full overflow-hidden items-center justify-center bg-gray-950 text-white p-6">
         <div className="max-w-xl w-full text-center space-y-4">
           <div className="text-5xl">🚫</div>
+
           <h1 className="text-2xl font-bold">Preview Unavailable</h1>
+
           <p className="text-gray-400 text-sm">
             The container failed to start. Check that your bundle was built
             successfully and that Docker is running on the server.
           </p>
+
           <pre className="bg-red-950/60 border border-red-500/30 text-red-300 p-4 rounded-xl font-mono text-xs text-left overflow-auto">
             {error}
           </pre>
@@ -224,21 +305,29 @@ export default function ProjectPreviewPage() {
     );
   }
 
+  // ─── expired ─────────────────────────────────────────────────────────────
+
   if (status === "expired") {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-950 text-white p-6">
+      <div className="flex h-full overflow-hidden items-center justify-center bg-gray-950 text-white p-6">
         <div className="max-w-md w-full text-center space-y-4">
           <div className="text-5xl">⏰</div>
+
           <h1 className="text-2xl font-bold">Session Expired</h1>
+
           <p className="text-gray-400 text-sm">
             The preview session has ended and the container was automatically
             removed to free resources.
           </p>
+
           <button
             onClick={() => {
               setStatus("loading");
+
               setPreviewUrl(null);
+
               setError(null);
+
               void startPreview(submissionId);
             }}
             className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition"
@@ -250,44 +339,54 @@ export default function ProjectPreviewPage() {
     );
   }
 
+  // ─── ready ───────────────────────────────────────────────────────────────
+
   if (status === "ready" && previewUrl) {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ?? "";
+
     const fullUrl = previewUrl.startsWith("http")
       ? previewUrl
       : `${baseUrl}${previewUrl}`;
 
-    const isWarning = secondsLeft < 10 * 60; // < 10 min → red
+    const isWarning = secondsLeft < 10 * 60;
 
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-950 text-white p-6">
+      <div className="w-full h-full overflow-hidden flex flex-col items-center justify-center bg-gray-950 text-white p-6">
         <div className="max-w-md w-full bg-gray-900 border border-white/10 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
           <div className="relative w-20 h-20 mx-auto">
             <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+
             <div className="relative flex items-center justify-center w-full h-full bg-green-500/10 border border-green-500/30 rounded-full text-4xl">
               🚀
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-white">Container Ready</h1>
+
             <p className="text-sm text-gray-400">
-              Your preview container is running. Click the button below to open your web application in a new tab.
+              Your preview container is running. Click the button below to open
+              your web application in a new tab.
             </p>
           </div>
 
           <div className="bg-black/50 rounded-xl p-4 border border-white/5 text-left space-y-3">
             <div className="flex items-center justify-between text-xs font-mono text-gray-400">
               <span>Preview URL</span>
+
               <div
                 className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold tracking-wider uppercase ${
-                  isWarning ? "bg-red-500/20 text-red-400" : "bg-indigo-500/20 text-indigo-400"
+                  isWarning
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-indigo-500/20 text-indigo-400"
                 }`}
-                title="Container auto-removes when the preview TTL expires"
               >
                 <span>⏱</span>
+
                 <span>{formatCountdown(secondsLeft)}</span>
               </div>
             </div>
+
             <div className="text-sm font-mono text-indigo-300 break-all select-all bg-white/5 p-3 rounded-lg border border-white/5">
               {fullUrl}
             </div>
@@ -300,6 +399,7 @@ export default function ProjectPreviewPage() {
             className="flex w-full items-center justify-center gap-2 px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition shadow-lg shadow-indigo-900/20"
           >
             <span>Open Preview in New Tab</span>
+
             <span className="text-xl leading-none">↗</span>
           </a>
         </div>

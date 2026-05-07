@@ -58,7 +58,10 @@ export const Navbar = () => {
   return (
     <nav className="flex h-[72px] items-center justify-between bg-primary03 px-10">
       {/* LEFT */}
-      <div className="flex items-center gap-2 text-neutral01">
+      <Link
+        href="/classroom"
+        className="flex items-center gap-2 text-neutral01"
+      >
         <Image
           src="/WLogo.png"
           alt="W Logo"
@@ -71,7 +74,7 @@ export const Navbar = () => {
           <h3 className="mt-1">EB2</h3>
           <div className="-mt-1 p2">eb learning Environment</div>
         </div>
-      </div>
+      </Link>
 
       {/* RIGHT */}
       <div className="flex items-center">

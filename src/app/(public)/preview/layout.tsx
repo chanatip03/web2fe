@@ -1,9 +1,8 @@
 "use client";
 
 import { Navbar } from "@/components/navbar";
-import { SidebarStudent } from "@/components/sidebarStudent";
 import { SidebarAssignment } from "@/components/sidebarAssignment";
-import { useState, useEffect, Suspense } from "react";
+import { Suspense } from "react";
 import Cookies from "js-cookie";
 import { useSearchParams } from "next/navigation";
 
@@ -12,16 +11,6 @@ interface Props {
 }
 
 function LayoutContent({ children }: Readonly<Props>) {
-  // Read cookie only on the client to avoid SSR/client hydration mismatch.
-  const [AssignmentName, setAssignmentName] = useState<string | undefined>(
-    undefined,
-  );
-  const [projectName, setProjectName] = useState<string | undefined>(undefined);
-  useEffect(() => {
-    setAssignmentName(Cookies.get("assignmentName"));
-    setProjectName(Cookies.get("projectName"));
-  }, []);
-
   const searchParams = useSearchParams();
   const isStudent =
     searchParams?.get("role") === "student" ||
@@ -36,17 +25,19 @@ function LayoutContent({ children }: Readonly<Props>) {
   }
 
   return (
-    <>
+    <div className="h-screen flex flex-col overflow-hidden">
       <Navbar />
-      <div className="flex bg-neutral01 min-h-screen">
+
+      <div className="flex flex-1 bg-neutral01 overflow-hidden">
         <SidebarAssignment
-          assignmentName={AssignmentName}
-          projectName={projectName}
+          assignmentName={Cookies.get("assignmentName")}
+          projectName={Cookies.get("projectName")}
         />
+
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto px-20 py-10">{children}</main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
-    </>
+    </div>
   );
 }
 

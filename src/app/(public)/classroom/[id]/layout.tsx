@@ -16,9 +16,12 @@ export default function ClassroomLayout({ children }: Readonly<Props>) {
 
   // Read cookie only on the client to avoid SSR/client hydration mismatch.
   // Passing undefined on both server and client during initial render.
-  const [classroomName, setClassroomName] = useState<string | undefined>(undefined);
+  const [classroomName, setClassroomName] = useState<string | undefined>(
+    undefined,
+  );
+
   useEffect(() => {
-    setClassroomName(Cookies.get("classroomName"));
+    setClassroomName(Cookies.get("classroomName") || undefined);
   }, []);
 
   return (

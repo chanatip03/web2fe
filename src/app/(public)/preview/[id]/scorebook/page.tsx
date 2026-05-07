@@ -1,6 +1,15 @@
 "use client";
 
-import { Breadcrumbs, Box, Typography, Avatar, Button, CircularProgress } from "@mui/material";
+import {
+  Breadcrumbs,
+  Box,
+  Typography,
+  Avatar,
+  Button,
+  CircularProgress,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,9 +20,13 @@ import { useEffect, useState } from "react";
 import { projectService } from "@/services/controller";
 import { Project } from "@/domain/project";
 import { ANONYMOUS_AVATAR_URL } from "@/constants";
+import Cookies from "js-cookie";
 
 const Schema = z.object({
-  score: z.string().regex(/^\d+$/, "Score must be a number").min(1, "Score is required"),
+  score: z
+    .string()
+    .regex(/^\d+$/, "Score must be a number")
+    .min(1, "Score is required"),
   feedback: z.string().optional(),
 });
 
@@ -27,8 +40,18 @@ export default function ScorebookPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success" as "success" | "error",
+  });
 
-  const { control, handleSubmit, reset, formState: { isValid } } = useForm<FormData>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isValid },
+  } = useForm<FormData>({
     resolver: zodResolver(Schema),
     defaultValues: {
       score: "",
@@ -94,11 +117,29 @@ export default function ScorebookPage() {
         feedback: data.feedback || null,
       });
       // Invalidate cache so next visit fetches updated grading
-      try { sessionStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
-      alert("Grading saved successfully!");
+      try {
+        sessionStorage.removeItem(CACHE_KEY);
+      } catch {
+        /* ignore */
+      }
+      setSnackbar({
+        open: true,
+        message: "Assigned score and feedback successfully.",
+        severity: "success",
+      });
+
+      setTimeout(() => {
+        router.push(
+          `/classroom/${Cookies.get("classroomId")}/assignment/${Cookies.get("assignmentId")}`,
+        );
+      }, 2000);
     } catch (err: any) {
-      console.error("Failed to submit:", err);
-      alert("Error saving grading: " + (err.message || "Unknown error"));
+      console.error(err);
+      setSnackbar({
+        open: true,
+        message: "Unable to assign score and feedback. Please try again.",
+        severity: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +147,7 @@ export default function ScorebookPage() {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -114,19 +155,24 @@ export default function ScorebookPage() {
 
   if (error || !project) {
     return (
-      <Box sx={{ p: 4, color: 'var(--color-accent04)' }}>
+      <Box sx={{ p: 4, color: "var(--color-accent04)" }}>
         <Typography>{error || "Project not found"}</Typography>
       </Box>
     );
   }
 
   return (
-    <div className="p-3 flex flex-col gap-6">
+    <div className="p-3 flex flex-col gap-6 px-20 py-10">
       {/* Breadcrumb */}
       <div className="flex flex-col items-start justify-start gap-2 mb-4">
-        <Breadcrumbs aria-label="breadcrumb" separator="/">
-          <Link href="/classroom/listclassroom">Home</Link>
-          <span className="text-black">Scorebook and Feedback</span>
+        <Breadcrumbs className="my-6 mb-6">
+          <Link href="/classroom">Home</Link>
+          <span>{Cookies.get("classroomName")}</span>
+          <span>{Cookies.get("assignmentName")}</span>
+          <span>{Cookies.get("projectName")}</span>
+          <span style={{ color: "var(--color-black)", fontWeight: 500 }}>
+            Score and Feedback
+          </span>
         </Breadcrumbs>
       </div>
 
@@ -141,7 +187,7 @@ export default function ScorebookPage() {
               borderRadius: "8px",
               overflow: "hidden",
               backgroundColor: "var(--color-neutral01)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
             }}
           >
             <Box
@@ -166,7 +212,10 @@ export default function ScorebookPage() {
             >
               {project.students.length > 0 ? (
                 project.students.map((student) => (
-                  <Box key={student.id} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box
+                    key={student.id}
+                    sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                  >
                     <Avatar
                       src={student.user.image_url || ANONYMOUS_AVATAR_URL}
                       alt={student.user.first_name}
@@ -178,7 +227,9 @@ export default function ScorebookPage() {
                   </Box>
                 ))
               ) : (
-                <Typography sx={{ color: "var(--color-neutral05)", fontStyle: "italic" }}>
+                <Typography
+                  sx={{ color: "var(--color-neutral05)", fontStyle: "italic" }}
+                >
                   No students assigned to this project.
                 </Typography>
               )}
@@ -188,7 +239,10 @@ export default function ScorebookPage() {
 
         {/* Right Column: Score & Feedback Form */}
         <div className="md:col-span-8 lg:col-span-8 xl:col-span-9">
-          <form onSubmit={handleSubmit(onSubmitForm)} className="flex flex-col gap-6">
+          <form
+            onSubmit={handleSubmit(onSubmitForm)}
+            className="flex flex-col gap-6"
+          >
             <Box sx={{ width: "250px" }}>
               <RHFTextField
                 name="score"
@@ -221,6 +275,18 @@ export default function ScorebookPage() {
                 {isSubmitting ? "Saving..." : "Submit"}
               </Button>
             </Box>
+            <Snackbar
+              open={snackbar.open}
+              onClose={() => setSnackbar({ ...snackbar, open: false })}
+            >
+              <Alert
+                severity={snackbar.severity}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                variant="standard"
+              >
+                {snackbar.message}
+              </Alert>
+            </Snackbar>
           </form>
         </div>
       </div>

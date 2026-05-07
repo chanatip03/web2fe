@@ -10,7 +10,9 @@ import TestResultFull from "./result_full";
 import TestResultFeBe from "./result_fe_be";
 import type { TestResultPageData, TestcaseCaseResult } from "./types";
 
-function parseJsonObject(value?: string | null): Record<string, unknown> | null {
+function parseJsonObject(
+  value?: string | null,
+): Record<string, unknown> | null {
   if (!value) return null;
 
   try {
@@ -36,8 +38,16 @@ function toNumber(value: unknown): number | null {
   return null;
 }
 
-function toDurationSeconds(startTime: unknown, endTime: unknown): number | null {
-  if (typeof startTime !== "string" || typeof endTime !== "string" || !startTime || !endTime) {
+function toDurationSeconds(
+  startTime: unknown,
+  endTime: unknown,
+): number | null {
+  if (
+    typeof startTime !== "string" ||
+    typeof endTime !== "string" ||
+    !startTime ||
+    !endTime
+  ) {
     return null;
   }
 
@@ -58,7 +68,9 @@ function toDurationSeconds(startTime: unknown, endTime: unknown): number | null 
   return (end - start) / 1000;
 }
 
-function normalizeTestcaseCases(testcaseResult: Record<string, unknown> | null): TestcaseCaseResult[] {
+function normalizeTestcaseCases(
+  testcaseResult: Record<string, unknown> | null,
+): TestcaseCaseResult[] {
   const cases = testcaseResult?.case_results;
   if (!Array.isArray(cases)) {
     const total = toNumber(testcaseResult?.total) ?? 0;
@@ -68,7 +80,12 @@ function normalizeTestcaseCases(testcaseResult: Record<string, unknown> | null):
     if (total <= 0) return [];
 
     return Array.from({ length: total }, (_, index) => {
-      const status = index < failed ? "failed" : index < failed + passed ? "passed" : "unknown";
+      const status =
+        index < failed
+          ? "failed"
+          : index < failed + passed
+            ? "passed"
+            : "unknown";
       return {
         id: `summary-case-${index + 1}`,
         name: `Test case ${index + 1}`,
@@ -83,16 +100,28 @@ function normalizeTestcaseCases(testcaseResult: Record<string, unknown> | null):
 
   return cases.map((item, index) => {
     const row = asRecord(item);
-    const name = typeof row?.name === "string" && row.name.trim() ? row.name.trim() : `Test case ${index + 1}`;
-    const message = typeof row?.message === "string" && row.message.trim() ? row.message.trim() : null;
+    const name =
+      typeof row?.name === "string" && row.name.trim()
+        ? row.name.trim()
+        : `Test case ${index + 1}`;
+    const message =
+      typeof row?.message === "string" && row.message.trim()
+        ? row.message.trim()
+        : null;
     return {
       id: `${name}-${index}`,
       name,
-      status: typeof row?.status === "string" && row.status.trim() ? row.status.trim().toLowerCase() : "unknown",
+      status:
+        typeof row?.status === "string" && row.status.trim()
+          ? row.status.trim().toLowerCase()
+          : "unknown",
       message,
       durationSeconds: toDurationSeconds(row?.start_time, row?.end_time),
       line: toNumber(row?.line),
-      suiteName: typeof row?.suite_name === "string" && row.suite_name.trim() ? row.suite_name.trim() : null,
+      suiteName:
+        typeof row?.suite_name === "string" && row.suite_name.trim()
+          ? row.suite_name.trim()
+          : null,
     };
   });
 }
@@ -111,7 +140,7 @@ function toBackendUrl(path?: string | null): string | null {
 function getStoredArtifactUrl(
   testcaseResult: Record<string, unknown> | null,
   submissionUuid: string | null | undefined,
-  artifactName: string
+  artifactName: string,
 ): string | null {
   const artifactUrls = asRecord(testcaseResult?.artifact_urls);
   const mapped = artifactUrls?.[artifactName];
@@ -138,10 +167,14 @@ function getStoredArtifactUrl(
     return null;
   }
 
-  return toBackendUrl(`/api/submission/${submissionUuid}/artifacts/${artifactId}`);
+  return toBackendUrl(
+    `/api/submission/${submissionUuid}/artifacts/${artifactId}`,
+  );
 }
 
-function getCyberScanUrl(cybersecurityResult: Record<string, unknown> | null): string | null {
+function getCyberScanUrl(
+  cybersecurityResult: Record<string, unknown> | null,
+): string | null {
   const downloadUrl = cybersecurityResult?.download_url;
   if (typeof downloadUrl === "string" && downloadUrl.trim()) {
     return toBackendUrl(downloadUrl);
@@ -150,9 +183,14 @@ function getCyberScanUrl(cybersecurityResult: Record<string, unknown> | null): s
   return null;
 }
 
-function getCyberScanSource(cybersecurityResult: Record<string, unknown> | null): "scan.json" | "summary" | "missing" {
+function getCyberScanSource(
+  cybersecurityResult: Record<string, unknown> | null,
+): "scan.json" | "summary" | "missing" {
   if (!cybersecurityResult) return "missing";
-  if (Array.isArray(cybersecurityResult.issues) || typeof cybersecurityResult.type === "string") {
+  if (
+    Array.isArray(cybersecurityResult.issues) ||
+    typeof cybersecurityResult.type === "string"
+  ) {
     return "scan.json";
   }
   return "summary";
@@ -166,14 +204,17 @@ function getProjectLabel(project: Project): string {
   }
   if (project.students?.length > 1) {
     return project.students
-      .map((student) => `${student.user.first_name} ${student.user.last_name}`.trim())
+      .map((student) =>
+        `${student.user.first_name} ${student.user.last_name}`.trim(),
+      )
       .join(", ");
   }
   return `Project ${project.id}`;
 }
 
 function isFullstackAssignment(assignment: Assignment): boolean {
-  const projectTypeName = assignment.project_type?.name?.trim().toLowerCase() || "";
+  const projectTypeName =
+    assignment.project_type?.name?.trim().toLowerCase() || "";
 
   return (
     assignment.project_type?.id === 3 ||
@@ -208,13 +249,25 @@ export default function Page() {
           throw new Error("Project is missing assignment reference");
         }
 
-        const assignment = await assignmentService.getAssignmentById(project.assignment_id);
+        const assignment = await assignmentService.getAssignmentById(
+          project.assignment_id,
+        );
 
         const testcaseResult = parseJsonObject(project.testcase_result);
-        const cybersecurityResult = parseJsonObject(project.cybersecurity_result);
+        const cybersecurityResult = parseJsonObject(
+          project.cybersecurity_result,
+        );
 
-        const testcaseLogUrl = getStoredArtifactUrl(testcaseResult, project.submission_uuid, "log.html");
-        const testcaseOutputUrl = getStoredArtifactUrl(testcaseResult, project.submission_uuid, "output.xml");
+        const testcaseLogUrl = getStoredArtifactUrl(
+          testcaseResult,
+          project.submission_uuid,
+          "log.html",
+        );
+        const testcaseOutputUrl = getStoredArtifactUrl(
+          testcaseResult,
+          project.submission_uuid,
+          "output.xml",
+        );
         const cyberScanUrl = getCyberScanUrl(cybersecurityResult);
         const testcaseCases = normalizeTestcaseCases(testcaseResult);
         const cyberScanSource = getCyberScanSource(cybersecurityResult);
@@ -223,7 +276,7 @@ export default function Page() {
           projectId,
           classroomName: Cookies.get("classroomName") || undefined,
           assignmentTitle: assignment.title,
-          projectLabel: getProjectLabel(project),
+          projectLabel: Cookies.get("projectName") || getProjectLabel(project),
           executionMode: project.env,
           isFullstack: isFullstackAssignment(assignment),
           testcaseResult,
@@ -238,7 +291,10 @@ export default function Page() {
             : [],
         });
       } catch (loadError) {
-        const message = loadError instanceof Error ? loadError.message : "Failed to load test results";
+        const message =
+          loadError instanceof Error
+            ? loadError.message
+            : "Failed to load test results";
         setError(message);
       } finally {
         setLoading(false);
@@ -248,11 +304,22 @@ export default function Page() {
     void load();
   }, [projectId]);
 
-  const isFullstack = useMemo(() => data?.isFullstack === true, [data?.isFullstack]);
+  const isFullstack = useMemo(
+    () => data?.isFullstack === true,
+    [data?.isFullstack],
+  );
 
   if (isFullstack) {
-    return <TestResultFull data={data} isLoading={loading} error={error} />;
+    return (
+      <div className="px-20 py-10">
+        <TestResultFull data={data} isLoading={loading} error={error} />
+      </div>
+    );
   }
 
-  return <TestResultFeBe data={data} isLoading={loading} error={error} />;
+  return (
+    <div className="px-20 py-10">
+      <TestResultFeBe data={data} isLoading={loading} error={error} />
+    </div>
+  );
 }

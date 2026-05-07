@@ -107,7 +107,7 @@ function TreeNode({ node, level = 0 }: { node: FileNode; level?: number }) {
 
 function FileExplorer({ rootNode }: { rootNode: FileNode }) {
   return (
-    <aside className="w-[260px] h-full shrink-0 overflow-y-auto border-r border-neutral02 bg-neutral01">
+    <aside className="w-[260px] h-full shrink-0 overflow-y-auto bg-neutral01">
       <div className="p-2 space-y-0.5">
         {(rootNode.children ?? []).map((child) => (
           <TreeNode key={child.path} node={child} level={0} />
@@ -121,23 +121,17 @@ function FileExplorer({ rootNode }: { rootNode: FileNode }) {
 
 function PreviewCode() {
   return (
-    <section className="flex-1 w-full h-full min-w-0 overflow-hidden bg-white">
-      <div 
-        className="h-full w-full overflow-auto 
-        [&_.sp-layout]:!rounded-none 
-        [&_.sp-layout]:!border-none 
-        [&_.sp-layout]:!h-full
-        [&_.sp-wrapper]:!h-full 
-        [&_.sp-code-viewer]:!h-full 
-        [&_.sp-cm]:!h-full 
-        [&_.cm-scroller]:!p-0"
-      >
-        <SandpackLayout className="w-full h-full !rounded-none !border-none">
+    <section className="flex-1 h-full overflow-hidden bg-white flex flex-col">
+      <div className="flex-1 overflow-auto">
+        <SandpackLayout className="h-full w-screen rounded-none border-none">
           <SandpackCodeViewer
             showTabs={false}
             showLineNumbers
             wrapContent={false}
             initMode="immediate"
+            style={{
+              height: "100%",
+            }}
           />
         </SandpackLayout>
       </div>
@@ -228,7 +222,10 @@ export default function SourceCodeViewer() {
   const activeFile = `/${firstFile.path}`;
 
   return (
-    <div className="flex w-full h-[75vh] min-h-[600px] rounded-xl border border-neutral03 shadow-md overflow-hidden bg-neutral01">
+    <div
+      className="flex w-full overflow-hidden bg-white"
+      style={{ height: "100dvh" }}
+    >
       <SandpackProvider
         template="static"
         files={files as SandpackFiles}
@@ -237,7 +234,10 @@ export default function SourceCodeViewer() {
           visibleFiles: [activeFile],
         }}
       >
-        <div className="flex w-full h-full min-h-0 overflow-hidden bg-white">
+        <div
+          className="flex w-full overflow-hidden"
+          style={{ height: "100dvh" }}
+        >
           <FileExplorer rootNode={projectTree} />
           <PreviewCode />
         </div>
