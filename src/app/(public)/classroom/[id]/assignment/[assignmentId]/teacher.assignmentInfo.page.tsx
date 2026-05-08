@@ -77,7 +77,7 @@ export default function TeacherAssignmentInfoPage() {
 
   const getDisplayName = (project: Project) => {
     if (project.group_name) return project.group_name;
-    if (project.students && project.students.length > 0) {
+    else if (project.students && project.students.length > 0) {
       return project.students
         .map((s) => `${s.user.first_name} ${s.user.last_name}`)
         .join(", ");
@@ -289,13 +289,13 @@ export default function TeacherAssignmentInfoPage() {
                     <TableCell align="center">
                       {project.created_date
                         ? new Date(project.created_date).toLocaleDateString(
-                          "en-GB",
-                          {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          },
-                        )
+                            "en-GB",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            },
+                          )
                         : "-"}
                     </TableCell>
 
@@ -335,7 +335,7 @@ export default function TeacherAssignmentInfoPage() {
                           });
                           Cookies.set(
                             "projectName",
-                            String(project.group_name),
+                            getDisplayName(project),
                             { expires: 1 },
                           );
                           Cookies.set("assignmentId", String(assignments.id), {
