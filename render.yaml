@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: web2fe
+    runtime: docker
+    # Render จะ pull Docker image จาก Docker Hub
+    # ตั้งค่า image ใน Render Dashboard → Settings → Deploy Image
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: NEXT_PUBLIC_API_URL
+        sync: false   # ใส่ค่าใน Render Dashboard
+      - key: NEXT_PUBLIC_WEBSOCKET_URL
+        sync: false   # ใส่ค่าใน Render Dashboard
+    healthCheckPath: /
+    autoDeploy: false  # Deploy ผ่าน webhook จาก GitHub Actions เท่านั้น
